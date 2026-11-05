@@ -38,10 +38,17 @@ internal class RateAgreementSeeder(ILogger<RateAgreementSeeder> log) : SeederBas
         var customersByName = (await context.TenantUnitOfWork.Repository<Customer>().GetListAsync(ct: cancellationToken))
             .GroupBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.First().Id, StringComparer.OrdinalIgnoreCase);
+        // Seeded cards are approved on import, so drafts are staff work in the app; and staff may
+        // name a revision after the card it replaces, so a name can repeat - the live one wins.
         var existing = (await repository.Query()
-                .Where(a => a.Status != RateAgreementStatus.Withdrawn)
+                .Where(a => a.Status == RateAgreementStatus.Active || a.Status == RateAgreementStatus.Superseded)
                 .ToListAsync(cancellationToken))
-            .ToDictionary(a => (a.CustomerId, a.Name));
+            .GroupBy(a => (a.CustomerId, a.Name))
+            .ToDictionary(
+                g => g.Key,
+                g => g.OrderByDescending(a => a.Status == RateAgreementStatus.Active)
+                    .ThenByDescending(a => a.EffectiveFrom)
+                    .First());
         var created = 0;
 
         foreach (var client in context.GetSeedRateAgreements().GroupBy(a => a.Customer))

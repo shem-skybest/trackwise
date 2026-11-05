@@ -51,6 +51,28 @@ internal class SeederOrchestrationWorker(
                 string.Join(", ", orderedSeeders.Select(s => s.Name)));
         }
 
+        var tenantConfigs = DemoTenantConfig.Load(configuration, environment.IsProduction());
+        try
+        {
+            await SeedAsync(rootScope, configuration, orderedSeeders, tenantConfigs, cancellationToken);
+        }
+        finally
+        {
+            // A failed seeder must not leave the Docker-internal host persisted: the host-run API
+            // and IdentityServer would hang resolving it on every tenant request.
+            await FinalizeConnectionStringsAsync(rootScope, configuration, tenantConfigs, cancellationToken);
+        }
+
+        logger.LogInformation("Database seeding completed successfully");
+    }
+
+    private async Task SeedAsync(
+        IServiceScope rootScope,
+        IConfiguration configuration,
+        IReadOnlyList<ISeeder> orderedSeeders,
+        IReadOnlyList<DemoTenantConfig> tenantConfigs,
+        CancellationToken cancellationToken)
+    {
         var globalSeeders = orderedSeeders.Where(s => !s.IsTenantScoped).ToList();
         var tenantScopedSeederTypes = orderedSeeders
             .Where(s => s.IsTenantScoped)
@@ -66,7 +88,6 @@ internal class SeederOrchestrationWorker(
         }
 
         // ─── Pass 2: per-tenant loop ─────────────────────────────────────────────────
-        var tenantConfigs = DemoTenantConfig.Load(configuration, environment.IsProduction());
         if (tenantConfigs.Count == 0)
         {
             logger.LogWarning("No tenants configured; skipping tenant-scoped seeders");
@@ -116,42 +137,59 @@ internal class SeederOrchestrationWorker(
                 await RunSeederAsync(seeder, tenantContext, cancellationToken);
             }
         }
+    }
 
-        // ─── Pass 3: finalize persisted connection strings to the host-facing form ─────
-        var masterUow = rootScope.ServiceProvider.GetRequiredService<IMasterUnitOfWork>();
-        var updated = false;
-
-        foreach (var tenantConfig in tenantConfigs)
+    /// <summary>
+    /// Pass 3 - rewrite each tenant's persisted ConnectionString to the host-facing form: same
+    /// database name as Passes 1-2 migrated, host/port/credentials from TenantDatabaseDefaults.
+    /// </summary>
+    private async Task FinalizeConnectionStringsAsync(
+        IServiceScope rootScope,
+        IConfiguration configuration,
+        IReadOnlyList<DemoTenantConfig> tenantConfigs,
+        CancellationToken cancellationToken)
+    {
+        try
         {
-            var tenantEntity = await masterRepo.GetAsync(t => t.Name == tenantConfig.Name, cancellationToken);
-            if (tenantEntity is null)
+            var masterUow = rootScope.ServiceProvider.GetRequiredService<IMasterUnitOfWork>();
+            var masterRepo = masterUow.Repository<Tenant>();
+            var updated = false;
+
+            foreach (var tenantConfig in tenantConfigs)
             {
-                continue;
+                var tenantEntity = await masterRepo.GetAsync(t => t.Name == tenantConfig.Name, cancellationToken);
+                if (tenantEntity is null)
+                {
+                    continue;
+                }
+
+                // Keep whatever database name Passes 1-2 actually migrated (a custom name from
+                // docker-compose, or the NameTemplate default) - only host/port/credentials flip to
+                // the host-facing values, so a renamed database doesn't get silently pointed back at
+                // the NameTemplate name that was never created.
+                var migratedConnectionString = tenantConfig.ResolveConnectionString(configuration) ?? tenantEntity.ConnectionString;
+                var databaseName = new NpgsqlConnectionStringBuilder(migratedConnectionString).Database;
+                var hostFacingConnectionString =
+                    $"Host={tenantDatabaseDefaults.Host}; Database={databaseName}; Port={tenantDatabaseDefaults.Port}; Username={tenantDatabaseDefaults.UserId}; Password={tenantDatabaseDefaults.Password}";
+
+                if (tenantEntity.ConnectionString != hostFacingConnectionString)
+                {
+                    tenantEntity.ConnectionString = hostFacingConnectionString;
+                    updated = true;
+                }
             }
 
-            // Keep whatever database name Passes 1-2 actually migrated (a custom name from
-            // docker-compose, or the NameTemplate default) - only host/port/credentials flip to
-            // the host-facing values, so a renamed database doesn't get silently pointed back at
-            // the NameTemplate name that was never created.
-            var migratedConnectionString = tenantConfig.ResolveConnectionString(configuration) ?? tenantEntity.ConnectionString;
-            var databaseName = new NpgsqlConnectionStringBuilder(migratedConnectionString).Database;
-            var hostFacingConnectionString =
-                $"Host={tenantDatabaseDefaults.Host}; Database={databaseName}; Port={tenantDatabaseDefaults.Port}; Username={tenantDatabaseDefaults.UserId}; Password={tenantDatabaseDefaults.Password}";
-
-            if (tenantEntity.ConnectionString != hostFacingConnectionString)
+            if (updated)
             {
-                tenantEntity.ConnectionString = hostFacingConnectionString;
-                updated = true;
+                await masterUow.SaveChangesAsync(cancellationToken);
+                logger.LogInformation("Finalized tenant connection strings to their host-facing form");
             }
         }
-
-        if (updated)
+        catch (Exception ex)
         {
-            await masterUow.SaveChangesAsync(cancellationToken);
-            logger.LogInformation("Finalized tenant connection strings to their host-facing form");
+            // Swallowed so it can't mask the seeder exception that sent us here from the finally.
+            logger.LogError(ex, "Could not finalize tenant connection strings to their host-facing form");
         }
-
-        logger.LogInformation("Database seeding completed successfully");
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
