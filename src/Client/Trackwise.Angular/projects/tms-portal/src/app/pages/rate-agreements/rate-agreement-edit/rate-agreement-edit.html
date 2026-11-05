@@ -1,0 +1,26 @@
+<div class="animate-in fade-in space-y-4">
+  <ui-page-header
+    [title]="agreement()?.name ?? 'Edit Rate Agreement'"
+    [backLink]="'/rate-agreements/' + id()"
+  />
+
+  @if (isLoading()) {
+    <ui-stack align="center" justify="center" class="py-16 text-center"><ui-spinner /></ui-stack>
+  } @else if (agreement(); as agreement) {
+    @if (agreement.status === "draft") {
+      <app-rate-agreement-form
+        [agreement]="agreement"
+        [isSaving]="isSaving()"
+        [cancelLink]="'/rate-agreements/' + id()"
+        (save)="update($event)"
+      />
+    } @else {
+      <ui-empty-state
+        title="Only a draft can be edited"
+        message="Use Revise rates on the agreement to start a new dated revision."
+      />
+    }
+  } @else {
+    <ui-empty-state title="Agreement not found" message="It may have been removed." />
+  }
+</div>

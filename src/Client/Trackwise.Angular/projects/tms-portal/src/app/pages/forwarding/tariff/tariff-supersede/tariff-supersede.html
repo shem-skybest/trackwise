@@ -1,0 +1,52 @@
+<ui-page-header title="Supersede Tariff" backLink="/tariffs" />
+
+<ui-container maxWidth="md">
+  <ui-card>
+    <form [formRoot]="form">
+      <ui-stack gap="4">
+        <ui-stack direction="row" align="center" gap="2">
+          <ui-icon name="copy" color="secondary" />
+          <ui-stack gap="0">
+            <ui-typography variant="h5" tag="h2">Create a new tariff version</ui-typography>
+            <ui-typography variant="body-sm" color="muted">
+              The current tariff will be closed and its rates copied to the new version.
+            </ui-typography>
+          </ui-stack>
+        </ui-stack>
+
+        <ui-form-field
+          label="New Effective From"
+          for="effectiveFrom"
+          [required]="true"
+          hint="The current tariff ends the day before this date."
+        >
+          <ui-date-field
+            inputId="effectiveFrom"
+            [formField]="form.effectiveFrom"
+            [showIcon]="true"
+          />
+        </ui-form-field>
+
+        <ui-form-field label="Reason" for="reason" hint="Optional audit note.">
+          <ui-textarea-field id="reason" [formField]="form.reason" [rows]="4" />
+        </ui-form-field>
+
+        <ui-stack direction="row" gap="2">
+          <ui-button
+            type="submit"
+            icon="copy"
+            label="Create New Version"
+            [loading]="form().submitting()"
+          />
+          <ui-button
+            type="button"
+            appearance="outlined"
+            icon="arrow-left"
+            label="Cancel"
+            [routerLink]="['/tariffs', id()]"
+          />
+        </ui-stack>
+      </ui-stack>
+    </form>
+  </ui-card>
+</ui-container>

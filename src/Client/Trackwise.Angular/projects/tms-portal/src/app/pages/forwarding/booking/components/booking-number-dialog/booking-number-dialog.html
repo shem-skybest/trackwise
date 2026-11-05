@@ -1,0 +1,33 @@
+<ui-dialog
+  header="nSFS booking number"
+  [(open)]="open"
+  [modal]="true"
+  width="28rem"
+  (opened)="onOpened()"
+>
+  <ui-stack gap="3">
+    <ui-typography variant="body-sm" color="muted">
+      The number nSFS gave this booking. Type it as nSFS or Monday shows it; a number without a year
+      takes this year's.
+    </ui-typography>
+    <ui-form-field label="Booking number" for="bookingNumber" [required]="true">
+      <ui-text-field
+        id="bookingNumber"
+        [(value)]="number"
+        placeholder="BKN-RFV1331-26-M or 1331"
+        (keydown.enter)="save()"
+      />
+    </ui-form-field>
+  </ui-stack>
+
+  <ng-template #footer>
+    <ui-button appearance="text" label="Cancel" [disabled]="isBusy()" (click)="open.set(false)" />
+    <ui-button
+      icon="save"
+      label="Save number"
+      [loading]="isBusy()"
+      [disabled]="!number().trim()"
+      (click)="save()"
+    />
+  </ng-template>
+</ui-dialog>

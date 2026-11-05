@@ -1,0 +1,5 @@
+using Trackwise.Application.Modules.Operations.FreightForwarding.Containers;
+
+namespace Trackwise.Application.Modules.Operations.FreightForwarding.Commands;
+
+internal sealed class UpdateWorkfileContainerValidator : WorkfileContainerFieldsValidator<UpdateWorkfileContainerCommand>;

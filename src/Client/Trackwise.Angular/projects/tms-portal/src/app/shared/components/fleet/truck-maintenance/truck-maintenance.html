@@ -1,0 +1,157 @@
+<ui-stack direction="row" align="center" justify="between" class="mb-4">
+  <ui-typography variant="h5" tag="h3" class="m-0">Schedules</ui-typography>
+  <ui-stack direction="row" gap="2">
+    <ui-button
+      size="sm"
+      appearance="outlined"
+      label="Log service"
+      icon="wrench"
+      (click)="logService()"
+    />
+    <ui-button size="sm" label="Add schedule" icon="plus" (click)="openCreate()" />
+  </ui-stack>
+</ui-stack>
+
+<ui-data-table [value]="schedules()" [loading]="isLoading()">
+  <ng-template #header>
+    <tr>
+      <th>Service</th>
+      <th>Repeats</th>
+      <th>Last done</th>
+      <th>Next due</th>
+      <th>Status</th>
+      <th class="w-40"></th>
+    </tr>
+  </ng-template>
+
+  <ng-template #body let-schedule>
+    <tr [class.opacity-60]="!schedule.isActive">
+      <td>{{ schedule.typeDisplay }}</td>
+      <td>{{ interval(schedule) }}</td>
+      <td>
+        {{ schedule.lastServiceDate ? (schedule.lastServiceDate | date: "mediumDate") : "Not on record" }}
+      </td>
+      <td>
+        {{ schedule.nextServiceDate ? (schedule.nextServiceDate | date: "mediumDate") : "-" }}
+      </td>
+      <td><ui-badge [value]="dueLabel(schedule)" [severity]="dueIntent(schedule)" /></td>
+      <td>
+        <ui-stack direction="row" gap="1">
+          @if (schedule.isActive) {
+            <ui-button
+              appearance="text"
+              size="sm"
+              ariaLabel="Log this service"
+              icon="check"
+              [rounded]="true"
+              (click)="logService(schedule)"
+            />
+            <ui-button
+              intent="secondary"
+              appearance="text"
+              size="sm"
+              ariaLabel="Pause schedule"
+              icon="pause-circle"
+              [rounded]="true"
+              (click)="setActive(schedule, false)"
+            />
+          } @else {
+            <ui-button
+              intent="secondary"
+              appearance="text"
+              size="sm"
+              ariaLabel="Resume schedule"
+              icon="play"
+              [rounded]="true"
+              (click)="setActive(schedule, true)"
+            />
+          }
+          <ui-button
+            intent="secondary"
+            appearance="text"
+            size="sm"
+            ariaLabel="Edit schedule"
+            icon="pencil"
+            [rounded]="true"
+            (click)="openEdit(schedule)"
+          />
+          <ui-button
+            intent="danger"
+            appearance="text"
+            size="sm"
+            ariaLabel="Delete schedule"
+            icon="trash"
+            [rounded]="true"
+            (click)="onDelete(schedule)"
+          />
+        </ui-stack>
+      </td>
+    </tr>
+  </ng-template>
+
+  <ng-template #empty>
+    <tr>
+      <td colspan="6" class="text-muted-foreground py-8 text-center">
+        No schedules. Add one - a reefer PMS every 7 days, a change oil every 5,000 {{ distanceUnit }} -
+        to see when it's due.
+      </td>
+    </tr>
+  </ng-template>
+</ui-data-table>
+
+<ui-stack direction="row" align="center" justify="between" class="mt-8 mb-4">
+  <ui-typography variant="h5" tag="h3" class="m-0">Recent services</ui-typography>
+  <ui-typography variant="body-sm" color="muted">
+    {{ records().length }} of {{ totalRecords() }} -
+    <a class="underline" routerLink="/maintenance/records">all service records</a>
+  </ui-typography>
+</ui-stack>
+
+<ui-data-table [value]="records()" [loading]="isLoading()">
+  <ng-template #header>
+    <tr>
+      <th>Date</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Requisition</th>
+      <th>Shop</th>
+      <th class="text-right">Cost</th>
+    </tr>
+  </ng-template>
+
+  <ng-template #body let-record>
+    <tr>
+      <td class="whitespace-nowrap">
+        <a class="underline" [routerLink]="['/maintenance/records', record.id]">
+          {{ record.serviceDate | date: "mediumDate" }}
+        </a>
+      </td>
+      <td>{{ record.typeDisplay }}</td>
+      <td class="max-w-72 truncate" [title]="record.description">{{ record.description }}</td>
+      <td class="font-mono whitespace-nowrap">
+        @if (record.requisitionNumber) {
+          <a class="underline" [routerLink]="['/maintenance/requisitions', record.requisitionNumber]">
+            {{ record.requisitionNumber }}
+          </a>
+        } @else {
+          -
+        }
+      </td>
+      <td>{{ record.vendorName ?? "-" }}</td>
+      <td class="text-right whitespace-nowrap">{{ record.totalCost | currencyFormat }}</td>
+    </tr>
+  </ng-template>
+
+  <ng-template #empty>
+    <tr>
+      <td colspan="6" class="text-muted-foreground py-8 text-center">No services logged yet.</td>
+    </tr>
+  </ng-template>
+</ui-data-table>
+
+<app-maintenance-schedule-dialog
+  [(visible)]="dialogVisible"
+  [truckId]="truckId()"
+  [schedule]="editing()"
+  (saved)="refresh()"
+/>

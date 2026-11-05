@@ -1,0 +1,9 @@
+<div class="animate-in fade-in space-y-4">
+  <ui-page-header title="Add a New Location" backLink="/master-data/locations" />
+
+  <app-location-form
+    [isLoading]="isLoading()"
+    [initialCustomer]="initialCustomer()"
+    (save)="create($event)"
+  />
+</div>

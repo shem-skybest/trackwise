@@ -1,0 +1,25 @@
+﻿@page
+@model Trackwise.IdentityServer.Pages.Account.Manage.ShowRecoveryCodesModel
+@{
+    ViewData["Title"] = "Recovery codes";
+    ViewData["ActivePage"] = "TwoFactorAuthentication";
+}
+
+<partial name="_StatusMessage" for="StatusMessage" />
+
+<div hlm-card>
+    <div hlm-card-header>
+        <div hlm-card-title>Recovery codes</div>
+        <div hlm-card-description>
+            Put these somewhere safe. If you lose your device and don't have these codes, you lose access to your account.
+        </div>
+    </div>
+    <div hlm-card-content>
+        <div class="grid max-w-sm grid-cols-2 gap-2">
+            @foreach (var code in Model.RecoveryCodes)
+            {
+                <code class="recovery-code bg-muted rounded-md px-2 py-1 text-center text-sm">@code</code>
+            }
+        </div>
+    </div>
+</div>

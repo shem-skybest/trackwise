@@ -1,0 +1,25 @@
+@page
+@model Trackwise.IdentityServer.Pages.Account.RegisterConfirmationModel
+@{
+    ViewData["Title"] = "Confirm your email";
+}
+
+<div class="flex flex-col gap-6 text-center">
+    <div class="flex flex-col items-center gap-1">
+        <h1 class="mb-0 text-2xl font-bold">Confirm your email</h1>
+        <p class="text-muted-foreground text-sm text-balance">We've sent you a link to confirm your account. Open it to finish signing up.</p>
+    </div>
+
+    @if (Model.DisplayConfirmAccountLink)
+    {
+        <div hlm-alert class="text-start">
+            <div hlm-alert-title>No email sender is configured</div>
+            <div hlm-alert-description>
+                This is the link that would have been emailed:
+                <a id="confirm-link" href="@Model.EmailConfirmationUrl">confirm your account</a>.
+            </div>
+        </div>
+    }
+
+    <a hlm-btn variant="outline" asp-page="/Account/Login/Index">Back to login</a>
+</div>

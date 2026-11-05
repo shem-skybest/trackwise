@@ -1,0 +1,57 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Core/">
+    <Project Path="src/Core/Trackwise.Application.Abstractions/Trackwise.Application.Abstractions.csproj" />
+    <Project Path="src/Core/Trackwise.Application/Trackwise.Application.csproj" />
+    <Project Path="src/Core/Trackwise.Domain.Primitives/Trackwise.Domain.Primitives.csproj" />
+    <Project Path="src/Core/Trackwise.Domain/Trackwise.Domain.csproj" />
+    <Project Path="src/Core/Trackwise.Mappings/Trackwise.Mappings.csproj" />
+  </Folder>
+  <Folder Name="/src/Infrastructure/">
+    <Project Path="src/Infrastructure/Trackwise.Infrastructure.AI/Trackwise.Infrastructure.AI.csproj" />
+    <Project Path="src/Infrastructure/Trackwise.Infrastructure.Communications/Trackwise.Infrastructure.Communications.csproj" />
+    <Project Path="src/Infrastructure/Trackwise.Infrastructure.Documents/Trackwise.Infrastructure.Documents.csproj" />
+    <Project Path="src/Infrastructure/Trackwise.Infrastructure.Integrations.Accounting/Trackwise.Infrastructure.Integrations.Accounting.csproj" />
+    <Project Path="src/Infrastructure/Trackwise.Infrastructure.Integrations.Common/Trackwise.Infrastructure.Integrations.Common.csproj" />
+    <Project Path="src/Infrastructure/Trackwise.Infrastructure.Integrations.Eld/Trackwise.Infrastructure.Integrations.Eld.csproj" />
+    <Project Path="src/Infrastructure/Trackwise.Infrastructure.Integrations.FuelCards/Trackwise.Infrastructure.Integrations.FuelCards.csproj" />
+    <Project Path="src/Infrastructure/Trackwise.Infrastructure.Integrations.LoadBoard/Trackwise.Infrastructure.Integrations.LoadBoard.csproj" />
+    <Project Path="src/Infrastructure/Trackwise.Infrastructure.Payments/Trackwise.Infrastructure.Payments.csproj" />
+    <Project Path="src/Infrastructure/Trackwise.Infrastructure.Persistence/Trackwise.Infrastructure.Persistence.csproj" />
+    <Project Path="src/Infrastructure/Trackwise.Infrastructure.Routing/Trackwise.Infrastructure.Routing.csproj" />
+    <Project Path="src/Infrastructure/Trackwise.Infrastructure.Storage/Trackwise.Infrastructure.Storage.csproj" />
+    <Project Path="src/Infrastructure/Trackwise.Infrastructure.Tax/Trackwise.Infrastructure.Tax.csproj" />
+    <Project Path="src/Infrastructure/Trackwise.Infrastructure.Vin/Trackwise.Infrastructure.Vin.csproj" />
+  </Folder>
+  <Folder Name="/src/Presentation/">
+    <Project Path="src/Presentation/Trackwise.API/Trackwise.API.csproj" />
+    <Project Path="src/Presentation/Trackwise.DbMigrator/Trackwise.DbMigrator.csproj" />
+    <Project Path="src/Presentation/Trackwise.HostDefaults/Trackwise.HostDefaults.csproj" />
+    <Project Path="src/Presentation/Trackwise.IdentityServer/Trackwise.IdentityServer.csproj" />
+    <Project Path="src/Presentation/Trackwise.McpServer/Trackwise.McpServer.csproj" />
+    <Project Path="src/Presentation/Trackwise.TelegramBot/Trackwise.TelegramBot.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/Trackwise.Shared.Geo/Trackwise.Shared.Geo.csproj" />
+    <Project Path="src/Shared/Trackwise.Shared.Identity/Trackwise.Shared.Identity.csproj" />
+    <Project Path="src/Shared/Trackwise.Shared.Models/Trackwise.Shared.Models.csproj" />
+  </Folder>
+  <Folder Name="/Test/">
+    <Project Path="test/Trackwise.Application.Tests/Trackwise.Application.Tests.csproj" />
+    <Project Path="test/Trackwise.Architecture.Tests/Trackwise.Architecture.Tests.csproj" />
+    <Project Path="test/Trackwise.Infrastructure.AI.Tests/Trackwise.Infrastructure.AI.Tests.csproj" />
+    <Project Path="test/Trackwise.Infrastructure.Documents.Tests/Trackwise.Infrastructure.Documents.Tests.csproj" />
+    <Project Path="test/Trackwise.Infrastructure.Payments.Tests/Trackwise.Infrastructure.Payments.Tests.csproj" />
+    <Project Path="test/Trackwise.Infrastructure.Persistence.Tests/Trackwise.Infrastructure.Persistence.Tests.csproj" />
+    <Project Path="test/Trackwise.Infrastructure.Routing.Tests/Trackwise.Infrastructure.Routing.Tests.csproj" />
+    <Project Path="test/Trackwise.Infrastructure.Tax.Tests/Trackwise.Infrastructure.Tax.Tests.csproj" />
+    <Project Path="test/Trackwise.Infrastructure.Vin.Tests/Trackwise.Infrastructure.Vin.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Core/" />
+  <Folder Name="/Shared/" />
+  <Folder Name="/Docs/">
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/Infrastructure/" />
+  <Folder Name="/Presentation/" />
+</Solution>

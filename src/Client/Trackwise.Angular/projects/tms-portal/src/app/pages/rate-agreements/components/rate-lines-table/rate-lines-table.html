@@ -1,0 +1,42 @@
+<ui-data-table [value]="lines()" [scrollable]="true" size="small">
+  <ng-template #header>
+    <tr>
+      <th>Row</th>
+      <th>{{ isBandCard() ? "Distance" : "Matches" }}</th>
+      <th>Truck</th>
+      <th class="text-right">Rate</th>
+      @if (showPercent()) {
+        <th class="text-right">Fuel %</th>
+      }
+      @for (tier of tiers(); track tier) {
+        <th class="text-right whitespace-nowrap">Gas at ₱{{ tier | number: "1.2-2" }}</th>
+      }
+    </tr>
+  </ng-template>
+  <ng-template #body let-line>
+    <tr>
+      <td class="font-medium">{{ line.label }}</td>
+      <td class="text-muted-foreground text-sm">{{ place(line) }}</td>
+      <td>{{ tonnageLabel(line.tonnage) }}</td>
+      <td class="text-right">{{ line.amount | currency: "PHP" : "symbol-narrow" }}</td>
+      @if (showPercent()) {
+        <td class="text-right">
+          {{
+            line.fuelPercent !== null && line.fuelPercent !== undefined
+              ? (line.fuelPercent | number: "1.0-2") + "%"
+              : "-"
+          }}
+        </td>
+      }
+      @for (tier of tiers(); track tier) {
+        <td class="text-right text-sm">
+          @if (surcharge(line, tier); as amount) {
+            {{ amount | currency: "PHP" : "symbol-narrow" }}
+          } @else {
+            <span class="text-muted-foreground">-</span>
+          }
+        </td>
+      }
+    </tr>
+  </ng-template>
+</ui-data-table>

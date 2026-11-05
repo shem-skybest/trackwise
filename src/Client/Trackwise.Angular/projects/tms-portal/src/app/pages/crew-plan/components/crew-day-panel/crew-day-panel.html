@@ -1,0 +1,99 @@
+<ui-stack direction="row" gap="4" class="text-muted-foreground mb-3 flex-wrap text-sm">
+  <span>
+    <strong class="text-foreground">{{ counts().available }}</strong>
+    available
+  </span>
+  <span>
+    <strong class="text-foreground">{{ counts().reserve }}</strong>
+    on reserve
+  </span>
+  <span>
+    <strong class="text-foreground">{{ counts().notWorking }}</strong>
+    absent, on leave or suspended
+  </span>
+  <span>
+    <strong class="text-foreground">{{ counts().elsewhere }}</strong>
+    training or lent out
+  </span>
+  <span>
+    <strong class="text-foreground">{{ counts().onTrucks }}</strong>
+    on a truck
+  </span>
+</ui-stack>
+
+<ui-stack direction="row" gap="3" class="mb-2 flex-wrap">
+  <ui-form-field label="Show" for="crewKind" class="w-56">
+    <ui-select-field
+      id="crewKind"
+      [(value)]="kind"
+      [options]="kindOptions"
+      optionLabel="label"
+      optionValue="value"
+    />
+  </ui-form-field>
+  <ui-form-field label="Name" for="crewSearch" class="w-64">
+    <ui-text-field id="crewSearch" [(value)]="search" placeholder="Filter by name" />
+  </ui-form-field>
+</ui-stack>
+
+<ui-data-table [value]="rows()" [loading]="isLoading()">
+  <ng-template #header>
+    <tr>
+      <th>Name</th>
+      <th>Role</th>
+      <th>Home unit</th>
+      <th>Status</th>
+      <th>Truck</th>
+      <th>Notes</th>
+      <th class="w-16"></th>
+    </tr>
+  </ng-template>
+
+  <ng-template #body let-item>
+    <tr class="cursor-pointer" (click)="openEdit(item.member)">
+      <td>
+        <div class="font-medium">{{ item.member.name }}</div>
+        <div class="text-muted-foreground text-xs">
+          {{ item.member.code }}
+          @if (item.employment) {
+            · {{ item.employment }}
+          }
+          @if (!item.member.isActive) {
+            · inactive
+          }
+        </div>
+      </td>
+      <td class="text-sm">{{ item.member.kind === "driver" ? "Driver" : "Helper" }}</td>
+      <td class="text-sm">{{ item.unit }}</td>
+      <td><ui-badge [value]="item.status.label" [severity]="item.status.intent" /></td>
+      <td class="text-sm">{{ item.member.truckNumber ?? "" }}</td>
+      <td class="text-muted-foreground max-w-xs truncate text-sm" [title]="item.member.notes ?? ''">
+        {{ item.member.notes ?? "" }}
+      </td>
+      <td class="text-right">
+        <ui-button
+          intent="secondary"
+          appearance="text"
+          size="sm"
+          ariaLabel="Set status"
+          icon="pencil"
+          [rounded]="true"
+          (click)="$event.stopPropagation(); openEdit(item.member)"
+        />
+      </td>
+    </tr>
+  </ng-template>
+
+  <ng-template #empty>
+    <tr>
+      <td colspan="7" class="text-muted-foreground py-12 text-center">No crew to show.</td>
+    </tr>
+  </ng-template>
+</ui-data-table>
+
+<app-crew-status-dialog
+  [(visible)]="dialogVisible"
+  [member]="editing()"
+  [date]="date()"
+  (saved)="onSaved()"
+/>

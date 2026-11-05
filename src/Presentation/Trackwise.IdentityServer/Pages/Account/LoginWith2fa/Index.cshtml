@@ -1,0 +1,37 @@
+﻿@page
+@model Trackwise.IdentityServer.Pages.Account.LoginWith2fa.LoginWith2faModel
+@{
+    ViewData["Title"] = "Two-factor authentication";
+}
+
+<form method="post" asp-route-returnUrl="@Model.ReturnUrl">
+    <input asp-for="RememberMe" type="hidden" />
+
+    <div hlm-field-group>
+        <div class="flex flex-col items-center gap-1 text-center">
+            <h1 class="mb-0 text-2xl font-bold">Two-factor authentication</h1>
+            <p class="text-muted-foreground text-sm text-balance">Enter the code from your authenticator app</p>
+        </div>
+
+        <partial name="_ValidationSummary" />
+
+        <div hlm-field>
+            <label hlm-field-label asp-for="Input.TwoFactorCode">Authenticator code</label>
+            <input hlm-input asp-for="Input.TwoFactorCode" autocomplete="one-time-code" inputmode="numeric" autofocus />
+            <span hlm-field-error asp-validation-for="Input.TwoFactorCode"></span>
+        </div>
+
+        <div hlm-field orientation="horizontal">
+            <input hlm-checkbox asp-for="Input.RememberMachine" />
+            <label hlm-field-label asp-for="Input.RememberMachine" class="font-normal"></label>
+        </div>
+
+        <div hlm-field>
+            <button hlm-btn type="submit">Log in</button>
+            <p hlm-field-description class="text-center">
+                Lost your device?
+                <a id="recovery-code-login" asp-page="../LoginWithRecoveryCode/Index" asp-route-returnUrl="@Model.ReturnUrl">Use a recovery code</a>
+            </p>
+        </div>
+    </div>
+</form>

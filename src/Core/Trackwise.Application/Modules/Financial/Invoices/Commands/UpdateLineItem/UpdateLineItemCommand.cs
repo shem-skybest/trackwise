@@ -1,0 +1,19 @@
+using Trackwise.Application.Abstractions;
+using Trackwise.Domain.Primitives.Enums;
+using Trackwise.Shared.Models;
+
+namespace Trackwise.Application.Modules.Financial.Invoices.Commands;
+
+/// <summary>
+/// Updates an existing line item on an invoice.
+/// </summary>
+public record UpdateLineItemCommand : ICommand<Result<InvoiceLineItemDto>>
+{
+    public required Guid InvoiceId { get; set; }
+    public required Guid LineItemId { get; set; }
+    public string? Description { get; set; }
+    public InvoiceLineItemType? Type { get; set; }
+    public decimal? Amount { get; set; }
+    public int? Quantity { get; set; }
+    public string? Notes { get; set; }
+}

@@ -1,0 +1,121 @@
+<!-- @let b = booking();
+
+<ui-grid container spacing="4">
+  <ui-grid [size]="{ xs: 12, lg: 8 }">
+    <ui-stack gap="4">
+      <ui-card>
+        <ui-grid container spacing="3">
+          <ui-grid [size]="{ xs: 12, md: 4 }">
+            <ui-typography variant="caption" color="muted">Client</ui-typography>
+            <ui-typography variant="body">{{ b.customerName }}</ui-typography>
+          </ui-grid>
+          <ui-grid [size]="{ xs: 6, md: 4 }">
+            <ui-typography variant="caption" color="muted">Delivery day</ui-typography>
+            <ui-typography variant="body">
+              {{ b.serviceDate | date: "EEE, MMM d, y" }}
+              @if (b.callTime) {
+                · call {{ formatTimeOfDay(b.callTime) }}
+              }
+            </ui-typography>
+          </ui-grid>
+          <ui-grid [size]="{ xs: 6, md: 4 }">
+            <ui-typography variant="caption" color="muted">Truck size</ui-typography>
+            <ui-typography variant="body">{{ truckSize() }}</ui-typography>
+          </ui-grid>
+          <ui-grid [size]="{ xs: 12, md: 4 }">
+            <ui-typography variant="caption" color="muted">Pickup warehouse</ui-typography>
+            <ui-typography variant="body">{{ b.pickupSiteName || "Not set yet" }}</ui-typography>
+          </ui-grid>
+          <ui-grid [size]="{ xs: 6, md: 4 }">
+            <ui-typography variant="caption" color="muted">Commodity</ui-typography>
+            <ui-typography variant="body">{{ b.commodity || "-" }}</ui-typography>
+          </ui-grid>
+          <ui-grid [size]="{ xs: 6, md: 4 }">
+            <ui-typography variant="caption" color="muted">Temperature</ui-typography>
+            <ui-typography variant="body">{{ temperature() }}</ui-typography>
+          </ui-grid>
+          @if (b.notes) {
+            <ui-grid [size]="{ xs: 12 }">
+              <ui-typography variant="caption" color="muted">Notes</ui-typography>
+              <ui-typography variant="body">{{ b.notes }}</ui-typography>
+            </ui-grid>
+          }
+        </ui-grid>
+      </ui-card>
+
+      @if (lossSummary(); as loss) {
+        <ui-alert intent="danger">
+          {{ loss }}{{ b.cancellationReason ? " - " + b.cancellationReason : "" }}
+        </ui-alert>
+      }
+
+      <ui-card>
+        <ui-stack gap="3">
+          <ui-stack gap="0">
+            <ui-typography variant="h5" tag="h2">Drops</ui-typography>
+            <ui-typography variant="caption" color="muted">
+              {{ b.drops?.length ?? 0 }} drop(s) · {{ totalBoxes() }} boxes · {{ totalBags() }} bags
+            </ui-typography>
+          </ui-stack>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-muted-foreground border-b text-left">
+                  <th class="py-2 pr-3 font-medium">#</th>
+                  <th class="py-2 pr-3 font-medium">Outlet</th>
+                  <th class="py-2 pr-3 font-medium">Address</th>
+                  <th class="py-2 pr-3 font-medium">Cut-off</th>
+                  <th class="py-2 pr-3 text-right font-medium">Boxes</th>
+                  <th class="py-2 pr-3 text-right font-medium">Bags</th>
+                  <th class="py-2 font-medium">Note</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (drop of b.drops; track drop.id; let i = $index) {
+                  <tr class="border-b last:border-b-0">
+                    <td class="py-2 pr-3">{{ i + 1 }}</td>
+                    <td class="py-2 pr-3">
+                      {{ drop.siteName }}
+                      <span class="text-muted-foreground text-xs">{{ drop.siteCode }}</span>
+                    </td>
+                    <td class="text-muted-foreground py-2 pr-3">
+                      {{ addressOf(drop) }}
+                    </td>
+                    <td class="py-2 pr-3">{{ formatTimeOfDay(drop.cutoffTime) || "-" }}</td>
+                    <td class="py-2 pr-3 text-right tabular-nums">
+                      {{ drop.plannedBoxes ?? "-" }}
+                    </td>
+                    <td class="py-2 pr-3 text-right tabular-nums">{{ drop.plannedBags ?? "-" }}</td>
+                    <td class="py-2">{{ drop.notes || "" }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </ui-stack>
+      </ui-card>
+    </ui-stack>
+  </ui-grid>
+
+  <ui-grid [size]="{ xs: 12, lg: 4 }">
+    <ui-stack gap="4">
+      <app-booking-estimate-card [estimate]="estimate()" title="Estimated price" />
+
+      <ui-card>
+        <ui-stack gap="2">
+          <ui-typography variant="h5" tag="h2">Trip</ui-typography>
+          @for (trip of b.trips; track trip.tripId) {
+            <a class="text-primary hover:underline" [routerLink]="['/trips', trip.tripId]">
+              Trip #{{ trip.number }} · {{ trip.name }} · {{ trip.status }}
+            </a>
+          } @empty {
+            <ui-typography variant="body-sm" color="muted">
+              No trip yet. Confirm the booking, then make its trip.
+            </ui-typography>
+          }
+        </ui-stack>
+      </ui-card>
+    </ui-stack>
+  </ui-grid>
+</ui-grid> -->

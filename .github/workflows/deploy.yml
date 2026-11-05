@@ -1,0 +1,208 @@
+# Docker-based deployment to VPS.
+#
+# Secrets: SSH_HOST / SSH_USER / SSH_KEY (VPS access), GHCR_PAT (read:packages + write:packages),
+# DOCKER_ENV (full .env contents for compose), FIREBASE_CREDENTIALS_JSON (Firebase Admin SDK key).
+# One-time on the VPS: mkdir -p ~/deploy/trackwise
+
+name: Build and Deploy
+
+on:
+  push:
+    branches: [prod]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  APP_DIR: ~/deploy/trackwise
+
+jobs:
+  build:
+    name: Build ${{ matrix.image }}
+    runs-on: ubuntu-latest
+    concurrency:
+      group: build-${{ matrix.image }}-${{ github.ref }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: api
+            context: .
+            file: ./src/Presentation/Trackwise.API/Dockerfile
+          - image: identity
+            context: .
+            file: ./src/Presentation/Trackwise.IdentityServer/Dockerfile
+          - image: dbmigrator
+            context: .
+            file: ./src/Presentation/Trackwise.DbMigrator/Dockerfile
+          - image: admin-portal
+            context: .
+            file: ./src/Client/Trackwise.Angular/deploy/Dockerfile.spa
+            build_args: APP_NAME=admin-portal
+          - image: tms-portal
+            context: .
+            file: ./src/Client/Trackwise.Angular/deploy/Dockerfile.spa
+            build_args: APP_NAME=tms-portal
+          - image: customer-portal
+            context: .
+            file: ./src/Client/Trackwise.Angular/deploy/Dockerfile.spa
+            build_args: APP_NAME=customer-portal
+          - image: website
+            context: .
+            file: ./src/Client/Trackwise.Angular/deploy/Dockerfile.website
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set lowercase repository name
+        id: repo
+        run: echo "name=${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      # Via env, not script interpolation: a quote in the JSON would break out of the echo.
+      - name: Write Firebase credentials
+        if: matrix.image == 'api'
+        env:
+          FIREBASE_CREDENTIALS_JSON: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
+        run: printf '%s' "$FIREBASE_CREDENTIALS_JSON" > ./src/Presentation/Trackwise.API/firebase-adminsdk-key.json
+
+      - name: Build and push ${{ matrix.image }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          build-args: ${{ matrix.build_args }}
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}/${{ matrix.image }}:latest
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}/${{ matrix.image }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}/${{ matrix.image }}:buildcache,mode=max
+
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    needs: build
+    concurrency:
+      group: deploy-prod
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Copy docker-compose to VPS
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "deploy/docker-compose.yml"
+          target: ${{ env.APP_DIR }}
+          strip_components: 1
+
+      - name: Copy postgres-init scripts to VPS
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "deploy/postgres-init/*"
+          target: ${{ env.APP_DIR }}/postgres-init
+          strip_components: 2
+
+      - name: Deploy with Docker Compose
+        uses: appleboy/ssh-action@v1.2.4
+        env:
+          DOCKER_ENV: ${{ secrets.DOCKER_ENV }}
+          GHCR_PAT: ${{ secrets.GHCR_PAT }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          IMAGE_TAG: latest
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          envs: DOCKER_ENV,GHCR_PAT,GITHUB_REPOSITORY,IMAGE_TAG
+          script: |
+            set -eu
+            cd ${{ env.APP_DIR }}
+
+            echo "$DOCKER_ENV" > .env
+
+            # Lowercase for GHCR; export so it overrides .env (compose prefers shell env)
+            export GITHUB_REPOSITORY=$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')
+            echo "GITHUB_REPOSITORY=$GITHUB_REPOSITORY" >> .env
+            echo "IMAGE_TAG=$IMAGE_TAG" >> .env
+
+            echo "$GHCR_PAT" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            # Pull before stopping anything, then recreate in place - no down/up cycle.
+            # If a previous run was interrupted (or something was started manually), a
+            # container outside this compose project can still be squatting on one of
+            # this stack's host ports, which --force-recreate can't clear since it only
+            # manages containers it recognizes as part of this project. Free them all.
+            get_port() {
+              local value
+              value=$(sed -n "s/^$1=//p" .env | head -n1 | tr -dc '0-9')
+              echo "${value:-$2}"
+            }
+            for PORT in \
+              "$(get_port POSTGRES_PORT 5432)" \
+              "$(get_port API_PORT 7000)" \
+              "$(get_port IDENTITY_SERVER_PORT 7001)" \
+              "$(get_port ADMIN_PORTAL_PORT 7002)" \
+              "$(get_port TMS_PORTAL_PORT 7003)" \
+              "$(get_port CUSTOMER_PORTAL_PORT 7004)" \
+              "$(get_port WEBSITE_PORT 7005)"; do
+              STALE=$(docker ps -q --filter "publish=${PORT}")
+              if [ -n "$STALE" ]; then
+                echo "Removing stale container(s) holding port ${PORT}: $STALE"
+                docker rm -f $STALE
+              fi
+            done
+
+            docker compose pull
+            docker compose up -d --force-recreate --remove-orphans
+            docker image prune -f
+
+            echo "=== Containers ==="
+            docker compose ps --format "table {{.Name}}\t{{.Status}}"
+
+      # Polls until the API answers or the budget runs out, and FAILS the job if it never does -
+      # the previous `curl || echo` reported success even when every container was crash-looping.
+      - name: Health check
+        uses: appleboy/ssh-action@v1.2.4
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            set -u
+            cd ${{ env.APP_DIR }}
+            PORT=$(sed -n 's/^API_PORT=//p' .env | head -n1 | tr -dc '0-9')
+            PORT=${PORT:-7000}
+
+            for i in $(seq 1 30); do
+              if curl -sf "http://localhost:${PORT}/health" > /dev/null; then
+                echo "API healthy (attempt ${i})"
+                docker compose ps --format "table {{.Name}}\t{{.Status}}"
+                exit 0
+              fi
+              sleep 5
+            done
+
+            echo "API did not pass /health within 150s"
+            docker compose ps --format "table {{.Name}}\t{{.Status}}"
+            docker compose logs --tail=50
+            exit 1

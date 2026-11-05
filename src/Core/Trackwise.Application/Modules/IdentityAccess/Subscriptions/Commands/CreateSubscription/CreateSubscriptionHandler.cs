@@ -1,0 +1,57 @@
+using Trackwise.Application.Abstractions;
+using Trackwise.Domain.Entities;
+using Trackwise.Domain.Persistence;
+using Trackwise.Shared.Models;
+using Microsoft.Extensions.Logging;
+using Trackwise.Application.Abstractions.Payments.Stripe;
+
+namespace Trackwise.Application.Modules.IdentityAccess.Subscriptions.Commands;
+
+internal sealed class CreateSubscriptionHandler(
+    IMasterUnitOfWork masterUow,
+    ITenantUnitOfWork tenantUow,
+    IStripeSubscriptionService stripeSubscriptionService,
+    IStripeCustomerService stripeCustomerService,
+    ILogger<CreateSubscriptionHandler> logger) : IAppRequestHandler<CreateSubscriptionCommand, Result>
+{
+    /// <summary>No-card trial granted on a tenant's first subscription. Marketed on the pricing page.</summary>
+    private const int FirstSubscriptionTrialDays = 30;
+
+    public async Task<Result> Handle(
+        CreateSubscriptionCommand req, CancellationToken ct)
+    {
+        var tenant = await tenantUow.SetCurrentTenantByIdAsync(req.TenantId);
+        var truckCount = await tenantUow.Repository<Truck>().CountAsync(ct: ct);
+
+        if (tenant.StripeCustomerId is null)
+        {
+            await CreateStripeCustomerAsync(tenant);
+        }
+
+        var subscriptionPlan = await masterUow.Repository<SubscriptionPlan>().GetByIdAsync(req.PlanId, ct);
+
+        if (subscriptionPlan is null)
+        {
+            return Result.Fail($"Could not find a subscription plan with ID '{req.PlanId}'");
+        }
+
+        var isFirstSubscription = string.IsNullOrEmpty(tenant.Subscription?.StripeSubscriptionId);
+        var trialDays = req.TrialDays ?? (isFirstSubscription ? FirstSubscriptionTrialDays : null);
+
+        // Create subscription in Stripe - the webhook will create the local record
+        await stripeSubscriptionService.CreateSubscriptionAsync(
+            subscriptionPlan, tenant, truckCount, trialDays);
+
+        logger.LogInformation("Created Stripe subscription for tenant {TenantId}, truck count: {TruckCount}",
+            tenant.Id, truckCount);
+        return Result.Ok();
+    }
+
+    private async Task CreateStripeCustomerAsync(Tenant tenant)
+    {
+        var stripeCustomer = await stripeCustomerService.CreateCustomerAsync(tenant);
+        tenant.StripeCustomerId = stripeCustomer.Id;
+        masterUow.Repository<Tenant>().Update(tenant);
+        await masterUow.SaveChangesAsync();
+    }
+}

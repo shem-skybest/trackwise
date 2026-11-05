@@ -1,0 +1,69 @@
+﻿@page
+@using Trackwise.IdentityServer.Pages.Account.Manage
+@model Trackwise.IdentityServer.Pages.Account.Manage.ExternalLoginsModel
+@{
+    ViewData["Title"] = "External logins";
+    ViewData["ActivePage"] = ManageNavPages.ExternalLogins;
+}
+
+<partial name="_StatusMessage" for="StatusMessage" />
+
+@if (Model.CurrentLogins?.Count > 0)
+{
+    <div hlm-card>
+        <div hlm-card-header>
+            <div hlm-card-title>Linked logins</div>
+            <div hlm-card-description>Services you can use to log in to this account.</div>
+        </div>
+        <div hlm-card-content>
+            <div hlm-table-container>
+                <table hlm-table>
+                    <tbody hlm-tbody>
+                        @foreach (var login in Model.CurrentLogins)
+                        {
+                            <tr hlm-tr>
+                                <td hlm-td id="@($"login-provider-{login.LoginProvider}")">@login.ProviderDisplayName</td>
+                                <td hlm-td class="text-end">
+                                    @if (Model.ShowRemoveButton)
+                                    {
+                                        <form id="@($"remove-login-{login.LoginProvider}")" asp-page-handler="RemoveLogin" method="post">
+                                            <input asp-for="@login.LoginProvider" name="LoginProvider" type="hidden" />
+                                            <input asp-for="@login.ProviderKey" name="ProviderKey" type="hidden" />
+                                            <button hlm-btn variant="outline" size="sm" type="submit"
+                                                    title="Remove this @login.ProviderDisplayName login from your account">Remove</button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+@if (Model.OtherLogins?.Count > 0)
+{
+    <div hlm-card>
+        <div hlm-card-header>
+            <div hlm-card-title>Add a login</div>
+            <div hlm-card-description>Link another service so you can log in with it too.</div>
+        </div>
+        <div hlm-card-content>
+            <form id="link-login-form" asp-page-handler="LinkLogin" method="post" class="flex flex-wrap gap-2">
+                @foreach (var provider in Model.OtherLogins)
+                {
+                    <button hlm-btn variant="outline" id="@($"link-login-button-{provider.Name}")" type="submit"
+                            name="provider" value="@provider.Name" title="Log in using your @provider.DisplayName account">
+                        @if (provider.Name.Contains("Google", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <partial name="_GoogleIcon" />
+                        }
+                        @provider.DisplayName
+                    </button>
+                }
+            </form>
+        </div>
+    </div>
+}

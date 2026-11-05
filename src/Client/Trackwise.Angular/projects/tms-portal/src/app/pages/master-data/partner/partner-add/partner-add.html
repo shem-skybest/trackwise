@@ -1,0 +1,5 @@
+<div class="animate-in fade-in space-y-4">
+  <ui-page-header title="Add a New Business Partner" backLink="/master-data/partners" />
+
+  <app-partner-form [isLoading]="isLoading()" (save)="create($event)" />
+</div>

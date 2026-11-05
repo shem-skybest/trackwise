@@ -1,0 +1,25 @@
+﻿@page
+@using Trackwise.IdentityServer.Pages.Account.Manage
+@model Trackwise.IdentityServer.Pages.Account.Manage.GenerateRecoveryCodesModel
+@{
+    ViewData["Title"] = "Generate recovery codes";
+    ViewData["ActivePage"] = ManageNavPages.TwoFactorAuthentication;
+}
+
+<partial name="_StatusMessage" for="StatusMessage" />
+
+<form method="post">
+    <div hlm-card>
+        <div hlm-card-header>
+            <div hlm-card-title>Generate new recovery codes</div>
+            <div hlm-card-description>
+                Your old codes stop working. Keep the new ones somewhere safe - if you lose your device and your
+                codes, you lose access to your account. This doesn't change your authenticator app's key; to change
+                that, <a asp-page="./ResetAuthenticator">reset your authenticator key</a>.
+            </div>
+        </div>
+        <div hlm-card-footer>
+            <button hlm-btn variant="destructive" type="submit">Generate recovery codes</button>
+        </div>
+    </div>
+</form>

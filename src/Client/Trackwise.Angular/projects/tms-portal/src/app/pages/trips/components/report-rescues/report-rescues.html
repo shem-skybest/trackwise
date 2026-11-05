@@ -1,0 +1,106 @@
+<ui-surface variant="elevated" [border]="true">
+  <ui-stack gap="3">
+    <ui-stack direction="row" gap="2" align="center" class="flex-wrap">
+      <ui-typography variant="overline" color="secondary">Incidents and rescues</ui-typography>
+      @if (!incidents().length && !rescues().length) {
+        <span class="text-muted-foreground text-sm">None on this trip</span>
+      }
+      <span class="ml-auto"></span>
+      <ui-button
+        appearance="outlined"
+        size="sm"
+        icon="triangle-alert"
+        label="Report incident"
+        [routerLink]="['/incidents/add']"
+        [queryParams]="{ tripId: trip().id }"
+      />
+      @if (rescuable()) {
+        <ui-button
+          appearance="outlined"
+          size="sm"
+          icon="truck"
+          label="Record rescue"
+          (click)="openRescue()"
+        />
+      }
+    </ui-stack>
+
+    @for (incident of incidents(); track incident.id) {
+      <ui-stack direction="row" gap="2" align="center" class="flex-wrap text-sm">
+        <a [routerLink]="['/incidents', incident.id]" class="font-semibold hover:underline">
+          {{ incident.caseNumber }} {{ kindLabel(incident.kind) }}
+        </a>
+        <span class="text-muted-foreground">{{ incident.occurredAt | date: "d MMM, HH:mm" }}</span>
+        <ui-badge
+          [value]="statusLabel(incident.status)"
+          [severity]="statusIntent(incident.status)"
+          size="sm"
+        />
+        <span class="min-w-0 flex-1 truncate">{{ incident.summary }}</span>
+      </ui-stack>
+    }
+
+    @for (rescue of rescues(); track rescue.id) {
+      <ui-stack gap="1" class="border-default border-t pt-2 text-sm">
+        <ui-stack direction="row" gap="2" align="center" class="flex-wrap">
+          <ui-badge value="Rescue" severity="warn" size="sm" />
+          <span class="font-semibold">{{ rescue.truckNumber }}</span>
+          <span>{{ drops(rescue) }}</span>
+          <span class="text-muted-foreground">
+            goods moved {{ rescue.transferredAt | date: "d MMM, HH:mm" }}
+            @if (rescue.place) {
+              at {{ rescue.place }}
+            }
+          </span>
+          @if (rescue.incidentId) {
+            <a [routerLink]="['/incidents', rescue.incidentId]" class="hover:underline">
+              {{ rescue.incidentCaseNumber }}
+            </a>
+          }
+          @if (undoable(rescue)) {
+            <ui-button
+              class="ml-auto"
+              appearance="text"
+              intent="danger"
+              size="sm"
+              icon="undo"
+              label="Undo"
+              (click)="undo(rescue)"
+            />
+          }
+        </ui-stack>
+        <div>{{ crew(rescue) }}</div>
+        <div class="text-muted-foreground">{{ rescue.reason }}</div>
+        <ui-stack direction="row" gap="2" align="center" class="flex-wrap">
+          <span class="text-muted-foreground">Rescue truck's garage:</span>
+          <span>
+            {{ rescue.garageDepartedAt ? (rescue.garageDepartedAt | date: "d MMM, HH:mm") : "-" }}
+            to
+            {{ rescue.garageArrivedAt ? (rescue.garageArrivedAt | date: "d MMM, HH:mm") : "-" }}
+          </span>
+          <ui-button
+            appearance="text"
+            size="sm"
+            icon="clock"
+            [label]="rescue.garageDepartedAt || rescue.garageArrivedAt ? 'Change' : 'Add times'"
+            (click)="openGarage(rescue)"
+          />
+        </ui-stack>
+      </ui-stack>
+    }
+  </ui-stack>
+</ui-surface>
+
+<app-rescue-garage-dialog
+  [trip]="trip()"
+  [rescue]="garageRescue()"
+  [(open)]="garageOpen"
+  (done)="changed.emit()"
+/>
+
+<app-rescue-dialog
+  [trip]="trip()"
+  [incidents]="incidents()"
+  [(open)]="dialogOpen"
+  (done)="changed.emit()"
+/>

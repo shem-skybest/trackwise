@@ -1,0 +1,104 @@
+<ui-page-header
+  [title]="'Requisition ' + number()"
+  subtitle="Every truck's parts and labour paid through this request for payment"
+  backLink="/maintenance/records"
+/>
+
+@if (isLoading()) {
+  <ui-stack align="center" justify="center" class="py-16 text-center">
+    <ui-spinner />
+  </ui-stack>
+} @else if (requisition(); as req) {
+  <ui-stack gap="4">
+    <ui-card>
+      <div class="grid grid-cols-2 gap-4 md:grid-cols-5">
+        <div>
+          <ui-typography variant="caption" color="muted" class="block">Date</ui-typography>
+          <div class="font-medium">
+            {{ req.firstServiceDate | date: "mediumDate" }}
+            @if (req.lastServiceDate !== req.firstServiceDate) {
+              - {{ req.lastServiceDate | date: "mediumDate" }}
+            }
+          </div>
+        </div>
+        <div>
+          <ui-typography variant="caption" color="muted" class="block">Shop</ui-typography>
+          <div class="font-medium">{{ req.vendorNames?.join(", ") || "-" }}</div>
+        </div>
+        <div>
+          <ui-typography variant="caption" color="muted" class="block">Labour</ui-typography>
+          <div class="font-medium">{{ req.laborCost | currencyFormat }}</div>
+        </div>
+        <div>
+          <ui-typography variant="caption" color="muted" class="block">Parts</ui-typography>
+          <div class="font-medium">{{ req.partsCost | currencyFormat }}</div>
+        </div>
+        <div>
+          <ui-typography variant="caption" color="muted" class="block">Total</ui-typography>
+          <div class="text-lg font-semibold">{{ req.totalCost | currencyFormat }}</div>
+        </div>
+      </div>
+    </ui-card>
+
+    @for (record of req.records; track record.id) {
+      <ui-card>
+        <ui-stack direction="row" justify="between" align="center" class="mb-3">
+          <div>
+            <a
+              class="font-mono text-lg font-semibold underline"
+              [routerLink]="['/maintenance/records', record.id]"
+            >
+              {{ record.truckNumber }}
+            </a>
+            <ui-typography variant="body-sm" color="muted">
+              {{ record.typeDisplay }} - {{ record.serviceDate | date: "mediumDate" }} -
+              {{ record.description }}
+            </ui-typography>
+          </div>
+          <div class="text-right font-semibold">{{ record.totalCost | currencyFormat }}</div>
+        </ui-stack>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-muted-foreground border-border border-b text-left">
+                <th class="py-1 font-medium">Part</th>
+                <th class="py-1 font-medium">Details</th>
+                <th class="py-1 text-right font-medium">Qty</th>
+                <th class="py-1 text-right font-medium whitespace-nowrap">Unit price</th>
+                <th class="py-1 text-right font-medium">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (part of record.parts; track part.id) {
+                <tr class="border-border border-b">
+                  <td class="py-1">{{ part.partName }}</td>
+                  <td class="py-1">{{ part.description ?? "-" }}</td>
+                  <td class="py-1 text-right">{{ part.quantity }}</td>
+                  <td class="py-1 text-right">{{ part.unitCost | currencyFormat }}</td>
+                  <td class="py-1 text-right">{{ part.totalCost | currencyFormat }}</td>
+                </tr>
+              }
+              @if (!record.parts?.length && record.partsCost) {
+                <tr class="border-border border-b">
+                  <td class="py-1" colspan="4">Parts (no breakdown)</td>
+                  <td class="py-1 text-right">{{ record.partsCost | currencyFormat }}</td>
+                </tr>
+              }
+              @if (record.laborCost) {
+                <tr class="border-border border-b">
+                  <td class="py-1" colspan="4">Labour</td>
+                  <td class="py-1 text-right">{{ record.laborCost | currencyFormat }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </ui-card>
+    }
+  </ui-stack>
+} @else {
+  <ui-card>
+    <ui-typography color="muted">No service records are paid through requisition {{ number() }}.</ui-typography>
+  </ui-card>
+}

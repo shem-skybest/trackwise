@@ -1,0 +1,73 @@
+<ui-grid container spacing="4">
+  <ui-grid [size]="{ xs: 12, md: 6, lg: 3 }">
+    <ui-card class="text-center">
+      <ui-typography color="muted">Spent on fuel</ui-typography>
+      <ui-typography variant="stat" color="primary" tag="div">
+        {{ summary().amount | currencyFormat }}
+      </ui-typography>
+      <ui-typography variant="caption" color="muted">
+        {{ summary().amountNetOfVat | currencyFormat }} net of VAT
+      </ui-typography>
+    </ui-card>
+  </ui-grid>
+
+  <ui-grid [size]="{ xs: 12, md: 6, lg: 3 }">
+    <ui-card class="text-center">
+      <ui-typography color="muted">Liters</ui-typography>
+      <ui-typography variant="stat" tag="div">
+        {{ summary().liters | number: "1.0-2" }}
+      </ui-typography>
+      <ui-typography variant="caption" color="muted">
+        {{ summary().fillUps }} fill-up{{ summary().fillUps === 1 ? "" : "s" }}
+      </ui-typography>
+    </ui-card>
+  </ui-grid>
+
+  <ui-grid [size]="{ xs: 12, md: 6, lg: 3 }">
+    <ui-card class="text-center">
+      <ui-typography color="muted">Average per liter</ui-typography>
+      <ui-typography variant="stat" tag="div">
+        {{
+          summary().averagePricePerLiter ? (summary().averagePricePerLiter | currencyFormat) : "-"
+        }}
+      </ui-typography>
+      <ui-typography variant="caption" color="muted">VAT included</ui-typography>
+    </ui-card>
+  </ui-grid>
+
+  <ui-grid [size]="{ xs: 12, md: 6, lg: 3 }">
+    <ui-card class="text-center">
+      <ui-typography color="muted">To review</ui-typography>
+      <ui-typography variant="stat" tag="div">
+        <span [class.text-warning]="(summary().forReview ?? 0) > 0">{{ summary().forReview }}</span>
+      </ui-typography>
+      <ui-typography variant="caption" color="muted">
+        <span [class.text-destructive]="(summary().flagged ?? 0) > 0">
+          {{ summary().flagged }} flagged
+        </span>
+      </ui-typography>
+    </ui-card>
+  </ui-grid>
+
+  @for (card of summary().byCard; track card.fleetCard) {
+    <ui-grid [size]="{ xs: 12, md: 4 }">
+      <ui-card>
+        <div class="flex items-baseline justify-between gap-2">
+          <ui-typography variant="body" class="font-semibold">
+            {{ cardLabel(card.fleetCard) }}
+          </ui-typography>
+          <ui-typography variant="caption" color="muted">
+            {{ card.fillUps }} fill-up{{ card.fillUps === 1 ? "" : "s" }} ·
+            {{ card.liters | number: "1.0-2" }} L
+          </ui-typography>
+        </div>
+        <div class="mt-1 flex items-baseline justify-between gap-2">
+          <span class="text-lg font-semibold">{{ card.amount | currencyFormat }}</span>
+          <span class="text-muted-foreground text-sm">
+            {{ card.amountNetOfVat | currencyFormat }} net
+          </span>
+        </div>
+      </ui-card>
+    </ui-grid>
+  }
+</ui-grid>

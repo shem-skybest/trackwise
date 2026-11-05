@@ -1,0 +1,7 @@
+<ui-select-field
+  [options]="languages()"
+  optionLabel="label"
+  optionValue="code"
+  [value]="value()"
+  (selectionChange)="onChange($any($event))"
+/>

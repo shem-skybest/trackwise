@@ -1,0 +1,133 @@
+<ui-grid container spacing="3">
+  <ui-grid [size]="{ xs: 12, lg: 9, xl: 8 }">
+    <form [formRoot]="form">
+      <ui-stack gap="4">
+        <ui-stack tag="section" gap="3">
+          <ui-stack direction="row" gap="2" align="start">
+            <ui-icon name="building-2" color="secondary" class="mt-1" />
+            <ui-stack gap="0">
+              <ui-typography variant="overline" color="secondary">Partner Details</ui-typography>
+              <ui-typography variant="caption" color="muted">
+                A partner can hold several roles - a trucker that also runs a depot is one record.
+              </ui-typography>
+            </ui-stack>
+          </ui-stack>
+
+          <ui-surface variant="elevated" [border]="true">
+            <ui-stack gap="3">
+              <ui-grid container spacing="3">
+                <ui-grid [size]="{ xs: 12, md: 8 }">
+                  <ui-form-field label="Name" for="name" [required]="true">
+                    <ui-text-field id="name" [formField]="form.name" type="text" />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field label="Code" for="code" [hint]="codeHint()">
+                    <ui-text-field id="code" [formField]="form.code" type="text" [maxlength]="30" />
+                  </ui-form-field>
+                </ui-grid>
+              </ui-grid>
+
+              <ui-form-field
+                label="Roles"
+                for="roles"
+                [required]="true"
+                hint="A workfile slot only accepts a partner holding the matching role."
+              >
+                <ui-multiselect-field
+                  id="roles"
+                  [formField]="form.roles"
+                  [options]="roleOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                />
+              </ui-form-field>
+
+              <ui-form-field
+                label="Branch"
+                for="branchId"
+                hint="One branch, or every branch if shared"
+              >
+                <ui-select-field
+                  id="branchId"
+                  [formField]="form.branchId"
+                  [options]="branchOptions()"
+                  optionLabel="label"
+                  optionValue="value"
+                />
+              </ui-form-field>
+            </ui-stack>
+          </ui-surface>
+        </ui-stack>
+
+        <ui-stack tag="section" gap="3">
+          <ui-stack direction="row" gap="2" align="start">
+            <ui-icon name="user" color="secondary" class="mt-1" />
+            <ui-stack gap="0">
+              <ui-typography variant="overline" color="secondary">Contact</ui-typography>
+              <ui-typography variant="caption" color="muted">
+                Optional. Used on booking confirmations and billing correspondence.
+              </ui-typography>
+            </ui-stack>
+          </ui-stack>
+
+          <ui-surface variant="elevated" [border]="true">
+            <ui-stack gap="3">
+              <ui-grid container spacing="3">
+                <ui-grid [size]="{ xs: 12, md: 6 }">
+                  <ui-form-field label="Contact Name" for="contactName">
+                    <ui-text-field id="contactName" [formField]="form.contactName" type="text" />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 6 }">
+                  <ui-form-field
+                    label="TIN"
+                    for="taxId"
+                    hint="VAT ID / TIN. Punctuation is stripped - two records with the same TIN are the same company."
+                  >
+                    <ui-text-field id="taxId" [formField]="form.taxId" type="text" />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 6 }">
+                  <ui-form-field label="Email" for="email">
+                    <ui-text-field id="email" [formField]="form.email" type="email" />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 6 }">
+                  <ui-form-field label="Phone" for="phone">
+                    <ui-text-field id="phone" [formField]="form.phone" type="tel" />
+                  </ui-form-field>
+                </ui-grid>
+              </ui-grid>
+
+              <ui-form-field label="Address" hint="Optional">
+                <ui-address-form [formField]="form.address" />
+              </ui-form-field>
+
+              <ui-form-field label="Notes" for="notes" hint="Optional">
+                <ui-textarea-field id="notes" [formField]="form.notes" [rows]="3" />
+              </ui-form-field>
+            </ui-stack>
+          </ui-surface>
+        </ui-stack>
+
+        <ui-stack direction="row" gap="2" align="center">
+          <ui-button type="submit" icon="save" [label]="submitLabel()" [disabled]="isLoading()" />
+
+          <ui-button
+            type="button"
+            appearance="text"
+            icon="arrow-left"
+            label="Cancel"
+            [routerLink]="['/master-data/partners']"
+            [disabled]="isLoading()"
+          />
+        </ui-stack>
+      </ui-stack>
+    </form>
+  </ui-grid>
+</ui-grid>

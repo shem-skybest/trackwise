@@ -1,0 +1,85 @@
+@page
+@model Trackwise.IdentityServer.Pages.Account.AcceptInvitation.Index
+@{
+    ViewData["Title"] = "Accept invitation";
+}
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="flex flex-col gap-6 text-center">
+        <div class="flex flex-col items-center gap-1">
+            <h1 class="mb-0 text-2xl font-bold">Unable to process invitation</h1>
+            <p class="text-muted-foreground text-sm text-balance">@Model.ErrorMessage</p>
+        </div>
+        <a hlm-btn variant="outline" asp-page="/Account/Login/Index">Go to login</a>
+    </div>
+}
+else if (Model.InvitationValid)
+{
+    <form method="post">
+        <input type="hidden" asp-for="Input.Token" />
+
+        <div hlm-field-group>
+            <div class="flex flex-col items-center gap-1 text-center">
+                <h1 class="mb-0 text-2xl font-bold">Accept invitation</h1>
+                <p class="text-muted-foreground text-sm text-balance">
+                    You've been invited to join <strong class="text-foreground">@Model.TenantName</strong>
+                    as <strong class="text-foreground">@Model.RoleDisplayName</strong>
+                </p>
+            </div>
+
+            <partial name="_ValidationSummary" />
+
+            <div hlm-field>
+                <label hlm-field-label for="invitation-email">Email</label>
+                <input hlm-input id="invitation-email" type="email" value="@Model.Email" readonly class="bg-muted" />
+            </div>
+
+            @if (!Model.UserExists)
+            {
+                <div class="grid grid-cols-2 gap-4">
+                    <div hlm-field>
+                        <label hlm-field-label asp-for="Input.FirstName"></label>
+                        <input hlm-input asp-for="Input.FirstName" autocomplete="given-name" />
+                        <span hlm-field-error asp-validation-for="Input.FirstName"></span>
+                    </div>
+                    <div hlm-field>
+                        <label hlm-field-label asp-for="Input.LastName"></label>
+                        <input hlm-input asp-for="Input.LastName" autocomplete="family-name" />
+                        <span hlm-field-error asp-validation-for="Input.LastName"></span>
+                    </div>
+                </div>
+
+                <div hlm-field>
+                    <label hlm-field-label asp-for="Input.Password"></label>
+                    <input hlm-input asp-for="Input.Password" placeholder="Minimum 8 characters" autocomplete="new-password" />
+                    <span hlm-field-error asp-validation-for="Input.Password"></span>
+                </div>
+
+                <div hlm-field>
+                    <label hlm-field-label asp-for="Input.ConfirmPassword"></label>
+                    <input hlm-input asp-for="Input.ConfirmPassword" autocomplete="new-password" />
+                    <span hlm-field-error asp-validation-for="Input.ConfirmPassword"></span>
+                </div>
+            }
+            else
+            {
+                <div hlm-alert>
+                    <div hlm-alert-description>You already have an account. Accept to add this organization to it.</div>
+                </div>
+                @* The model validates these fields even for an existing account, which never uses them. *@
+                <input type="hidden" asp-for="Input.FirstName" value="Existing" />
+                <input type="hidden" asp-for="Input.LastName" value="User" />
+                <input type="hidden" asp-for="Input.Password" value="NotRequired123!" />
+                <input type="hidden" asp-for="Input.ConfirmPassword" value="NotRequired123!" />
+            }
+
+            <div hlm-field>
+                <button hlm-btn type="submit">Accept invitation</button>
+                <p hlm-field-description class="text-center">
+                    <a asp-page="/Account/Login/Index">Back to login</a>
+                </p>
+            </div>
+        </div>
+    </form>
+}

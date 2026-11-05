@@ -1,0 +1,211 @@
+<ui-page-header [title]="agreement()?.name ?? 'Rate Agreement'" backLink="/rate-agreements">
+  @if (agreement() && canManage) {
+    @if (isDraft()) {
+      <ui-button
+        appearance="outlined"
+        icon="pencil"
+        label="Edit"
+        [routerLink]="['/rate-agreements', id(), 'edit']"
+      />
+      <ui-button icon="check" label="Approve" [disabled]="isBusy()" (click)="approve()" />
+    }
+    @if (canRevise()) {
+      <ui-button icon="copy" label="Revise rates" [disabled]="isBusy()" (click)="openRevise()" />
+    }
+    @if (canWithdraw()) {
+      <ui-button
+        intent="danger"
+        appearance="outlined"
+        icon="circle-x"
+        label="Withdraw"
+        [disabled]="isBusy()"
+        (click)="withdraw()"
+      />
+    }
+  }
+</ui-page-header>
+
+@if (isLoading()) {
+  <ui-stack align="center" justify="center" class="py-16 text-center"><ui-spinner /></ui-stack>
+} @else if (agreement(); as agreement) {
+  <ui-stack gap="4">
+    <ui-card>
+      <ui-grid container spacing="4">
+        <ui-grid [size]="{ xs: 12, md: 4 }">
+          <ui-info-item label="Customer">
+            <a
+              [routerLink]="['/customers', agreement.customerId]"
+              class="text-primary hover:underline"
+            >
+              {{ agreement.customerName }}
+            </a>
+          </ui-info-item>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 4 }">
+          <ui-info-item label="In force">
+            {{ isoToDate(agreement.effectiveFrom) | date: "mediumDate" }} -
+            @if (agreement.effectiveTo) {
+              {{ isoToDate(agreement.effectiveTo) | date: "mediumDate" }}
+            } @else {
+              until revised
+            }
+          </ui-info-item>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 4 }">
+          <ui-info-item label="Status">
+            <ui-badge
+              [value]="statusLabel(agreement.status)"
+              [severity]="statusIntent(agreement.status)"
+              size="sm"
+              rounded
+            />
+          </ui-info-item>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 4 }">
+          <ui-info-item label="Fuel" [value]="fuelMethodLabel(agreement.fuelMethod)" />
+        </ui-grid>
+        @if (agreement.approvedBy) {
+          <ui-grid [size]="{ xs: 6, md: 4 }">
+            <ui-info-item label="Approved">
+              {{ agreement.approvedBy }}, {{ agreement.approvedAt | date: "mediumDate" }}
+            </ui-info-item>
+          </ui-grid>
+        }
+        @if (agreement.supersedesId) {
+          <ui-grid [size]="{ xs: 6, md: 4 }">
+            <ui-info-item label="Revises">
+              <a
+                [routerLink]="['/rate-agreements', agreement.supersedesId]"
+                class="text-primary hover:underline"
+              >
+                Previous agreement
+              </a>
+            </ui-info-item>
+          </ui-grid>
+        }
+      </ui-grid>
+
+      @if (agreement.notes) {
+        <ui-typography variant="body-sm" color="muted" class="mt-4 block whitespace-pre-wrap">
+          {{ agreement.notes }}
+        </ui-typography>
+      }
+    </ui-card>
+
+    <ui-card>
+      <ui-typography variant="h5" tag="h2" class="mb-3 block">Quotation terms</ui-typography>
+      <ui-grid container spacing="4">
+        @for (term of terms(); track term.label) {
+          <ui-grid [size]="{ xs: 6, md: 3 }">
+            <ui-info-item [label]="term.label">
+              @if (term.value) {
+                {{ term.value }}
+              } @else {
+                <span class="text-muted-foreground">Not stated</span>
+              }
+            </ui-info-item>
+          </ui-grid>
+        }
+      </ui-grid>
+    </ui-card>
+
+    <ui-card>
+      <ui-typography variant="h5" tag="h2" class="block">Billing</ui-typography>
+      <ui-typography variant="caption" color="muted" class="mb-3 block">
+        How Skybest bills this card, not the client's price - so these change without a revision.
+        Trips already priced keep their price until priced again.
+      </ui-typography>
+      <ui-grid container spacing="4">
+        <ui-grid [size]="{ xs: 12, md: 6 }">
+          <ui-stack direction="row" align="center" justify="between" gap="3">
+            <div>
+              <ui-typography variant="body-sm" class="font-medium">Bill extra drops</ui-typography>
+              <ui-typography variant="caption" color="muted">
+                Off: drops past the rate's are counted but not charged, as SAS bills today.
+              </ui-typography>
+            </div>
+            <ui-toggle-field
+              inputId="billExtraDrops"
+              [value]="agreement.billExtraDrops ?? false"
+              [disabled]="!canSetBillingRules() || isBusy()"
+              (valueChange)="setBillingRules({ billExtraDrops: $event })"
+            />
+          </ui-stack>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 12, md: 6 }">
+          <ui-stack direction="row" align="center" justify="between" gap="3">
+            <div>
+              <ui-typography variant="body-sm" class="font-medium">Rates include VAT</ui-typography>
+              <ui-typography variant="caption" color="muted">
+                On: trips are billed net of 12% VAT, as nSFS records Global and HFI.
+              </ui-typography>
+            </div>
+            <ui-toggle-field
+              inputId="ratesIncludeVat"
+              [value]="agreement.ratesIncludeVat ?? false"
+              [disabled]="!canSetBillingRules() || isBusy()"
+              (valueChange)="setBillingRules({ ratesIncludeVat: $event })"
+            />
+          </ui-stack>
+        </ui-grid>
+      </ui-grid>
+    </ui-card>
+
+    <ui-card>
+      <ui-stack direction="row" align="center" justify="between" class="mb-3">
+        <ui-typography variant="h5" tag="h2">Rate card</ui-typography>
+        <ui-typography variant="body-sm" color="muted">
+          {{ agreement.lineCount }} rows
+        </ui-typography>
+      </ui-stack>
+      @if (agreement.lines?.length) {
+        <app-rate-lines-table [agreement]="agreement" />
+      } @else {
+        <ui-empty-state title="No rates yet" message="Edit the draft to add the card's rows." />
+      }
+    </ui-card>
+  </ui-stack>
+} @else {
+  <ui-empty-state title="Agreement not found" message="It may have been removed." />
+}
+
+<ui-dialog
+  [(open)]="reviseOpen"
+  header="Revise rates"
+  width="460px"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <form [formRoot]="reviseForm">
+    <ui-stack gap="3">
+      <ui-typography variant="body-sm" color="muted">
+        Copies this card into a new draft from a later date. The current rates keep pricing trips
+        until you approve the revision.
+      </ui-typography>
+      <ui-form-field label="Name" for="reviseName" [required]="true">
+        <ui-text-field id="reviseName" [formField]="reviseForm.name" />
+      </ui-form-field>
+      <ui-form-field label="New rates start" for="reviseFrom" [required]="true">
+        <ui-date-field
+          inputId="reviseFrom"
+          [formField]="reviseForm.effectiveFrom"
+          [showIcon]="true"
+        />
+      </ui-form-field>
+      <ui-stack direction="row" gap="2" justify="end">
+        <ui-button
+          intent="secondary"
+          appearance="outlined"
+          label="Cancel"
+          (click)="reviseOpen.set(false)"
+        />
+        <ui-button
+          type="submit"
+          label="Create draft"
+          icon="copy"
+          [loading]="reviseForm().submitting()"
+        />
+      </ui-stack>
+    </ui-stack>
+  </form>
+</ui-dialog>

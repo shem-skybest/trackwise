@@ -1,0 +1,65 @@
+<div class="animate-in fade-in space-y-4">
+  <ui-page-header title="Edit Business Partner" backLink="/master-data/partners">
+    @if (canDeactivate()) {
+      <ui-button
+        type="button"
+        appearance="text"
+        icon="pause-circle"
+        label="Deactivate"
+        [disabled]="isBusy() || isLoading()"
+        (click)="setActive(false)"
+      />
+    }
+
+    @if (canReactivate()) {
+      <ui-button
+        type="button"
+        appearance="text"
+        icon="play"
+        label="Reactivate"
+        [disabled]="isBusy() || isLoading()"
+        (click)="setActive(true)"
+      />
+    }
+
+    <ui-button
+      type="button"
+      appearance="text"
+      intent="danger"
+      icon="trash"
+      label="Delete"
+      [disabled]="isBusy() || isLoading()"
+      (click)="confirmDelete()"
+    />
+  </ui-page-header>
+
+  @if (isLoading()) {
+    <div class="flex justify-center py-12">
+      <ui-spinner />
+    </div>
+  } @else {
+    <app-partner-approval
+      [partner]="partner()"
+      [canManage]="canManage"
+      [canApprove]="canApprove"
+      [isBusy]="isBusy()"
+      (submitForApproval)="submitForApproval($event)"
+      (approve)="approve($event)"
+      (reject)="reject($event)"
+    />
+
+    <app-partner-form
+      [partner]="partner()"
+      [isLoading]="isBusy()"
+      [isEdit]="true"
+      submitLabel="Save Changes"
+      (save)="update($event)"
+    />
+
+    @if (id) {
+      <div class="max-w-5xl">
+        <app-master-data-history entity="partner" [recordId]="id" [version]="historyVersion()" />
+      </div>
+    }
+  }
+</div>

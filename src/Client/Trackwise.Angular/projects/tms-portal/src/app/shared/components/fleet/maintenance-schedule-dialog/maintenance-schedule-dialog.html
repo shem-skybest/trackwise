@@ -1,0 +1,93 @@
+<ui-dialog
+  [(open)]="visible"
+  [modal]="true"
+  [header]="title()"
+  width="560px"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <form [formRoot]="form">
+    <ui-stack gap="3">
+      <ui-form-field label="Service" for="type" [required]="true">
+        <ui-select-field
+          id="type"
+          [formField]="form.type"
+          [options]="typeOptions"
+          optionLabel="label"
+          optionValue="value"
+          appendTo="body"
+        />
+      </ui-form-field>
+
+      <ui-form-field label="Repeats" for="intervalType" [required]="true">
+        <ui-select-field
+          id="intervalType"
+          [formField]="form.intervalType"
+          [options]="intervalOptions"
+          optionLabel="label"
+          optionValue="value"
+          appendTo="body"
+        />
+      </ui-form-field>
+
+      <ui-stack direction="row" gap="3">
+        @if (usesDays()) {
+          <ui-form-field label="Every (days)" for="daysInterval" class="flex-1">
+            <ui-number-field id="daysInterval" [formField]="form.daysInterval" />
+          </ui-form-field>
+        }
+        @if (usesDistance()) {
+          <ui-form-field label="Every ({{ distanceUnit }})" for="mileageInterval" class="flex-1">
+            <ui-number-field id="mileageInterval" [formField]="form.mileageInterval" [useGrouping]="true" />
+          </ui-form-field>
+        }
+        @if (usesHours()) {
+          <ui-form-field label="Every (engine hrs)" for="engineHoursInterval" class="flex-1">
+            <ui-number-field id="engineHoursInterval" [formField]="form.engineHoursInterval" />
+          </ui-form-field>
+        }
+      </ui-stack>
+
+      <ui-form-field
+        label="Last done"
+        for="lastServiceDate"
+        hint="Leave empty if nobody knows: it shows as due now."
+      >
+        <ui-date-field
+          id="lastServiceDate"
+          [formField]="form.lastServiceDate"
+          [showIcon]="true"
+          appendTo="body"
+        />
+      </ui-form-field>
+
+      @if (usesDistance() || usesHours()) {
+        <ui-stack direction="row" gap="3">
+          @if (usesDistance()) {
+            <ui-form-field label="Odometer then ({{ distanceUnit }})" for="lastServiceOdometer" class="flex-1">
+              <ui-number-field
+                id="lastServiceOdometer"
+                [formField]="form.lastServiceOdometer"
+                [useGrouping]="true"
+              />
+            </ui-form-field>
+          }
+          @if (usesHours()) {
+            <ui-form-field label="Engine hours then" for="lastServiceEngineHours" class="flex-1">
+              <ui-number-field id="lastServiceEngineHours" [formField]="form.lastServiceEngineHours" />
+            </ui-form-field>
+          }
+        </ui-stack>
+      }
+
+      <ui-form-field label="Notes" for="notes">
+        <ui-textarea-field id="notes" [formField]="form.notes" [rows]="2" />
+      </ui-form-field>
+
+      <ui-stack direction="row" justify="end" gap="2">
+        <ui-button intent="secondary" appearance="outlined" label="Cancel" (click)="close()" />
+        <ui-button type="submit" label="Save" icon="check" [loading]="form().submitting()" />
+      </ui-stack>
+    </ui-stack>
+  </form>
+</ui-dialog>

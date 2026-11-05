@@ -1,0 +1,128 @@
+using Trackwise.Domain.Primitives.Enums;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Trackwise.Application.Modules.Compliance.Eld.Commands;
+using Trackwise.Application.Modules.Integrations.Webhooks.Commands;
+using Trackwise.Shared.Models;
+
+namespace Trackwise.API.Controllers;
+
+[ApiController]
+[AllowAnonymous]
+[Route("webhooks")]
+[Produces("application/json")]
+public class WebhookController(IMediator mediator) : ControllerBase
+{
+    [HttpPost("stripe", Name = "ProcessStripeWebhook")]
+    public async Task<IActionResult> Stripe()
+    {
+        var requestBodyJson = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
+        var stripeSignature = Request.Headers["Stripe-Signature"].ToString();
+
+        var result = await mediator.Send(new ProcessStripEventCommand
+        {
+            RequestBodyJson = requestBodyJson,
+            StripeSignature = stripeSignature
+        });
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>
+    /// Inbound mail from Resend. A 500 is deliberate on a transient failure - it is what makes
+    /// Resend retry a delivery we could not finish.
+    /// </summary>
+    [HttpPost("resend", Name = "ProcessResendWebhook")]
+    [RequestSizeLimit(512 * 1024)]
+    public async Task<IActionResult> Resend()
+    {
+        var requestBodyJson = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
+
+        var result = await mediator.Send(new ProcessResendWebhookCommand
+        {
+            RawBody = requestBodyJson,
+            SvixId = Request.Headers["svix-id"].ToString(),
+            SvixTimestamp = Request.Headers["svix-timestamp"].ToString(),
+            SvixSignature = Request.Headers["svix-signature"].ToString()
+        });
+
+        if (result.IsSuccess)
+        {
+            return Ok();
+        }
+
+        return result.ErrorCode == ErrorCodes.WebhookRejected
+            ? BadRequest()
+            : StatusCode(StatusCodes.Status500InternalServerError);
+    }
+
+    [HttpPost("eld/samsara", Name = "ProcessSamsaraWebhook")]
+    public async Task<IActionResult> SamsaraWebhook()
+    {
+        var requestBodyJson = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
+        var signature = Request.Headers["X-Samsara-Signature"].ToString();
+
+        var result = await mediator.Send(new ProcessEldWebhookCommand
+        {
+            ProviderType = EldProviderType.Samsara,
+            RequestBodyJson = requestBodyJson,
+            Signature = signature
+        });
+        return result.IsSuccess ? Ok() : BadRequest();
+    }
+
+    [HttpPost("eld/motive", Name = "ProcessMotiveWebhook")]
+    public async Task<IActionResult> MotiveWebhook()
+    {
+        var requestBodyJson = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
+        var signature = Request.Headers["X-Motive-Signature"].ToString();
+
+        var result = await mediator.Send(new ProcessEldWebhookCommand
+        {
+            ProviderType = EldProviderType.Motive,
+            RequestBodyJson = requestBodyJson,
+            Signature = signature
+        });
+        return result.IsSuccess ? Ok() : BadRequest();
+    }
+
+    [HttpPost("eld/tteld", Name = "ProcessTtEldWebhook")]
+    public Task<IActionResult> TtEldWebhook()
+    {
+        // TT ELD does not support webhooks - GPS data is polled via EldSyncJob
+        return Task.FromResult<IActionResult>(Ok());
+    }
+
+    [HttpPost("eld/geotab", Name = "ProcessGeotabWebhook")]
+    public async Task<IActionResult> GeotabWebhook()
+    {
+        var requestBodyJson = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
+        var signature = Request.Headers["X-Geotab-Signature"].ToString();
+
+        var result = await mediator.Send(new ProcessEldWebhookCommand
+        {
+            ProviderType = EldProviderType.Geotab,
+            RequestBodyJson = requestBodyJson,
+            Signature = signature
+        });
+        return result.IsSuccess ? Ok() : BadRequest();
+    }
+
+    [HttpPost("loadboard/dat", Name = "ProcessDatWebhook")]
+    public Task<IActionResult> DatWebhook()
+    {
+        return Task.FromResult<IActionResult>(Ok());
+    }
+
+    [HttpPost("loadboard/truckstop", Name = "ProcessTruckstopWebhook")]
+    public Task<IActionResult> TruckstopWebhook()
+    {
+        return Task.FromResult<IActionResult>(Ok());
+    }
+
+    [HttpPost("loadboard/123loadboard", Name = "Process123LoadboardWebhook")]
+    public Task<IActionResult> OneTwo3LoadboardWebhook()
+    {
+        return Task.FromResult<IActionResult>(Ok());
+    }
+}

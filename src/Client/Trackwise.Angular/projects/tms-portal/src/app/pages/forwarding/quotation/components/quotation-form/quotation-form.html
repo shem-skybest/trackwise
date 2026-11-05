@@ -1,0 +1,526 @@
+<ui-grid container spacing="3">
+  <ui-grid [size]="{ xs: 12, lg: 10, xl: 9 }">
+    <form [formRoot]="form">
+      <ui-stack gap="6">
+        <!-- 1. Commercial & Scope -->
+        <ui-stack tag="section" gap="3">
+          <ui-stack direction="row" gap="2" align="start">
+            <ui-icon name="file-text" color="secondary" class="mt-1" />
+            <ui-stack gap="0">
+              <ui-typography variant="overline" color="secondary">
+                Commercial & Trade Scope
+              </ui-typography>
+              <ui-typography variant="caption" color="muted">
+                Specify the customer, trading boundary, and pricing currency.
+              </ui-typography>
+            </ui-stack>
+          </ui-stack>
+
+          <ui-surface variant="elevated" [border]="true">
+            <ui-stack gap="3">
+              <ui-grid container spacing="3">
+                <ui-grid [size]="{ xs: 12, md: 8 }">
+                  <ui-form-field label="Customer" for="customer" [required]="true">
+                    <app-search-customer [formField]="form.customer" />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field
+                    label="Freight Mode"
+                    for="freightMode"
+                    [required]="true"
+                    hint="Governs trade borders & customs"
+                  >
+                    <ui-select-field
+                      id="freightMode"
+                      [formField]="form.freightMode"
+                      [options]="freightModeOptions"
+                      optionLabel="label"
+                      optionValue="value"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field
+                    label="Incoterm"
+                    for="incoterm"
+                    [required]="true"
+                    hint="Governs risk transfer and carrier contract"
+                  >
+                    <ui-select-field
+                      id="incoterm"
+                      [formField]="form.incoterm"
+                      [options]="incotermOptions"
+                      optionLabel="label"
+                      optionValue="value"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field
+                    label="Quotation Currency"
+                    for="currency"
+                    [required]="true"
+                    hint="3-letter ISO code"
+                  >
+                    <ui-text-field
+                      id="currency"
+                      [formField]="form.currency"
+                      placeholder="USD"
+                      [maxlength]="3"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+              </ui-grid>
+            </ui-stack>
+          </ui-surface>
+        </ui-stack>
+
+        <!-- 2. Transport & Lane Routing -->
+        <ui-stack tag="section" gap="3">
+          <ui-stack direction="row" gap="2" align="start">
+            <ui-icon name="truck" color="secondary" class="mt-1" />
+            <ui-stack gap="0">
+              <ui-typography variant="overline" color="secondary">
+                Transport Mode & Lane Routing
+              </ui-typography>
+              <ui-typography variant="caption" color="muted">
+                Routing stops, transport methods, and operational constraints.
+              </ui-typography>
+            </ui-stack>
+          </ui-stack>
+
+          <ui-surface variant="elevated" [border]="true">
+            <ui-stack gap="4">
+              <ui-grid container spacing="3">
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field label="Transport Mode" for="mode" [required]="true">
+                    <ui-select-field
+                      id="mode"
+                      [formField]="form.mode"
+                      [options]="transportModeOptions"
+                      optionLabel="label"
+                      optionValue="value"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field
+                    label="Shipment Type"
+                    for="shipmentType"
+                    [required]="true"
+                    hint="Filtered for selected transport mode"
+                  >
+                    <ui-select-field
+                      id="shipmentType"
+                      [formField]="form.shipmentType"
+                      [options]="shipmentTypeOptions()"
+                      optionLabel="label"
+                      optionValue="value"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field label="Routing Layout" for="routingMode" [required]="true">
+                    <ui-select-field
+                      id="routingMode"
+                      [value]="routingMode()"
+                      (valueChange)="routingMode.set($event ?? 'point-to-point')"
+                      [options]="routingModeOptions"
+                      optionLabel="label"
+                      optionValue="value"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+
+                <!-- Point-to-Point Mode Locations -->
+                @if (routingMode() === "point-to-point") {
+                  <ui-grid [size]="{ xs: 12, md: 6 }">
+                    <ui-form-field
+                      [label]="originLocationLabel()"
+                      for="originLocation"
+                      [required]="true"
+                    >
+                      <ui-select-field
+                        id="originLocation"
+                        [formField]="form.originLocationId!"
+                        [options]="
+                          !model().customer
+                            ? [{ label: 'Select a customer first', value: '' }]
+                            : selectedCustomerLocationOptions()
+                        "
+                        optionLabel="label"
+                        optionValue="value"
+                      />
+                    </ui-form-field>
+                  </ui-grid>
+
+                  <ui-grid [size]="{ xs: 12, md: 6 }">
+                    <ui-form-field
+                      [label]="destinationLocationLabel()"
+                      for="destinationLocationId"
+                      [required]="true"
+                    >
+                      <ui-select-field
+                        id="destinationLocationId"
+                        [formField]="form.destinationLocationId!"
+                        [options]="
+                          !model().customer
+                            ? [{ label: 'Select a customer first', value: '' }]
+                            : selectedCustomerLocationOptions()
+                        "
+                        optionLabel="label"
+                        optionValue="value"
+                      />
+                    </ui-form-field>
+                  </ui-grid>
+                }
+
+                <!-- Transit Schedule & Distance -->
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field
+                    label="Pickup Window Start"
+                    for="requestedPickupWindowStart"
+                    hint="Date (YYYY-MM-DD)"
+                  >
+                    <ui-text-field
+                      id="requestedPickupWindowStart"
+                      [formField]="form.requestedPickupWindowStart"
+                      placeholder="YYYY-MM-DD"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field
+                    label="Delivery Window End"
+                    for="requestedDeliveryWindowEnd"
+                    hint="Date (YYYY-MM-DD)"
+                  >
+                    <ui-text-field
+                      id="requestedDeliveryWindowEnd"
+                      [formField]="form.requestedDeliveryWindowEnd"
+                      placeholder="YYYY-MM-DD"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field label="Estimated Distance (km)" for="totalDistanceKm">
+                    <ui-text-field
+                      id="totalDistanceKm"
+                      [formField]="form.totalDistanceKm"
+                      placeholder="0"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+
+                <!-- Conditional Customs & HAZMAT -->
+                <ui-grid [size]="{ xs: 12 }">
+                  <ui-stack direction="row" gap="6" class="mt-2">
+                    @if (!isDomestic()) {
+                      <ui-checkbox-field
+                        id="requiresCustomsBrokerage"
+                        [formField]="form.requiresCustomsBrokerage"
+                        label="Requires Customs Clearance & Brokerage"
+                      />
+                    }
+
+                    <ui-checkbox-field
+                      id="isHazardous"
+                      [formField]="form.isHazardous"
+                      label="Dangerous Goods / HAZMAT Classification"
+                    />
+                  </ui-stack>
+                </ui-grid>
+              </ui-grid>
+            </ui-stack>
+          </ui-surface>
+        </ui-stack>
+
+        <!-- Multi-Route Stops Section -->
+        @if (routingMode() === "multi-stop") {
+          <ui-stack tag="section" gap="3">
+            <ui-stack direction="row" gap="2" align="start">
+              <ui-icon name="list" color="secondary" class="mt-1" />
+              <ui-stack gap="0">
+                <ui-typography variant="overline" color="secondary">Route Stops</ui-typography>
+                <ui-typography variant="caption" color="muted">
+                  Configure sequence stops, waypoints, and intermediate hubs.
+                </ui-typography>
+              </ui-stack>
+            </ui-stack>
+
+            <ui-surface variant="elevated" [border]="true">
+              <ui-stack gap="3">
+                @if (!model().stops?.length) {
+                  <ui-empty-state icon="list" title="No route stops added yet." />
+                } @else {
+                  @for (stop of model().stops; track stop.sequence) {
+                    <ui-stack gap="2" class="py-2">
+                      <ui-stack direction="row" align="center" justify="between" gap="3">
+                        <ui-stack direction="row" align="center" gap="3">
+                          <ui-typography
+                            variant="label"
+                            color="secondary"
+                            class="font-semibold whitespace-nowrap"
+                          >
+                            Stop {{ stop.sequence }}
+                          </ui-typography>
+
+                          <ui-stack gap="0">
+                            <ui-typography variant="body" class="font-medium">
+                              {{ stop.locationName || stop.locationId }}
+                            </ui-typography>
+                            <ui-typography variant="caption" color="muted">
+                              {{ stopTypeLabels[stop.type ?? ""] ?? "Stop" }}
+                            </ui-typography>
+                          </ui-stack>
+                        </ui-stack>
+
+                        <ui-button
+                          type="button"
+                          appearance="text"
+                          intent="danger"
+                          icon="trash"
+                          label="Remove"
+                          (click)="handleRemoveStop(stop)"
+                        />
+                      </ui-stack>
+                      <div class="border-border border-b"></div>
+                    </ui-stack>
+                  }
+                }
+
+                @if (model().customer) {
+                  <ui-button
+                    appearance="outlined"
+                    icon="plus"
+                    label="Add Route Stop"
+                    [disabled]="isAddingRouteStop()"
+                    (click)="isAddingRouteStop.set(true)"
+                  />
+                } @else {
+                  <ui-stack direction="row" gap="2" align="center">
+                    <ui-icon name="info" color="muted" />
+                    <ui-typography variant="caption" color="muted">
+                      Please select a customer above before adding route stops.
+                    </ui-typography>
+                  </ui-stack>
+                }
+              </ui-stack>
+            </ui-surface>
+          </ui-stack>
+        }
+
+        <!-- 3. Cargo Specifications -->
+        <ui-stack tag="section" gap="3">
+          <ui-stack direction="row" gap="2" align="start">
+            <ui-icon name="box" color="secondary" class="mt-1" />
+            <ui-stack gap="0">
+              <ui-typography variant="overline" color="secondary">
+                Cargo Specifications
+              </ui-typography>
+              <ui-typography variant="caption" color="muted">
+                Weight, package count, commodity details, and cargo valuation.
+              </ui-typography>
+            </ui-stack>
+          </ui-stack>
+
+          <ui-surface variant="elevated" [border]="true">
+            <ui-stack gap="3">
+              <ui-grid container spacing="3">
+                <ui-grid [size]="{ xs: 12, md: 6 }">
+                  <ui-form-field label="Commodity Description" for="commodity">
+                    <ui-text-field
+                      id="commodity"
+                      [formField]="form.commodity"
+                      placeholder="e.g. Pharmaceutical Vaccines, Auto Parts"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 3 }">
+                  <ui-form-field label="Pallet / Package Count" for="palletCount">
+                    <ui-text-field
+                      id="palletCount"
+                      [formField]="form.palletCount"
+                      placeholder="0"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 3 }">
+                  <ui-form-field label="Total Gross Weight (kg)" for="totalWeightKg">
+                    <ui-text-field
+                      id="totalWeightKg"
+                      [formField]="form.totalWeightKg"
+                      placeholder="0"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 6 }">
+                  <ui-form-field
+                    label="Declared Cargo Value"
+                    for="declaredCargoValueAmount"
+                    hint="Basis for CIF insurance & ad-valorem surcharges"
+                  >
+                    <ui-text-field
+                      id="declaredCargoValueAmount"
+                      [formField]="form.declaredCargoValueAmount"
+                      placeholder="0.00"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 6 }">
+                  <ui-form-field
+                    label="Declared Value Currency"
+                    for="declaredCargoValueCurrency"
+                    hint="Defaulted to quotation currency if not defined"
+                  >
+                    <ui-text-field
+                      id="declaredCargoValueCurrency"
+                      [formField]="form.declaredCargoValueCurrency"
+                      [placeholder]="model().currency"
+                      [maxlength]="3"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12 }">
+                  <ui-checkbox-field
+                    id="requiresActiveRefrigeration"
+                    [formField]="form.requiresActiveRefrigeration"
+                    label="Cargo Requires Temperature Control / Cold Chain Protocol"
+                    (change)="toggleColdChain($any($event).target.checked)"
+                  />
+                </ui-grid>
+              </ui-grid>
+            </ui-stack>
+          </ui-surface>
+        </ui-stack>
+
+        <!-- 4. Cold Chain & Telematics (Progressive Disclosure) -->
+        @if (isColdChainRequired()) {
+          <ui-stack tag="section" gap="3">
+            <ui-stack direction="row" gap="2" align="start">
+              <ui-icon name="thermometer" color="secondary" class="mt-1" />
+              <ui-stack gap="0">
+                <ui-typography variant="overline" color="secondary">
+                  Temperature Control & Telematics
+                </ui-typography>
+                <ui-typography variant="caption" color="muted">
+                  Configure thermal zones, setpoints, and regulatory compliance.
+                </ui-typography>
+              </ui-stack>
+            </ui-stack>
+
+            <ui-surface variant="elevated" [border]="true">
+              <ui-stack gap="3">
+                <ui-grid container spacing="3">
+                  <ui-grid [size]="{ xs: 12, md: 6 }">
+                    <ui-form-field label="Temperature Zone" for="temperatureZone" [required]="true">
+                      <ui-select-field
+                        id="temperatureZone"
+                        [formField]="form.temperatureZone"
+                        [options]="temperatureZoneOptions"
+                        optionLabel="label"
+                        optionValue="value"
+                      />
+                    </ui-form-field>
+                  </ui-grid>
+
+                  <ui-grid [size]="{ xs: 12, md: 6 }">
+                    <ui-form-field label="Regulatory Compliance" for="compliance">
+                      <ui-select-field
+                        id="compliance"
+                        [formField]="form.compliance"
+                        [options]="complianceRegimeOptions"
+                        optionLabel="label"
+                        optionValue="value"
+                      />
+                    </ui-form-field>
+                  </ui-grid>
+
+                  <ui-grid [size]="{ xs: 12, md: 6 }">
+                    <ui-form-field label="Setpoint (°C)" for="setpointCelsius">
+                      <ui-text-field
+                        id="setpointCelsius"
+                        [formField]="form.setpointCelsius"
+                        placeholder="e.g. 4.0"
+                      />
+                    </ui-form-field>
+                  </ui-grid>
+
+                  <ui-grid [size]="{ xs: 12, md: 6 }">
+                    <ui-form-field label="Allowable Variance (±°C)" for="allowableVarianceCelsius">
+                      <ui-text-field
+                        id="allowableVarianceCelsius"
+                        [formField]="form.allowableVarianceCelsius"
+                        placeholder="e.g. 1.5"
+                      />
+                    </ui-form-field>
+                  </ui-grid>
+
+                  <ui-grid [size]="{ xs: 12 }">
+                    <ui-checkbox-field
+                      id="requiresContinuousTelematics"
+                      [formField]="form.requiresContinuousTelematics"
+                      label="Continuous Telematics / Real-Time IoT Temperature Logging"
+                    />
+                  </ui-grid>
+                </ui-grid>
+              </ui-stack>
+            </ui-surface>
+          </ui-stack>
+        }
+
+        <!-- 5. Instructions & Submission -->
+        <ui-stack tag="section" gap="3">
+          <ui-surface variant="elevated" [border]="true">
+            <ui-form-field label="Special Instructions & Remarks" for="notes" hint="Optional">
+              <ui-textarea-field
+                id="notes"
+                [formField]="form.notes"
+                [rows]="20"
+                placeholder="Mention accessorials, handling instructions, or delivery nuances..."
+              />
+            </ui-form-field>
+          </ui-surface>
+        </ui-stack>
+
+        <ui-stack direction="row" gap="2" align="center" class="pt-2">
+          <ui-button
+            type="submit"
+            icon="save"
+            [label]="submitLabel()"
+            [disabled]="isLoading() || form().submitting()"
+          />
+          <ui-button
+            type="button"
+            appearance="text"
+            icon="arrow-left"
+            label="Cancel"
+            [routerLink]="[
+              quotation()?.id != null ? `/quotations/${quotation()?.id}` : '/quotations',
+            ]"
+            [disabled]="isLoading() || form().submitting()"
+          />
+        </ui-stack>
+      </ui-stack>
+    </form>
+  </ui-grid>
+</ui-grid>
+
+<add-stop-dilog
+  [(isOpen)]="isAddingRouteStop"
+  [locations]="selectedCustomerLocationsStore.data()"
+  (submitted)="handleAddStop($event)"
+/>

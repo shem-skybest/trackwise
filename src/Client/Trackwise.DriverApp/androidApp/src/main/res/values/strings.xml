@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Trackwise Driver</string>
+
+    <!-- Notifications (Android-only: used by services and manifest) -->
+    <string name="default_notification_channel_id">trackwise_driver_channel</string>
+    <string name="notification_channel_name">Trackwise Notifications</string>
+    <string name="notification_channel_description">Notifications for load updates</string>
+    <string name="location_tracking_channel_name">Location Tracking</string>
+    <string name="location_tracking_channel_description">Active while you are logged in</string>
+    <string name="location_tracking_notification_title">Sharing truck location</string>
+    <string name="location_tracking_notification_text">Sharing truck location with dispatch</string>
+    <string name="location_tracking_notification_text_with_truck">Truck #%1$s · sharing location with dispatch</string>
+</resources>

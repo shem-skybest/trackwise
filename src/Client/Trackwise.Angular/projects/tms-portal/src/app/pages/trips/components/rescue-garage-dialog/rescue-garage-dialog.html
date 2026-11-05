@@ -1,0 +1,40 @@
+<ui-dialog
+  [header]="'Garage times - ' + (rescue()?.truckNumber ?? 'rescue truck')"
+  [(open)]="open"
+  [modal]="true"
+  width="28rem"
+  (opened)="onOpened()"
+>
+  <form [formRoot]="form">
+    <ui-grid container spacing="3">
+      <ui-grid [size]="{ xs: 6 }">
+        <ui-form-field
+          label="Left garage"
+          for="rescueGarageDeparted"
+          [hint]="departedAt() ? describe(departedAt()!) : 'hhmm'"
+        >
+          <ui-text-field id="rescueGarageDeparted" [formField]="form.departed" placeholder="hhmm" />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 6 }">
+        <ui-form-field
+          label="Back at garage"
+          for="rescueGarageArrived"
+          [hint]="arrivedAt() ? describe(arrivedAt()!) : 'hhmm'"
+        >
+          <ui-text-field id="rescueGarageArrived" [formField]="form.arrived" placeholder="hhmm" />
+        </ui-form-field>
+      </ui-grid>
+    </ui-grid>
+
+    <ui-typography variant="caption" color="muted" class="mt-2 block">
+      The rescue truck's own run: it leaves before the goods move across and gets back after the last
+      drop it took over. Leave a time blank to clear it.
+    </ui-typography>
+
+    <div class="mt-4 flex justify-end gap-2">
+      <ui-button appearance="text" label="Cancel" (click)="open.set(false)" />
+      <ui-button type="submit" icon="check" label="Save" [loading]="form().submitting()" />
+    </div>
+  </form>
+</ui-dialog>

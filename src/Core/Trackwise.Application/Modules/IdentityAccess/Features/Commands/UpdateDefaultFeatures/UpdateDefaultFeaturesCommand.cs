@@ -1,0 +1,22 @@
+using Trackwise.Application.Abstractions;
+using Trackwise.Domain.Primitives.Enums;
+
+namespace Trackwise.Application.Modules.IdentityAccess.Features.Commands;
+
+/// <summary>
+/// Command to update the default feature configuration for new tenants (used by admin).
+/// </summary>
+public class UpdateDefaultFeaturesCommand : ICommand
+{
+    /// <summary>
+    /// The list of default feature updates.
+    /// </summary>
+    public List<DefaultFeatureUpdate> Features { get; set; } = [];
+}
+
+/// <summary>
+/// Represents a default feature configuration update.
+/// </summary>
+public record DefaultFeatureUpdate(
+    TenantFeature Feature,
+    bool IsEnabledByDefault);

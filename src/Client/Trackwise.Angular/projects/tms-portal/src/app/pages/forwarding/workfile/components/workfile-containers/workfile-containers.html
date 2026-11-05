@@ -1,0 +1,128 @@
+<ui-card>
+  <ui-stack gap="3" class="p-4">
+    <ui-stack direction="row" align="center" justify="between" class="flex-wrap gap-2">
+      <ui-stack gap="1">
+        <ui-typography variant="overline" color="secondary">Containers</ui-typography>
+        @if (containers().length) {
+          <ui-typography variant="caption" color="muted">
+            {{ summary() }} · {{ numbered() }} of {{ containers().length }} numbered
+          </ui-typography>
+        }
+      </ui-stack>
+      @if (canManage()) {
+        <ui-button
+          type="button"
+          appearance="text"
+          size="sm"
+          icon="plus"
+          label="Add containers"
+          (click)="openAdd()"
+        />
+      }
+    </ui-stack>
+
+    @if (containers().length) {
+      <ui-data-table [value]="containers()" [scrollable]="true" size="small">
+        <ng-template #header>
+          <tr>
+            <th>#</th>
+            <th>Size</th>
+            <th>Container no.</th>
+            <th>Seal</th>
+            <th class="text-right">Gross kg</th>
+            <th class="text-right">Packages</th>
+            <th class="text-right">CBM</th>
+            @if (showMoveStatus()) {
+              <th>Where</th>
+            }
+            @if (canManage()) {
+              <th></th>
+            }
+          </tr>
+        </ng-template>
+        <ng-template #body let-slot let-i="rowIndex">
+          <tr>
+            <td class="text-muted-foreground">{{ i + 1 }}</td>
+            <td>{{ slot.containerTypeCode ?? "-" }}</td>
+            <td class="font-mono">
+              @if (slot.containerId) {
+                <a
+                  [routerLink]="['/containers', slot.containerId]"
+                  class="text-primary hover:underline"
+                >
+                  {{ slot.containerNumber }}
+                </a>
+              } @else {
+                <span class="text-muted-foreground">Not yet known</span>
+              }
+            </td>
+            <td>{{ slot.sealNumber ?? "-" }}</td>
+            <td class="text-right">
+              {{
+                slot.grossWeightKg !== null && slot.grossWeightKg !== undefined
+                  ? (slot.grossWeightKg | number: "1.0-2")
+                  : "-"
+              }}
+            </td>
+            <td class="text-right">
+              {{ slot.packageCount ?? "-" }}
+              @if (slot.packagingType) {
+                <span class="text-muted-foreground">{{ slot.packagingType }}</span>
+              }
+            </td>
+            <td class="text-right">
+              {{ slot.cbm !== null && slot.cbm !== undefined ? (slot.cbm | number: "1.0-3") : "-" }}
+            </td>
+            @if (showMoveStatus()) {
+              <td>
+                <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <ui-badge [value]="moveLabel(slot)" [severity]="moveIntent(slot)" rounded />
+                  @if (slot.moveStatusPlace) {
+                    <span class="text-sm">{{ slot.moveStatusPlace }}</span>
+                  }
+                  @if (daysAtPort(slot); as days) {
+                    <span class="text-muted-foreground text-xs">
+                      {{ days }} {{ days === 1 ? "day" : "days" }}
+                    </span>
+                  }
+                </div>
+              </td>
+            }
+            @if (canManage()) {
+              <td class="text-right whitespace-nowrap">
+                <ui-button
+                  type="button"
+                  appearance="text"
+                  size="sm"
+                  icon="pencil"
+                  ariaLabel="Edit container"
+                  (click)="openEdit(slot)"
+                />
+                <ui-button
+                  type="button"
+                  appearance="text"
+                  size="sm"
+                  intent="danger"
+                  icon="trash"
+                  ariaLabel="Remove container"
+                  (click)="confirmRemove(slot)"
+                />
+              </td>
+            }
+          </tr>
+        </ng-template>
+      </ui-data-table>
+    } @else {
+      <ui-typography color="muted">
+        No containers yet. Add the sizes booked, e.g. 4 x 40' high cube; numbers can come later.
+      </ui-typography>
+    }
+  </ui-stack>
+</ui-card>
+
+<app-workfile-container-dialog
+  [workfileId]="workfileId()"
+  [slot]="editing()"
+  [(open)]="dialogOpen"
+  (saved)="changed.emit()"
+/>

@@ -1,0 +1,37 @@
+<div class="animate-in fade-in space-y-4">
+  <ui-page-header title="Edit Trailer" backLink="/master-data/trailers">
+    <ui-button
+      type="button"
+      appearance="text"
+      intent="danger"
+      icon="trash"
+      label="Delete"
+      [disabled]="isBusy() || isLoading()"
+      (click)="confirmDelete()"
+    />
+  </ui-page-header>
+
+  @if (isLoading()) {
+    <div class="flex justify-center py-12">
+      <ui-spinner />
+    </div>
+  } @else {
+    <app-trailer-form
+      [trailer]="trailer()"
+      [isLoading]="isBusy()"
+      [isEdit]="true"
+      submitLabel="Save Changes"
+      (save)="update($event)"
+    />
+
+    @if (id) {
+      <ui-card class="block max-w-5xl">
+        <app-vehicle-papers [trailerId]="id" />
+      </ui-card>
+
+      <div class="max-w-5xl">
+        <app-master-data-history entity="trailer" [recordId]="id" [version]="historyVersion()" />
+      </div>
+    }
+  }
+</div>

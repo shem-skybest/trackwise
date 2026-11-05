@@ -1,0 +1,138 @@
+<ui-card class="max-w-5xl">
+  <ui-stack gap="3" class="p-4">
+    <ui-stack direction="row" gap="2" align="start">
+      <ui-icon name="shield-check" color="secondary" class="mt-1" />
+      <ui-stack gap="0">
+        <ui-typography variant="overline" color="secondary">Approval</ui-typography>
+        <ui-typography variant="caption" color="muted">
+          A partner is usable on a workfile only once somebody other than its author has accepted
+          it.
+        </ui-typography>
+      </ui-stack>
+    </ui-stack>
+
+    @switch (state()) {
+      @case ("draft") {
+        <ui-stack gap="2">
+          <ui-stack direction="row" gap="2" align="center">
+            <ui-badge value="Draft" severity="secondary" size="sm" rounded />
+            <ui-typography variant="caption" color="muted">
+              Not live. Nothing can select this partner yet.
+            </ui-typography>
+          </ui-stack>
+
+          @if (partner()?.lastReviewNote) {
+            <p class="text-warning text-xs">Sent back: {{ partner()?.lastReviewNote }}</p>
+          }
+
+          @if (canManage()) {
+            <ui-form-field label="Note for the approver" for="submitNote" hint="Optional">
+              <ui-textarea-field id="submitNote" [(value)]="note" [rows]="2" [maxlength]="1000" />
+            </ui-form-field>
+
+            <ui-stack direction="row" gap="2">
+              <ui-button
+                type="button"
+                icon="send"
+                label="Submit for approval"
+                [disabled]="isBusy()"
+                (click)="onSubmit()"
+              />
+            </ui-stack>
+          }
+        </ui-stack>
+      }
+
+      @case ("pending") {
+        <ui-stack gap="2">
+          <ui-stack direction="row" gap="2" align="center">
+            <ui-badge value="Awaiting approval" severity="warn" size="sm" rounded />
+            <ui-typography variant="caption" color="muted">
+              Submitted by {{ partner()?.submittedByName || "a steward" }} on
+              {{ partner()?.submittedAt | date: "dd/MM/yyyy HH:mm" }}. Still not live.
+            </ui-typography>
+          </ui-stack>
+
+          @if (canApprove()) {
+            @if (rejecting()) {
+              <ui-form-field
+                label="Why is it going back?"
+                for="rejectReason"
+                [required]="true"
+                hint="The steward sees this. A record returned without a reason comes back unchanged."
+              >
+                <ui-textarea-field
+                  id="rejectReason"
+                  [(value)]="note"
+                  [rows]="2"
+                  [maxlength]="1000"
+                />
+              </ui-form-field>
+
+              <ui-stack direction="row" gap="2">
+                <ui-button
+                  type="button"
+                  intent="danger"
+                  icon="undo"
+                  label="Send back"
+                  [disabled]="isBusy() || !canReject()"
+                  (click)="onReject()"
+                />
+
+                <ui-button
+                  type="button"
+                  appearance="text"
+                  label="Cancel"
+                  [disabled]="isBusy()"
+                  (click)="cancelRejecting()"
+                />
+              </ui-stack>
+            } @else {
+              <ui-form-field label="Note" for="approveNote" hint="Optional">
+                <ui-textarea-field
+                  id="approveNote"
+                  [(value)]="note"
+                  [rows]="2"
+                  [maxlength]="1000"
+                />
+              </ui-form-field>
+
+              <ui-stack direction="row" gap="2">
+                <ui-button
+                  type="button"
+                  icon="check"
+                  label="Approve"
+                  [disabled]="isBusy()"
+                  (click)="onApprove()"
+                />
+
+                <ui-button
+                  type="button"
+                  appearance="text"
+                  intent="danger"
+                  icon="undo"
+                  label="Send back"
+                  [disabled]="isBusy()"
+                  (click)="startRejecting()"
+                />
+              </ui-stack>
+            }
+          } @else {
+            <ui-typography variant="caption" color="muted">
+              An approver has to decide this one. You cannot approve a record you submitted.
+            </ui-typography>
+          }
+        </ui-stack>
+      }
+
+      @default {
+        <ui-stack direction="row" gap="2" align="center">
+          <ui-badge value="Approved" severity="success" size="sm" rounded />
+          <ui-typography variant="caption" color="muted">
+            Live and selectable on workfiles. Edits from here take effect immediately.
+          </ui-typography>
+        </ui-stack>
+      }
+    }
+  </ui-stack>
+</ui-card>

@@ -1,0 +1,146 @@
+<ui-dialog [header]="header()" [(open)]="open" [modal]="true" width="44rem" (opened)="onOpened()">
+  <form [formRoot]="form">
+    <ui-stack gap="3">
+      <ui-typography variant="body-sm" color="muted">
+        Type times as the crew wrote them (2329). They're dated forward from the arrival day, so a
+        time earlier than the one before it is the next day.
+      </ui-typography>
+
+      <ui-grid container spacing="3">
+        <ui-grid [size]="{ xs: 12, md: 4 }">
+          <ui-form-field label="Arrival day" for="corr-day" [required]="true">
+            <ui-date-field inputId="corr-day" [formField]="form.day" dateFormat="yy-mm-dd" />
+          </ui-form-field>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 4 }">
+          <ui-form-field label="Arrival" for="corr-arrival" [hint]="hint('arrival')">
+            <ui-text-field id="corr-arrival" [formField]="form.arrival" placeholder="hhmm" />
+          </ui-form-field>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 4 }">
+          <ui-form-field label="Temp at arrival (°C)" for="corr-temp-in">
+            <ui-number-field
+              id="corr-temp-in"
+              [formField]="form.tempArrival"
+              [maxFractionDigits]="1"
+            />
+          </ui-form-field>
+        </ui-grid>
+
+        @if (hasDeparture()) {
+          <ui-grid [size]="{ xs: 6, md: 3 }">
+            <ui-form-field
+              [label]="'Start ' + handlingLabel()"
+              for="corr-handling-start"
+              [hint]="hint('handlingStart')"
+            >
+              <ui-text-field
+                id="corr-handling-start"
+                [formField]="form.handlingStart"
+                placeholder="hhmm"
+              />
+            </ui-form-field>
+          </ui-grid>
+          <ui-grid [size]="{ xs: 6, md: 3 }">
+            <ui-form-field
+              [label]="'Done ' + handlingLabel()"
+              for="corr-handling-done"
+              [hint]="hint('handlingFinish')"
+            >
+              <ui-text-field
+                id="corr-handling-done"
+                [formField]="form.handlingFinish"
+                placeholder="hhmm"
+              />
+            </ui-form-field>
+          </ui-grid>
+          <ui-grid [size]="{ xs: 6, md: 3 }">
+            <ui-form-field label="Departure" for="corr-departure" [hint]="hint('departure')">
+              <ui-text-field id="corr-departure" [formField]="form.departure" placeholder="hhmm" />
+            </ui-form-field>
+          </ui-grid>
+          <ui-grid [size]="{ xs: 6, md: 3 }">
+            <ui-form-field label="Temp at departure (°C)" for="corr-temp-out">
+              <ui-number-field
+                id="corr-temp-out"
+                [formField]="form.tempDeparture"
+                [maxFractionDigits]="1"
+              />
+            </ui-form-field>
+          </ui-grid>
+
+          @if (isDrop()) {
+            <ui-grid [size]="{ xs: 12, md: 6 }">
+              <ui-form-field label="Outcome" for="corr-outcome">
+                <ui-select-field
+                  id="corr-outcome"
+                  [formField]="form.outcome"
+                  [options]="outcomeOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  appendTo="body"
+                />
+              </ui-form-field>
+            </ui-grid>
+            <ui-grid [size]="{ xs: 6, md: 3 }">
+              <ui-form-field label="Boxes back" for="corr-boxes-back">
+                <ui-number-field
+                  id="corr-boxes-back"
+                  [formField]="form.returnedBoxes"
+                  [maxFractionDigits]="0"
+                />
+              </ui-form-field>
+            </ui-grid>
+            <ui-grid [size]="{ xs: 6, md: 3 }">
+              <ui-form-field label="Bags back" for="corr-bags-back">
+                <ui-number-field
+                  id="corr-bags-back"
+                  [formField]="form.returnedBags"
+                  [maxFractionDigits]="0"
+                />
+              </ui-form-field>
+            </ui-grid>
+            <ui-grid [size]="{ xs: 12, md: 6 }">
+              <ui-form-field label="Why it came back" for="corr-reason-back">
+                <ui-select-field
+                  id="corr-reason-back"
+                  [formField]="form.returnReason"
+                  [options]="reasonOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  placeholder="Only when boxes or bags came back"
+                  [showClear]="true"
+                  appendTo="body"
+                />
+              </ui-form-field>
+            </ui-grid>
+            <ui-grid [size]="{ xs: 12, md: 6 }">
+              <ui-form-field label="Remarks" for="corr-note">
+                <ui-text-field id="corr-note" [formField]="form.note" />
+              </ui-form-field>
+            </ui-grid>
+          }
+        }
+      </ui-grid>
+
+      <ui-form-field
+        label="Reason for the correction"
+        for="corr-why"
+        [required]="true"
+        hint='Kept with every changed value, e.g. "typo - crew wrote 2329".'
+      >
+        <ui-textarea-field id="corr-why" [formField]="form.reason" [rows]="2" />
+      </ui-form-field>
+
+      <div class="flex justify-end gap-2">
+        <ui-button appearance="text" label="Cancel" (click)="open.set(false)" />
+        <ui-button
+          type="submit"
+          icon="save"
+          label="Save correction"
+          [loading]="form().submitting()"
+        />
+      </div>
+    </ui-stack>
+  </form>
+</ui-dialog>

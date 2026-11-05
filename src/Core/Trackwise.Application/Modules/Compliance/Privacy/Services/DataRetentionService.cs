@@ -1,0 +1,68 @@
+using Trackwise.Domain.Entities;
+using Trackwise.Domain.Persistence;
+using Trackwise.Domain.Primitives;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+
+namespace Trackwise.Application.Modules.Compliance.Privacy.Services;
+
+internal sealed class DataRetentionService(
+    IMasterUnitOfWork masterUow,
+    ITenantUnitOfWork tenantUow,
+    ILogger<DataRetentionService> logger) : IDataRetentionService
+{
+    public async Task PurgeAsync(CancellationToken ct = default)
+    {
+        var now = DateTime.UtcNow;
+        var notificationCutoff = now - PrivacyDefaults.NotificationRetention;
+        var dispatchCutoff = now - PrivacyDefaults.AIDispatchSessionRetention;
+
+        var tenants = await masterUow.Repository<Tenant>().GetListAsync(ct: ct);
+
+        foreach (var tenant in tenants)
+        {
+            if (ct.IsCancellationRequested)
+            {
+                break;
+            }
+
+            try
+            {
+                tenantUow.SetCurrentTenant(tenant);
+
+                var oldNotifications = await tenantUow.Repository<Notification>()
+                    .Query()
+                    .Where(n => n.IsRead && n.CreatedDate < notificationCutoff)
+                    .ToListAsync(ct);
+
+                foreach (var notification in oldNotifications)
+                {
+                    tenantUow.Repository<Notification>().Delete(notification);
+                }
+
+                var oldSessions = await tenantUow.Repository<AgentSession>()
+                    .Query()
+                    .DispatchOnly()
+                    .Where(s => s.StartedAt < dispatchCutoff)
+                    .ToListAsync(ct);
+
+                foreach (var session in oldSessions)
+                {
+                    tenantUow.Repository<AgentSession>().Delete(session);
+                }
+
+                if (oldNotifications.Count > 0 || oldSessions.Count > 0)
+                {
+                    await tenantUow.SaveChangesAsync(ct);
+                    logger.LogInformation(
+                        "Retention purge for tenant '{TenantName}': {Notifications} notifications, {Sessions} dispatch sessions.",
+                        tenant.Name, oldNotifications.Count, oldSessions.Count);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Retention purge failed for tenant '{TenantName}'.", tenant.Name);
+            }
+        }
+    }
+}

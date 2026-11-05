@@ -1,0 +1,175 @@
+<div class="flex flex-col gap-6">
+  @if (form().submitting()) {
+    <div class="flex justify-center py-8">
+      <ui-spinner />
+    </div>
+  }
+
+  <form [formRoot]="form">
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <ui-form-field label="Truck" for="truck" [required]="true">
+        <app-search-truck [formField]="form.truck" />
+      </ui-form-field>
+
+      <ui-form-field label="Service Type" for="type" [required]="true">
+        <ui-select-field
+          [formField]="form.type"
+          id="type"
+          [options]="typeOptions"
+          optionLabel="label"
+          optionValue="value"
+        />
+      </ui-form-field>
+
+      <ui-form-field label="System" for="vehicleSystem" hint="Which part of the truck">
+        <ui-select-field
+          [formField]="form.vehicleSystem"
+          id="vehicleSystem"
+          [options]="systemOptions"
+          optionLabel="label"
+          optionValue="value"
+        />
+      </ui-form-field>
+    </div>
+
+    <ui-form-field label="Description" for="description" [required]="true" class="mt-4">
+      <ui-textarea-field
+        [formField]="form.description"
+        id="description"
+        [rows]="2"
+        placeholder="Leaf spring and center bolt replaced"
+      />
+    </ui-form-field>
+
+    <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+      <ui-form-field label="Service Date" for="serviceDate" [required]="true">
+        <ui-date-field inputId="serviceDate" [formField]="form.serviceDate" [showIcon]="true" />
+      </ui-form-field>
+
+      <ui-form-field label="Odometer ({{ distanceUnit }})" for="odometerReading">
+        <ui-number-field [formField]="form.odometerReading" id="odometerReading" [useGrouping]="true" />
+      </ui-form-field>
+
+      <ui-form-field label="Engine Hours" for="engineHours">
+        <ui-number-field [formField]="form.engineHours" id="engineHours" [useGrouping]="true" />
+      </ui-form-field>
+    </div>
+
+    <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+      <ui-form-field
+        label="Requisition No."
+        for="requisitionNumber"
+        hint="The request for payment, e.g. RFV26-001517-M"
+      >
+        <ui-text-field id="requisitionNumber" [formField]="form.requisitionNumber" />
+      </ui-form-field>
+
+      <ui-form-field label="Shop" for="vendorName">
+        <ui-text-field
+          id="vendorName"
+          [formField]="form.vendorName"
+          placeholder="South Star Automotive Sales"
+        />
+      </ui-form-field>
+
+      <ui-form-field label="Invoice / OR No." for="invoiceNumber">
+        <ui-text-field id="invoiceNumber" [formField]="form.invoiceNumber" />
+      </ui-form-field>
+    </div>
+
+    <ui-stack gap="2" class="mt-6">
+      <ui-typography variant="h6">Parts</ui-typography>
+      @if (hasParts()) {
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-muted-foreground border-border border-b text-left">
+                <th class="p-2 font-medium">Part</th>
+                <th class="p-2 font-medium">Details</th>
+                <th class="p-2 font-medium">Qty</th>
+                <th class="p-2 font-medium">Unit price ({{ currency }})</th>
+                <th class="p-2 text-right font-medium">Amount</th>
+                <th class="p-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (part of model().parts; track $index; let i = $index) {
+                <tr class="border-border border-b align-top">
+                  <td class="min-w-44 p-1">
+                    <ui-text-field [formField]="form.parts[i].partName" placeholder="LEAF SPRING" />
+                  </td>
+                  <td class="min-w-44 p-1">
+                    <ui-text-field [formField]="form.parts[i].description" placeholder="Brand, size" />
+                  </td>
+                  <td class="w-20 p-1"><ui-number-field [formField]="form.parts[i].quantity" /></td>
+                  <td class="w-36 p-1">
+                    <ui-number-field
+                      [formField]="form.parts[i].unitCost"
+                      [minFractionDigits]="0"
+                      [maxFractionDigits]="2"
+                    />
+                  </td>
+                  <td class="p-2 text-right whitespace-nowrap">
+                    {{ lineTotal(i) | currencyFormat }}
+                  </td>
+                  <td class="p-1">
+                    <ui-button
+                      appearance="text"
+                      icon="trash"
+                      ariaLabel="Remove part"
+                      (click)="removePart(i)"
+                    />
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <ui-typography variant="body-sm" color="muted">
+          No part lines. Add them from the requisition, or type the parts total below.
+        </ui-typography>
+      }
+      <div>
+        <ui-button appearance="outlined" size="sm" icon="plus" label="Add part" (click)="addPart()" />
+      </div>
+    </ui-stack>
+
+    <div class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+      <ui-form-field label="Labour" for="laborCost">
+        <ui-currency-field inputId="laborCost" [formField]="form.laborCost" [currency]="currency" />
+      </ui-form-field>
+
+      <ui-form-field
+        label="Parts"
+        for="partsCost"
+        [hint]="hasParts() ? 'The sum of the part lines' : 'The invoice total for parts'"
+      >
+        @if (hasParts()) {
+          <div class="py-2 font-medium">{{ partsTotal() | currencyFormat }}</div>
+        } @else {
+          <ui-currency-field inputId="partsCost" [formField]="form.partsCost" [currency]="currency" />
+        }
+      </ui-form-field>
+
+      <ui-form-field label="Total" for="total">
+        <div class="py-2 text-lg font-semibold">{{ total() | currencyFormat }}</div>
+      </ui-form-field>
+    </div>
+
+    <ui-form-field label="Notes" for="notes" class="mt-4">
+      <ui-textarea-field [formField]="form.notes" id="notes" [rows]="3" />
+    </ui-form-field>
+
+    <div class="mt-6 flex gap-2">
+      <ui-button type="submit" icon="check" label="Save" [loading]="form().submitting()" />
+      <ui-button
+        appearance="outlined"
+        type="button"
+        icon="arrow-left"
+        label="Cancel"
+        [routerLink]="cancelLink()"
+      />
+    </div>
+  </form>
+</div>

@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AspNetCoreHostingModel>OutOfProcess</AspNetCoreHostingModel>
+    <PublishSingleFile>true</PublishSingleFile>
+    <LangVersion>default</LangVersion>
+    <UserSecretsId>379131b1-9a3e-4cef-927e-77ad84a73d06</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Duende.IdentityServer.AspNetIdentity" Version="7.4.5"/>
+    <PackageReference Include="Duende.IdentityServer.EntityFramework" Version="7.4.5"/>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.2"/>
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.1.0"/>
+    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0"/>
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.2"/>
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.2"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Trackwise.HostDefaults\Trackwise.HostDefaults.csproj"/>
+    <ProjectReference Include="..\..\Core\Trackwise.Application\Trackwise.Application.csproj"/>
+    <ProjectReference Include="..\..\Core\Trackwise.Application.Abstractions\Trackwise.Application.Abstractions.csproj"/>
+    <ProjectReference Include="..\..\Infrastructure\Trackwise.Infrastructure.Communications\Trackwise.Infrastructure.Communications.csproj"/>
+    <ProjectReference Include="..\..\Infrastructure\Trackwise.Infrastructure.Persistence\Trackwise.Infrastructure.Persistence.csproj"/>
+    <ProjectReference Include="..\..\Infrastructure\Trackwise.Infrastructure.Storage\Trackwise.Infrastructure.Storage.csproj"/>
+  </ItemGroup>
+
+</Project>

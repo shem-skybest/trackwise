@@ -1,0 +1,29 @@
+import { DatePipe } from "@angular/common";
+import { Component, input } from "@angular/core";
+import { RouterLink } from "@angular/router";
+import type { LoadDto } from "@trackwise/shared/api";
+import { AddressPipe, CurrencyFormatPipe } from "@trackwise/shared/pipes";
+import { Icon, UiButton, UiDataTable, UiTooltip } from "@trackwise/shared/ui";
+import { LoadStatusTag, LoadTypeTag } from "@/shared/components";
+
+@Component({
+  selector: "app-customer-loads-list",
+  templateUrl: "./customer-loads-list.html",
+  imports: [
+    AddressPipe,
+    CurrencyFormatPipe,
+    DatePipe,
+    Icon,
+    LoadStatusTag,
+    LoadTypeTag,
+    RouterLink,
+    UiButton,
+    UiDataTable,
+    UiTooltip,
+  ],
+})
+export class CustomerLoadsList {
+  public readonly loads = input<LoadDto[]>([]);
+  public readonly customerId = input<string>();
+  public readonly isLoading = input(false);
+}

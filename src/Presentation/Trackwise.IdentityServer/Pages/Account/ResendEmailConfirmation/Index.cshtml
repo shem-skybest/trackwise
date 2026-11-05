@@ -1,0 +1,29 @@
+﻿@page
+@model Trackwise.IdentityServer.Pages.Account.ResendEmailConfirmation.ResendEmailConfirmationModel
+@{
+    ViewData["Title"] = "Resend email confirmation";
+}
+
+<form method="post">
+    <div hlm-field-group>
+        <div class="flex flex-col items-center gap-1 text-center">
+            <h1 class="mb-0 text-2xl font-bold">Resend confirmation</h1>
+            <p class="text-muted-foreground text-sm text-balance">Enter your email and we'll send the confirmation link again</p>
+        </div>
+
+        <partial name="_ValidationSummary" />
+
+        <div hlm-field>
+            <label hlm-field-label asp-for="Input.Email">Email</label>
+            <input hlm-input asp-for="Input.Email" placeholder="m@example.com" autocomplete="email" autofocus />
+            <span hlm-field-error asp-validation-for="Input.Email"></span>
+        </div>
+
+        <div hlm-field>
+            <button hlm-btn type="submit">Resend</button>
+            <p hlm-field-description class="text-center">
+                <a asp-page="/Account/Login/Index">Back to login</a>
+            </p>
+        </div>
+    </div>
+</form>

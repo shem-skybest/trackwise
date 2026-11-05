@@ -1,0 +1,803 @@
+<div class="animate-in fade-in mx-auto max-w-7xl space-y-6 pb-12">
+  <!-- Top Navigation & Action Bar -->
+  <div
+    class="bg-background sticky top-0 z-10 flex flex-col gap-3 border-b pt-1 pb-4 md:flex-row md:items-center md:justify-between"
+  >
+    <ui-page-header
+      class="mb-0 min-w-0"
+      [title]="pageTitle()"
+      [subtitle]="subtitle()"
+      backLink="/bookings-executions"
+    />
+
+    @if (booking()) {
+      <div
+        class="flex flex-wrap items-center gap-2 md:justify-end"
+        role="toolbar"
+        aria-label="Booking actions"
+      >
+        <!-- Secondary actions -->
+        <ui-button
+          icon="eye"
+          appearance="outlined"
+          label="Preview PDF"
+          [disabled]="isBusy()"
+          (click)="openBookingPdfViewer.set(true)"
+        />
+
+        @if (canRegenerateBillingAdvice()) {
+          <ui-button
+            icon="refresh-cw"
+            appearance="outlined"
+            label="Regenerate Billing Advice"
+            [disabled]="isBusy()"
+            (click)="regenerateBillingAdvice()"
+          />
+        }
+
+        @if (canCancel()) {
+          <ui-button
+            icon="x"
+            intent="danger"
+            appearance="outlined"
+            label="Cancel Booking"
+            [disabled]="isBusy()"
+            (click)="openCancelDialog()"
+          />
+        }
+
+        <!-- Divider between secondary and primary, only when there is a primary action -->
+        @if (isDraft() || isInProgress()) {
+          <span class="mx-1 hidden h-6 border-l md:block" aria-hidden="true"></span>
+        }
+
+        <!-- Primary action: at most one per status, always last -->
+        @if (isDraft()) {
+          <!-- A disabled button swallows hover, so the explanation sits on a wrapper -->
+          <span [attr.title]="confirmHint()">
+            <ui-button
+              icon="check"
+              intent="success"
+              label="Confirm Booking"
+              [disabled]="isBusy() || !canConfirm()"
+              (click)="confirmDialogVisible.set(true)"
+            />
+          </span>
+        }
+
+        @if (isInProgress()) {
+          <ui-button
+            icon="check"
+            intent="success"
+            label="Complete Booking"
+            [disabled]="isBusy()"
+            (click)="complete()"
+          />
+        }
+      </div>
+    }
+  </div>
+
+  @if (isLoading()) {
+    <div class="flex min-h-[300px] items-center justify-center">
+      <ui-stack direction="row" align="center" gap="3">
+        <ui-spinner />
+        <ui-typography variant="body" color="muted">Loading booking details...</ui-typography>
+      </ui-stack>
+    </div>
+  } @else if (booking(); as b) {
+    <!-- Cancellation Banner -->
+    @if (isCancelled() && b.cancellationReason) {
+      <ui-alert intent="danger">
+        <div class="flex flex-col gap-0.5">
+          <span class="font-semibold">This booking has been cancelled</span>
+          <span class="text-sm opacity-90">{{ b.cancellationReason }}</span>
+        </div>
+      </ui-alert>
+    }
+
+    <!-- Actionable Blockers Callout -->
+    @if (isDraft() && blockers().length > 0) {
+      <div
+        class="rounded-xl border border-amber-300 bg-amber-50/60 p-4 dark:border-amber-900/50 dark:bg-amber-950/20"
+      >
+        <div class="flex items-start gap-3">
+          <span class="mt-0.5 font-bold text-amber-600 dark:text-amber-400">⚠️</span>
+          <div class="flex-1">
+            <h4 class="text-sm font-semibold text-amber-900 dark:text-amber-200">
+              Required Before Confirmation ({{ blockers().length }})
+            </h4>
+            <ul
+              class="mt-2 grid grid-cols-1 gap-2 text-sm text-amber-800 sm:grid-cols-2 dark:text-amber-300"
+            >
+              @for (blocker of blockers(); track blocker) {
+                <li class="flex items-center gap-2">
+                  <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                  <span>{{ blocker }}</span>
+                </li>
+              }
+            </ul>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Main Content Layout (2-Column Grid) -->
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <!-- Left Column (Primary Details: Route, Cargo, Financials, Docs) -->
+      <div class="space-y-6 lg:col-span-2">
+        <!-- Route & Stops -->
+        <ui-surface variant="elevated" [border]="true">
+          <div class="flex items-center justify-between border-b pb-3">
+            <div>
+              <h3 class="text-base font-semibold">Route & Stops</h3>
+              <p class="text-muted-foreground text-xs">
+                Sequential journey schedule and transit points
+              </p>
+            </div>
+            @if (b.totalDistanceKm) {
+              <span
+                class="bg-secondary inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium"
+              >
+                {{ b.totalDistanceKm | number: "1.0-0" }} km total
+              </span>
+            }
+          </div>
+
+          @if (b.stops?.length) {
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm">
+                <thead>
+                  <tr
+                    class="text-muted-foreground border-b text-xs font-medium tracking-wider uppercase"
+                  >
+                    <th class="py-2.5 pr-3">Seq</th>
+                    <th class="py-2.5 pr-3">Type</th>
+                    <th class="py-2.5 pr-3">Location</th>
+                    <th class="py-2.5 pr-3">Window</th>
+                    <th class="py-2.5">Instructions</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-border/60 divide-y">
+                  @for (s of b.stops; track s.sequence) {
+                    <tr class="hover:bg-muted/30 transition-colors">
+                      <td class="py-3 pr-3 font-semibold">{{ s.sequence }}</td>
+                      <td class="py-3 pr-3">
+                        <span
+                          class="bg-muted inline-flex items-center rounded px-2 py-0.5 text-xs font-medium"
+                        >
+                          {{ label(s.type) }}
+                        </span>
+                      </td>
+                      <td class="py-3 pr-3 font-medium">
+                        {{ s.locationName || "Unknown location" }}
+                      </td>
+                      <td class="text-muted-foreground py-3 pr-3 text-xs whitespace-nowrap">
+                        <div>{{ s.windowStart ? (s.windowStart | date: "short") : "—" }}</div>
+                        <div>{{ s.windowEnd ? (s.windowEnd | date: "short") : "—" }}</div>
+                      </td>
+                      <td class="text-muted-foreground py-3 text-xs">
+                        {{ s.instructions || "—" }}
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <p class="text-muted-foreground py-6 text-center text-sm">
+              No stops assigned to this route.
+            </p>
+          }
+        </ui-surface>
+
+        <!-- Cargo & Temperature Specifications -->
+        @if (b.cargo || b.temperature) {
+          <ui-surface variant="elevated" [border]="true">
+            <h3 class="border-b pb-3 text-base font-semibold">Cargo & Equipment Conditions</h3>
+
+            @if (b.cargo; as c) {
+              <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                <div class="bg-muted/40 rounded-lg p-3">
+                  <span class="text-muted-foreground block text-xs">Commodity</span>
+                  <span class="text-sm font-medium">{{ c.commodity || "—" }}</span>
+                </div>
+                <div class="bg-muted/40 rounded-lg p-3">
+                  <span class="text-muted-foreground block text-xs">Total Weight</span>
+                  <span class="text-sm font-medium">
+                    {{ c.totalWeightKg | number: "1.0-2" }} kg
+                  </span>
+                </div>
+                <div class="bg-muted/40 rounded-lg p-3">
+                  <span class="text-muted-foreground block text-xs">Pallet Count</span>
+                  <span class="text-sm font-medium">{{ c.palletCount || "0" }}</span>
+                </div>
+                <div class="bg-muted/40 rounded-lg p-3">
+                  <span class="text-muted-foreground block text-xs">Declared Value</span>
+                  <span class="text-sm font-medium">
+                    {{ c.declaredValueAmount | number: "1.2-2" }} {{ c.declaredValueCurrency }}
+                  </span>
+                </div>
+              </div>
+            }
+
+            @if (b.temperature; as t) {
+              <div class="bg-muted/20 mt-4 rounded-lg border border-dashed p-4">
+                <h4
+                  class="text-muted-foreground mb-3 text-xs font-semibold tracking-wider uppercase"
+                >
+                  Temperature Control Requirements
+                </h4>
+                <div class="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
+                  <div>
+                    <span class="text-muted-foreground block text-xs">Zone</span>
+                    <span class="font-medium">{{ label(t.zone) }}</span>
+                  </div>
+                  <div>
+                    <span class="text-muted-foreground block text-xs">Setpoint</span>
+                    <span class="text-primary font-mono font-medium">
+                      {{ t.setpointCelsius }}°C (±{{ t.allowableVarianceCelsius }}°C)
+                    </span>
+                  </div>
+                  <div>
+                    <span class="text-muted-foreground block text-xs">Compliance</span>
+                    <span class="font-medium">{{ label(t.compliance) }}</span>
+                  </div>
+                  <div>
+                    <span class="text-muted-foreground block text-xs">Telematics</span>
+                    <span class="font-medium">
+                      {{ t.requiresContinuousTelematics ? "Continuous Monitoring" : "Standard" }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            }
+          </ui-surface>
+        }
+
+        <!-- Financial Breakdown & Charges -->
+        <ui-surface variant="elevated" [border]="true">
+          <div class="flex items-center justify-between border-b pb-3">
+            <div>
+              <h3 class="text-base font-semibold">Financial & Charges</h3>
+              <p class="text-muted-foreground text-xs">Currency: {{ b.currency }}</p>
+            </div>
+            @if (canViewCosts()) {
+              <div class="text-right">
+                <span class="text-muted-foreground block text-xs">Gross Margin</span>
+                <span class="font-semibold text-emerald-600 dark:text-emerald-400">
+                  {{ b.margin | number: "1.2-2" }} ({{ b.marginPercent | number: "1.0-2" }}%)
+                </span>
+              </div>
+            }
+          </div>
+
+          @if (b.charges?.length) {
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm">
+                <thead>
+                  <tr
+                    class="text-muted-foreground border-b text-xs font-medium tracking-wider uppercase"
+                  >
+                    <th class="py-2.5 pr-3">Item</th>
+                    <th class="py-2.5 pr-3">Category</th>
+                    <th class="py-2.5 pr-3 text-right">Qty</th>
+                    <th class="py-2.5 pr-3 text-right">Selling</th>
+                    @if (canViewCosts()) {
+                      <th class="py-2.5 pr-3 text-right">Buying</th>
+                    }
+                    <th class="py-2.5 text-right">Billing</th>
+                    <th class="py-2"></th>
+                  </tr>
+                </thead>
+                <tbody class="divide-border/60 divide-y">
+                  @for (c of b.charges; track c.id) {
+                    <tr class="hover:bg-muted/30 transition-colors">
+                      <td class="py-3 pr-3">
+                        <div class="font-medium">{{ c.description }}</div>
+                        @if (c.reason) {
+                          <div class="text-muted-foreground text-xs">{{ c.reason }}</div>
+                        }
+                      </td>
+                      <td class="text-muted-foreground py-3 pr-3">{{ label(c.category) }}</td>
+                      <td class="py-3 pr-3 text-right font-mono">
+                        {{ c.quantity | number: "1.0-2" }}
+                      </td>
+                      <td class="py-3 pr-3 text-right font-semibold">
+                        {{ c.sellingAmount | number: "1.2-2" }}
+                      </td>
+                      @if (canViewCosts()) {
+                        <td class="text-muted-foreground py-3 pr-3 text-right font-mono">
+                          {{ c.buyingAmount | number: "1.2-2" }}
+                        </td>
+                      }
+                      <td class="py-3 text-right">
+                        <span class="bg-muted inline-flex rounded px-2 py-0.5 text-xs font-medium">
+                          {{ label(c.billingStatus) }}
+                        </span>
+                      </td>
+                      <td class="py-2 text-right">
+                        @if (canRemoveCharge(c)) {
+                          <ui-button
+                            icon="trash"
+                            intent="danger"
+                            appearance="text"
+                            label="Remove"
+                            [disabled]="isBusy()"
+                            (click)="chargeToRemove.set(c)"
+                          />
+                        }
+                      </td>
+                    </tr>
+                  }
+                  <tr>
+                    <td class="py-3">
+                      @if (canAddCharge()) {
+                        <ui-button
+                          icon="plus"
+                          appearance="outlined"
+                          label="Add Charge"
+                          [disabled]="isBusy()"
+                          (click)="addChargeDialogVisible.set(true)"
+                        />
+                      }
+                    </td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr class="border-t-2 font-semibold">
+                    <td colspan="3" class="text-muted-foreground pt-3 text-xs uppercase">
+                      Total Amount
+                    </td>
+                    <td class="pt-3 text-right font-mono text-base">
+                      {{ b.totalSelling | number: "1.2-2" }}
+                    </td>
+                    @if (canViewCosts()) {
+                      <td class="text-muted-foreground pt-3 text-right font-mono">
+                        {{ b.totalBuying | number: "1.2-2" }}
+                      </td>
+                    }
+                    <td></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          } @else {
+            <p class="text-muted-foreground py-6 text-center text-sm">No charges billed.</p>
+          }
+
+          @if (b.billingInvoices?.length) {
+            <div class="mt-4 border-t pt-4">
+              <h4 class="mb-2 text-sm font-semibold">Billing Advice History</h4>
+              <ul class="space-y-2">
+                @for (invoice of b.billingInvoices; track invoice.id) {
+                  <li>
+                    <a
+                      class="text-primary inline-flex items-center gap-2 text-sm underline-offset-4 hover:underline"
+                      [routerLink]="['/billing-invoicing', invoice.id]"
+                    >
+                      Invoice #{{ invoice.number }}
+                      <span class="text-muted-foreground">
+                        {{ label(invoice.purpose) }} · {{ label(invoice.status) }}
+                      </span>
+                    </a>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+        </ui-surface>
+
+        <!-- Compliance & Documents -->
+        <ui-surface variant="elevated" [border]="true">
+          <h3 class="border-b pb-3 text-base font-semibold">Compliance & Documentation</h3>
+          @if (b.documents?.length) {
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm">
+                <thead>
+                  <tr
+                    class="text-muted-foreground border-b text-xs font-medium tracking-wider uppercase"
+                  >
+                    <th class="py-2.5 pr-3">Document</th>
+                    <th class="py-2.5 pr-3">Status</th>
+                    <th class="py-2.5 pr-3">Reference</th>
+                    <th class="py-2.5 pr-3">Expires</th>
+                    <th class="py-2.5">Audit Trail</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-border/60 divide-y">
+                  @for (d of b.documents; track d.id) {
+                    <tr class="hover:bg-muted/30 transition-colors">
+                      <td class="py-3 pr-3 font-medium">{{ documentType(d.type) }}</td>
+                      <td class="py-3 pr-3">
+                        <span
+                          class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                          [class.bg-emerald-100]="d.isSatisfied"
+                          [class.text-emerald-800]="d.isSatisfied"
+                          [class.bg-amber-100]="!d.isSatisfied"
+                          [class.text-amber-800]="!d.isSatisfied"
+                        >
+                          {{ documentStatus(d.status) }}
+                          @if (d.isSatisfied) {
+                            <span class="ml-1">✓</span>
+                          }
+                        </span>
+                      </td>
+                      <td class="py-3 pr-3 font-mono text-xs">{{ d.reference || "—" }}</td>
+                      <td class="text-muted-foreground py-3 pr-3 text-xs">
+                        {{ d.expiresAt ? (d.expiresAt | date: "mediumDate") : "—" }}
+                      </td>
+                      <td class="text-muted-foreground py-3 text-xs">
+                        @if (d.reviewedBy) {
+                          <div>{{ d.reviewedBy }}</div>
+                          <div>{{ d.reviewedAt | date: "shortDate" }}</div>
+                        } @else {
+                          <span>—</span>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <p class="text-muted-foreground py-6 text-center text-sm">No documents attached.</p>
+          }
+        </ui-surface>
+      </div>
+
+      <!-- Right Column (Sidebar: Key Info, Credit, Trips) -->
+      <div class="space-y-6">
+        <!-- Summary Card -->
+        <ui-surface variant="elevated" [border]="true">
+          <div class="flex items-center justify-between border-b pb-3">
+            <span class="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+              Status
+            </span>
+            <span
+              class="bg-primary/10 text-primary inline-flex rounded-full px-2.5 py-0.5 text-xs font-bold"
+            >
+              {{ statusLabel(b.status) }}
+            </span>
+          </div>
+
+          <div class="space-y-3 text-sm">
+            <div>
+              <span class="text-muted-foreground block text-xs">Customer</span>
+              <span class="text-foreground font-medium">{{ b.customerName }}</span>
+            </div>
+            <div>
+              <span class="text-muted-foreground block text-xs">Quotation</span>
+              <a
+                class="text-primary font-mono font-medium hover:underline"
+                [routerLink]="['/quotations', b.quotationId]"
+              >
+                {{ b.quotationReference || "—" }}
+              </a>
+            </div>
+            <div>
+              <span class="text-muted-foreground block text-xs">Customer Reference</span>
+              <span class="font-mono">{{ b.customerReference || "—" }}</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <span class="text-muted-foreground block text-xs">Mode</span>
+                <span class="font-medium">{{ label(b.mode) }}</span>
+              </div>
+              <div>
+                <span class="text-muted-foreground block text-xs">Freight Mode</span>
+                <span class="font-medium">{{ label(b.freightMode) }}</span>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <span class="text-muted-foreground block text-xs">Incoterm</span>
+                <span class="font-medium">{{ b.incoterm || "—" }}</span>
+              </div>
+              <div>
+                <span class="text-muted-foreground block text-xs">Shipment Type</span>
+                <span class="font-medium">{{ b.shipmentType || "—" }}</span>
+              </div>
+            </div>
+          </div>
+        </ui-surface>
+
+        <!-- Schedule Dates Card -->
+        <ui-surface variant="elevated" [border]="true">
+          <h4 class="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+            Timeline Windows
+          </h4>
+          <div class="space-y-3 text-sm">
+            <div>
+              <span class="text-muted-foreground block text-xs">Requested Pickup</span>
+              <span class="font-medium">
+                {{ b.requestedPickupStart ? (b.requestedPickupStart | date: "medium") : "—" }}
+              </span>
+            </div>
+            <div>
+              <span class="text-muted-foreground block text-xs">Requested Delivery</span>
+              <span class="font-medium">
+                {{ b.requestedDeliveryEnd ? (b.requestedDeliveryEnd | date: "medium") : "—" }}
+              </span>
+            </div>
+            <div class="border-t pt-2">
+              <span class="text-muted-foreground block text-xs">Booking Created</span>
+              <span class="text-muted-foreground text-xs">
+                {{ b.createdAt | date: "medium" }}
+              </span>
+            </div>
+          </div>
+        </ui-surface>
+
+        <!-- Credit & Payment Terms Card -->
+        <ui-surface variant="elevated" [border]="true">
+          <h4 class="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+            Payment & Risk
+          </h4>
+          <div class="space-y-3 text-sm">
+            <div>
+              <span class="text-muted-foreground block text-xs">Payment Terms</span>
+              <span class="font-medium">
+                {{ b.paymentTermsDays }} days
+                @if (b.depositRequiredPercent) {
+                  <span class="text-muted-foreground">
+                    ({{ b.depositRequiredPercent }}% deposit)
+                  </span>
+                }
+              </span>
+            </div>
+            <div>
+              <span class="text-muted-foreground block text-xs">Credit Status</span>
+              <div class="font-medium">{{ creditLabel(b.creditCheckStatus) }}</div>
+              @if (b.creditCheckedBy) {
+                <div class="text-muted-foreground text-xs">
+                  By {{ b.creditCheckedBy }} on {{ b.creditCheckedAt | date: "mediumDate" }}
+                </div>
+              }
+            </div>
+            @if (b.creditCheckNotes) {
+              <div class="bg-muted/50 text-muted-foreground rounded p-2 text-xs">
+                {{ b.creditCheckNotes }}
+              </div>
+            }
+          </div>
+        </ui-surface>
+
+        <!-- Handling & Notes -->
+        @if (handlingFlags().length > 0 || b.notes) {
+          <ui-surface variant="elevated" [border]="true">
+            @if (handlingFlags().length > 0) {
+              <div>
+                <span class="text-muted-foreground mb-1 block text-xs">Handling Requirements</span>
+                <div class="flex flex-wrap gap-1">
+                  @for (flag of handlingFlags(); track flag) {
+                    <span
+                      class="bg-secondary inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium"
+                    >
+                      {{ flag }}
+                    </span>
+                  }
+                </div>
+              </div>
+            }
+            @if (b.notes) {
+              <div class="border-t pt-3">
+                <span class="text-muted-foreground mb-1 block text-xs">Special Notes</span>
+                <p class="text-muted-foreground text-xs leading-relaxed">{{ b.notes }}</p>
+              </div>
+            }
+          </ui-surface>
+        }
+
+        <!-- Associated Trips -->
+        @if (b.trips?.length) {
+          <ui-surface variant="elevated" [border]="true">
+            <h4 class="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+              Connected Trips
+            </h4>
+            <div class="divide-border/60 divide-y">
+              @for (t of b.trips; track t.tripId) {
+                <div class="flex items-center justify-between py-2 text-sm">
+                  <a
+                    class="text-primary font-medium hover:underline"
+                    [routerLink]="['/trips', t.tripId]"
+                  >
+                    {{ t.name || "Trip " + t.number }}
+                  </a>
+                  <span class="bg-muted inline-flex rounded px-2 py-0.5 text-xs">
+                    {{ label(t.status) }}
+                  </span>
+                </div>
+              }
+            </div>
+          </ui-surface>
+        }
+      </div>
+    </div>
+  }
+</div>
+
+<!-- Confirm Dialog -->
+<ui-dialog header="Confirm Booking" [(open)]="confirmDialogVisible" [modal]="true" width="450px">
+  <div class="space-y-3 py-2">
+    <p class="text-muted-foreground text-sm">
+      Confirming locks the booking details. Draft invoices and trip dispatches will be generated
+      automatically.
+    </p>
+    <div class="bg-muted/50 text-muted-foreground rounded-lg p-3 text-xs">
+      Please verify that route stops, applied charges, and required compliance documents are correct
+      before proceeding.
+    </div>
+  </div>
+  <ng-template #footer>
+    <ui-button appearance="text" label="Go Back" (click)="confirmDialogVisible.set(false)" />
+    <ui-button
+      intent="success"
+      label="Confirm & Lock"
+      icon="check"
+      [disabled]="isBusy()"
+      (click)="confirmBookingAction()"
+    />
+  </ng-template>
+</ui-dialog>
+
+<!-- Cancel Dialog -->
+<ui-dialog header="Cancel Booking" [(open)]="cancelDialogVisible" [modal]="true" width="450px">
+  <div class="space-y-3 py-2">
+    <p class="text-muted-foreground text-sm">
+      Please provide a reason for cancellation.
+      @if (isConfirmed()) {
+        <span class="text-destructive mt-1 block font-medium">
+          Connected billing records and active trips will be notified immediately.
+        </span>
+      }
+    </p>
+    <ui-textarea-field
+      [(value)]="cancellationReason"
+      [rows]="3"
+      class="w-full"
+      placeholder="E.g., Customer requested route alteration, credit declined..."
+    />
+  </div>
+  <ng-template #footer>
+    <ui-button appearance="text" label="Keep Booking" (click)="cancelDialogVisible.set(false)" />
+    <ui-button
+      intent="danger"
+      label="Confirm Cancellation"
+      icon="x"
+      [disabled]="!cancellationReason().trim() || isBusy()"
+      (click)="confirmCancel()"
+    />
+  </ng-template>
+</ui-dialog>
+
+<!-- Open Workfile Dialog -->
+<ui-dialog header="Open Workfile" [(open)]="promoteDialogVisible" [modal]="true" width="32rem">
+  <div class="space-y-4 py-2">
+    <ui-form-field label="Shipment Type" for="wfType" [required]="true">
+      <ui-select-field
+        id="wfType"
+        [(value)]="promoteType"
+        [options]="workfileTypes"
+        optionLabel="label"
+        optionValue="value"
+      />
+    </ui-form-field>
+
+    @if (promoteType() === "regular") {
+      <ui-form-field
+        label="Direction"
+        for="wfDirection"
+        [required]="true"
+        hint="Sets the reference series (BKN-IMP, BKN-EXP, ...)."
+      >
+        <ui-select-field
+          id="wfDirection"
+          [(value)]="promoteDirection"
+          [options]="freightModes"
+          optionLabel="label"
+          optionValue="value"
+        />
+      </ui-form-field>
+    }
+
+    @if (promoteType() === "trucking") {
+      <ui-form-field label="Variant" for="wfVariant" [required]="true">
+        <ui-select-field
+          id="wfVariant"
+          [(value)]="promoteVariant"
+          [options]="truckingVariants"
+          optionLabel="label"
+          optionValue="value"
+        />
+      </ui-form-field>
+    }
+
+    @if (promoteNeedsBillIndicator()) {
+      <ui-form-field label="Bill Indicator" for="wfBill" [required]="true">
+        <ui-select-field
+          id="wfBill"
+          [(value)]="promoteBillIndicator"
+          [options]="billIndicators"
+          optionLabel="label"
+          optionValue="value"
+        />
+      </ui-form-field>
+    }
+
+    <ui-form-field label="Report Category" for="wfReport" [required]="true">
+      <ui-select-field
+        id="wfReport"
+        [(value)]="promoteReportCategory"
+        [options]="reportCategories"
+        optionLabel="label"
+        optionValue="value"
+      />
+    </ui-form-field>
+  </div>
+
+  <ng-template #footer>
+    <ui-button
+      appearance="text"
+      label="Cancel"
+      [disabled]="isBusy()"
+      (click)="promoteDialogVisible.set(false)"
+    />
+    <!-- <ui-button
+      intent="primary"
+      icon="folder"
+      label="Open Workfile"
+      [disabled]="isBusy()"
+      (click)="confirmPromote()"
+    /> -->
+  </ng-template>
+</ui-dialog>
+
+<ui-dialog
+  header="Booking PDF Preview"
+  [(open)]="openBookingPdfViewer"
+  [modal]="true"
+  [fullScreen]="true"
+  [draggable]="false"
+  [resizable]="false"
+>
+  @if (openBookingPdfViewer()) {
+    <app-pdf-viewer
+      [documentId]="booking()?.id!"
+      [loader]="loadBookingPdf"
+      [fileName]="booking()?.bookingNumber + '.pdf'"
+    />
+  }
+</ui-dialog>
+
+@if (booking(); as b) {
+  <app-add-booking-charge-dialog
+    [bookingId]="b.id!"
+    [currency]="b.currency ?? ''"
+    [showCosts]="canViewCosts()"
+    [(open)]="addChargeDialogVisible"
+    (added)="load()"
+  />
+}
+
+<ui-dialog
+  header="Remove Charge"
+  [open]="!!chargeToRemove()"
+  (openChange)="!$event && chargeToRemove.set(null)"
+  [modal]="true"
+  width="28rem"
+>
+  <p class="text-subtle-foreground">
+    Remove "{{ chargeToRemove()?.description }}" from this booking? This cannot be undone.
+  </p>
+  <ng-template #footer>
+    <ui-button appearance="text" label="Keep" (click)="chargeToRemove.set(null)" />
+    <ui-button
+      intent="danger"
+      icon="trash"
+      label="Remove"
+      [disabled]="isBusy()"
+      (click)="confirmRemoveCharge()"
+    />
+  </ng-template>
+</ui-dialog>

@@ -1,0 +1,46 @@
+<ui-stack>
+  <form [formRoot]="form">
+    <ui-form-field label="Trip Name" for="tripName" [required]="true">
+      <ui-text-field
+        id="tripName"
+        [formField]="form.tripName"
+        type="text"
+        placeholder="Trip name"
+      />
+    </ui-form-field>
+
+    <ui-form-field label="Assigned Truck" for="truck">
+      <app-search-truck [formField]="form.truck" />
+    </ui-form-field>
+
+    <ui-form-field
+      label="Driver"
+      for="driver"
+      hint="Filled from today's crew plan when the truck is planned. Leave empty to use the truck's main driver. Only crew available today are offered."
+    >
+      <app-search-employee
+        [formField]="form.driver"
+        [roles]="drivingRoles"
+        [availableOn]="today"
+        placeholder="Type driver name"
+      />
+    </ui-form-field>
+
+    <ui-form-field label="Helper" for="helper" hint="The helper riding this trip, if any.">
+      <app-search-helper [formField]="form.helper" [availableOn]="today" />
+    </ui-form-field>
+
+    <ui-form-field
+      label="Second helper"
+      for="secondHelper"
+      hint="Only for trucks running with two."
+    >
+      <app-search-helper [formField]="form.secondHelper" [availableOn]="today" />
+    </ui-form-field>
+
+    <ui-stack direction="row" justify="between" class="pt-6">
+      <ui-button type="button" icon="arrow-left" label="Back to list" [routerLink]="['/trips']" />
+      <ui-button type="submit" iconEnd="arrow-right" label="Next" />
+    </ui-stack>
+  </form>
+</ui-stack>

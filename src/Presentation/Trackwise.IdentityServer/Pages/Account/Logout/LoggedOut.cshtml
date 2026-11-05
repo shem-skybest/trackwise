@@ -1,0 +1,38 @@
+@page
+@model Trackwise.IdentityServer.Pages.Account.Logout.LoggedOut
+@{
+    ViewData["Title"] = "Logged out";
+}
+
+<div class="flex flex-col gap-6 text-center">
+    <div class="flex flex-col items-center gap-1">
+        <h1 class="mb-0 text-2xl font-bold">You're logged out</h1>
+        @if (Model.View.PostLogoutRedirectUri != null)
+        {
+            <p class="text-muted-foreground text-sm text-balance">Taking you back to @Model.View.ClientName.</p>
+        }
+    </div>
+
+    @if (Model.View.PostLogoutRedirectUri != null)
+    {
+        @* signout-redirect.js follows this link by its class. *@
+        <a hlm-btn class="PostLogoutRedirectUri" href="@Model.View.PostLogoutRedirectUri">Return to @Model.View.ClientName</a>
+    }
+    else
+    {
+        <a hlm-btn variant="outline" asp-page="/Account/Login/Index">Log in again</a>
+    }
+
+    @if (Model.View.SignOutIframeUrl != null)
+    {
+        <iframe class="signout hidden" src="@Model.View.SignOutIframeUrl"></iframe>
+    }
+</div>
+
+@section scripts
+{
+    @if (Model.View.AutomaticRedirectAfterSignOut)
+    {
+        <script src="~/js/signout-redirect.js"></script>
+    }
+}

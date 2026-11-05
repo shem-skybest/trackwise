@@ -1,0 +1,34 @@
+import { Component } from "@angular/core";
+import { Avatar, Icon } from "@trackwise/shared/ui";
+import { SectionContainer, SectionHeader } from "@/shared/components";
+import { ScrollAnimateDirective } from "@/shared/directives";
+
+interface TeamMember {
+  name: string;
+  role: string;
+  bio: string;
+  initials: string;
+  linkedIn?: string;
+}
+
+@Component({
+  selector: "web-team",
+  templateUrl: "./team.html",
+  imports: [Avatar, Icon, ScrollAnimateDirective, SectionContainer, SectionHeader],
+})
+export class Team {
+  protected readonly members: TeamMember[] = [
+    {
+      name: "Founder",
+      role: "CEO & Founder",
+      bio: "Software engineer and founder. Spends his time building tools for the logistics industry.",
+      initials: "SL",
+    },
+    {
+      name: "Co-Founder",
+      role: "Co-Founder",
+      bio: "Details coming soon.",
+      initials: "CF",
+    },
+  ];
+}

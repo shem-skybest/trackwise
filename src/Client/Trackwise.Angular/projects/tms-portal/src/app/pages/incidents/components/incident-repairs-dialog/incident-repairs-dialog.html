@@ -1,0 +1,59 @@
+<ui-dialog
+  header="Repairs this caused"
+  [(open)]="open"
+  [modal]="true"
+  width="40rem"
+  (opened)="onOpened()"
+>
+  @if (!incident().truckId) {
+    <ui-typography variant="body" color="muted">
+      Put the truck on the incident first - repairs are picked from its maintenance records.
+    </ui-typography>
+  } @else if (isLoading()) {
+    <ui-spinner />
+  } @else {
+    <ui-typography variant="caption" color="muted" class="mb-3 block">
+      {{ incident().truckNumber }}'s repairs from a few days before the incident to two months
+      after.
+    </ui-typography>
+    <ui-stack gap="2">
+      @for (record of records(); track record.id) {
+        <ui-stack
+          direction="row"
+          gap="3"
+          align="center"
+          class="border-default border-b pb-2 text-sm"
+        >
+          <ui-checkbox-field
+            [inputId]="'repair-' + record.id"
+            [value]="isSelected(record.id)"
+            (valueChange)="toggle(record.id, $event)"
+          />
+          <label [for]="'repair-' + record.id" class="min-w-0 flex-1 cursor-pointer">
+            <span class="font-medium">{{ record.serviceDate | date: "d MMM yyyy" }}</span>
+            @if (record.requisitionNumber) {
+              <span class="text-muted-foreground">· {{ record.requisitionNumber }}</span>
+            }
+            <div class="truncate">{{ record.description ?? record.vendorName ?? "Repair" }}</div>
+          </label>
+          <span class="whitespace-nowrap">{{ record.totalCost | currencyFormat }}</span>
+        </ui-stack>
+      } @empty {
+        <ui-typography variant="body" color="muted">
+          No repairs on record for those dates.
+        </ui-typography>
+      }
+    </ui-stack>
+  }
+
+  <div class="mt-4 flex justify-end gap-2">
+    <ui-button appearance="text" label="Cancel" (click)="open.set(false)" />
+    <ui-button
+      icon="save"
+      label="Save"
+      [loading]="isSaving()"
+      [disabled]="!incident().truckId"
+      (click)="save()"
+    />
+  </div>
+</ui-dialog>

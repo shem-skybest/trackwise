@@ -1,0 +1,68 @@
+<ui-card>
+  <ui-stack gap="3" class="p-4">
+    <ui-stack gap="1">
+      <ui-typography variant="overline" color="secondary">Door-to-door timeline</ui-typography>
+      <ui-typography variant="caption" color="muted">
+        Vessel dates are the ETD/ETA on this workfile; truck steps come from each leg's trip.
+      </ui-typography>
+    </ui-stack>
+
+    @if (entries().length) {
+      <ui-timeline [value]="entries()">
+        <ng-template uiTimelineContent let-entry>
+          <div class="flex flex-col gap-1 pb-4" [class.opacity-60]="entry.isUpcoming">
+            <div class="flex flex-wrap items-baseline gap-x-2">
+              <span class="text-sm font-medium">
+                {{ kind(entry).label }}
+                @if (entry.place) {
+                  {{ entry.place }}
+                }
+              </span>
+              <span class="text-muted-foreground text-xs">
+                {{ entry.at | dateFormat: (entry.isEstimate ? "MMM d, y" : "MMM d, y h:mm a") }}
+                @if (entry.isUpcoming) {
+                  · expected
+                } @else if (entry.isEstimate && isVessel(entry)) {
+                  · as typed
+                }
+              </span>
+            </div>
+            @if (isVessel(entry)) {
+              @if (vesselName()) {
+                <span class="text-muted-foreground text-xs">{{ vesselName() }}</span>
+              }
+            } @else {
+              <span class="text-muted-foreground text-xs">
+                <a
+                  [routerLink]="['/forwarding/workfiles', entry.legId]"
+                  class="text-primary font-mono hover:underline"
+                >
+                  {{ entry.legReferenceNumber }}
+                </a>
+                @if (entry.tripNumber) {
+                  · trip #{{ entry.tripNumber }}
+                }
+                @if (entry.containers?.length) {
+                  ·
+                  <span class="font-mono">{{ entry.containers.join(", ") }}</span>
+                }
+              </span>
+            }
+          </div>
+        </ng-template>
+        <ng-template uiTimelineMarker let-entry>
+          <span
+            class="z-10 flex h-7 w-7 items-center justify-center rounded-full"
+            [class]="kind(entry).marker"
+          >
+            <ui-icon [name]="kind(entry).icon" size="inherit" class="text-xs" />
+          </span>
+        </ng-template>
+      </ui-timeline>
+    } @else {
+      <ui-typography color="muted">
+        Nothing yet. Type the ETD/ETA, or add a truck leg, and the steps show up here.
+      </ui-typography>
+    }
+  </ui-stack>
+</ui-card>

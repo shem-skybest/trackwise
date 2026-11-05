@@ -1,0 +1,430 @@
+# Architecture Overview
+
+TrackWise is a Domain-Driven Design (DDD) monolith with CQRS, organized into clear layers and a modular infrastructure split into focused projects. The runtime is .NET 10 on PostgreSQL 18, deployed with Docker Compose.
+
+> See [layering.md](layering.md) for the 4-layer rule and the Abstractions / Application split. See [module-layout.md](module-layout.md) for the Application `Modules/` layout.
+
+## System Architecture
+
+```mermaid
+flowchart TB
+    subgraph Clients["Clients"]
+        direction LR
+        Portals["Angular Portals<br/>TMS · Customer · Admin · Website"]
+        Driver["Driver App<br/>(Kotlin Multiplatform)"]
+        AIClients["External AI<br/>Claude Desktop · Cursor"]
+        Telegram["Telegram"]
+    end
+
+    subgraph Presentation["Presentation"]
+        direction LR
+        API["Trackwise.API<br/>REST · SignalR · Hangfire"]
+        Identity["IdentityServer<br/>OAuth2 / OIDC"]
+        Mcp["McpServer<br/>MCP / API key"]
+        TelegramBot["TelegramBot"]
+        Migrator["DbMigrator"]
+    end
+
+    subgraph Core["Core"]
+        direction LR
+        Application["Application<br/>Modules · Commands · Queries · Behaviors"]
+        Abstractions["Application.Abstractions<br/>Infrastructure ports"]
+        Mappings["Mappings<br/>Entity ↔ DTO"]
+        Domain["Domain<br/>Entities · Aggregates · Events"]
+        Primitives["Domain.Primitives<br/>Value objects · Enums"]
+    end
+
+    subgraph Shared["Shared"]
+        direction LR
+        SharedModels["Shared.Models<br/>DTO contracts"]
+        SharedIdentity["Shared.Identity<br/>Claims · Roles · Policies"]
+        SharedGeo["Shared.Geo<br/>Geolocation utilities"]
+    end
+
+    subgraph Infra["Infrastructure (14 projects)"]
+        direction LR
+        Persistence["Persistence"]
+        AI["AI"]
+        Comms["Communications"]
+        Payments["Payments"]
+        Routing["Routing"]
+        Documents["Documents"]
+        Storage["Storage"]
+        Tax["Tax"]
+        Vin["Vin"]
+        Integrations["Integrations<br/>Common · Eld · LoadBoard<br/>FuelCards · Accounting"]
+    end
+
+    subgraph External["External Services"]
+        direction LR
+        Postgres[("PostgreSQL 18<br/>Master + Tenant DBs")]
+        SaaS["Stripe · Mapbox · Firebase<br/>Azure Blob · Cloudflare R2 · Resend"]
+        Llm["Anthropic · OpenAI · DeepSeek"]
+        Providers["Samsara · Motive · TT ELD · Geotab<br/>DAT · Truckstop · 123LB<br/>WEX · EFS · QuickBooks Online"]
+    end
+
+    Clients --> Presentation
+    Presentation --> Application
+    Migrator --> Persistence
+    Application --> Abstractions
+    Application --> Domain
+    Application --> Mappings
+    Domain --> Primitives
+    Application -.uses.-> Shared
+    Infra -.uses.-> Shared
+    Abstractions -. implemented by .-> Infra
+    Infra --> External
+```
+
+## Layered Design
+
+The codebase follows a Clean / Onion architecture: `Domain ← Abstractions ← Application/Infrastructure ← Presentation`. Application depends on `Application.Abstractions` for infrastructure ports; Infrastructure implements those ports and **never** references `Application`. See [layering.md](layering.md) for the port vs. workflow-service rule.
+
+```mermaid
+flowchart TB
+    P["Presentation<br/>API · IdentityServer · McpServer · TelegramBot · DbMigrator"]
+    A["Application<br/>Modules · Commands · Queries · Behaviours · workflow services"]
+    Ab["Application.Abstractions<br/>Infrastructure ports · marker interfaces · DTOs"]
+    D["Domain<br/>Entities · Aggregates · Events · Specifications"]
+    Pr["Domain.Primitives<br/>Value objects · Enums"]
+    I["Infrastructure<br/>Persistence · Communications · AI · Payments · Documents · Routing · Storage · Tax · Vin<br/>Integrations.Common · Integrations.Eld · Integrations.LoadBoard · Integrations.FuelCards · Integrations.Accounting"]
+
+    P --> A
+    P -.composition root.-> I
+    A --> Ab
+    A --> D
+    Ab --> D
+    D --> Pr
+    I --> Ab
+    I --> D
+```
+
+Application is wired to infrastructure implementations only at the **composition root**. Each module ships its own DI registrar inside `Trackwise.Application/Modules/{Module}/` (all six invoked by the aggregate `AddApplicationLayer()`), and each infrastructure project ships a registrar (`AddPersistenceInfrastructure`, `AddPaymentsInfrastructure`, …). The composition root is the API's `Setup.cs` (`ConfigureServices`), reached through a thin `TrackwiseHost.Run` shell in `Program.cs` - `Program.cs` no longer holds wiring. See [Hosts and cross-cutting concerns](#hosts-and-cross-cutting-concerns).
+
+### Architecture enforcement
+
+Layering rules are enforced by [`test/Trackwise.Architecture.Tests/`](../../test/Trackwise.Architecture.Tests/) (ArchUnitNET over compiled assemblies):
+
+- `Application` must not depend on `Microsoft.AspNetCore.Http` or any Infrastructure assembly.
+- `Application.Abstractions` must not depend on `Application`, Infrastructure, EF Core, or AspNetCore.Http.
+- Each Infrastructure assembly references `Application.Abstractions`, not `Application`.
+- No handler injects `IHttpContextAccessor`.
+
+Both infrastructure rules discover what they cover instead of hand-listing it, so a new project is picked up off disk automatically (the IL-level boundary rule additionally needs an anchor in `AssemblyAnchors.AllInfrastructure` and a `ProjectReference` in the arch-tests csproj). CLAUDE.md holds the canonical rule; [layering.md](layering.md#enforcement) covers the full matrix and the named exemptions.
+
+## Project Structure
+
+The repository follows the layer split above. Each project name is `Trackwise.{Layer}.{Module}`.
+
+| Folder               | Projects                                                                                                                                                                            |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/Client`         | `Trackwise.Angular` (workspace: tms-portal, customer-portal, admin-portal, website, shared library), `Trackwise.DriverApp` (Kotlin Multiplatform), `Trackwise.DemoVideo` (Remotion) |
+| `src/Core`           | `Trackwise.Application`, `Trackwise.Application.Abstractions`, `Trackwise.Domain`, `Trackwise.Domain.Primitives`, `Trackwise.Mappings`                                              |
+| `src/Shared`         | `Trackwise.Shared.Geo`, `Trackwise.Shared.Identity`, `Trackwise.Shared.Models`                                                                                                      |
+| `src/Infrastructure` | `Persistence`, `Communications`, `AI`, `Payments`, `Documents`, `Routing`, `Storage`, `Tax`, `Vin`, `Integrations.{Common, Eld, LoadBoard, FuelCards, Accounting}`                  |
+| `src/Presentation`   | `Trackwise.API`, `Trackwise.IdentityServer`, `Trackwise.McpServer`, `Trackwise.TelegramBot`, `Trackwise.DbMigrator`                                                                 |
+
+## Tech Stack
+
+### Backend
+
+| Technology            | Purpose                                       |
+| --------------------- | --------------------------------------------- |
+| .NET 10               | Runtime                                       |
+| ASP.NET Core          | Web framework                                 |
+| Entity Framework Core | ORM (lazy loading enabled)                    |
+| Duende IdentityServer | OAuth2 / OIDC                                 |
+| MediatR               | CQRS dispatch + pipeline behaviors            |
+| FluentValidation      | Request validation                            |
+| Serilog               | Structured logging                            |
+| SignalR               | Real-time hubs (tracking, chat, notification) |
+| Hangfire              | Background jobs                               |
+| QuestPDF              | Invoice & payroll PDF generation              |
+
+### Frontend & Mobile
+
+| Technology              | Used by                                   |
+| ----------------------- | ----------------------------------------- |
+| Angular 22 + spartan/ui | TMS Portal, Customer Portal, Admin Portal |
+| Angular 22 SSR          | Marketing Website                         |
+| Tailwind CSS            | All Angular projects                      |
+| Kotlin Multiplatform    | Driver App (shared business logic)        |
+| Compose Multiplatform   | Driver App UI                             |
+| Remotion                | DemoVideo (programmatic marketing video)  |
+
+### Infrastructure & DevOps
+
+| Technology     | Purpose          |
+| -------------- | ---------------- |
+| PostgreSQL 18  | Database         |
+| Docker         | Containerization |
+| Docker Compose | Orchestration    |
+| Nginx          | Reverse proxy    |
+| GitHub Actions | CI/CD            |
+
+### External Services
+
+| Service                            | Purpose                                 |
+| ---------------------------------- | --------------------------------------- |
+| Stripe                             | Subscription billing                    |
+| Stripe Connect                     | Direct payouts to trucking companies    |
+| Anthropic / OpenAI / DeepSeek      | LLM providers for the AI dispatch agent |
+| Firebase                           | Push notifications                      |
+| Mapbox                             | Maps, geocoding, route optimization     |
+| Azure Blob / Cloudflare R2         | Document & photo storage (pluggable)    |
+| NHTSA API                          | VIN decoding                            |
+| Samsara / Motive / TT ELD / Geotab | ELD / HOS providers                     |
+| DAT / Truckstop / 123Loadboard     | Load board providers                    |
+| WEX / EFS                          | Fuel card transaction feeds             |
+| QuickBooks Online                  | Accounting sync                         |
+| Resend                             | Transactional email                     |
+| Google reCAPTCHA                   | Public form protection                  |
+
+## Design Patterns
+
+### CQRS
+
+Commands and queries are separated and dispatched through MediatR. Both extend `IRequest<TResponse>` via the `ICommand<T>` / `IQuery<T>` markers in `Trackwise.Application.Abstractions.Common`. A command targets the master or tenant DB purely by which unit of work its handler injects (`IMasterUnitOfWork` vs `ITenantUnitOfWork`) - there is no separate marker interface. Handlers own their own `SaveChangesAsync` calls - there is no auto-transaction wrapper.
+
+Commands and queries live under `Trackwise.Application/Modules/{Module}/{Feature}/{Commands|Queries}/`. See [module-layout.md](module-layout.md) for the six modules and the feature-folder convention.
+
+```csharp
+public class CreateLoadCommand : ICommand;                 // flat fields, bound directly as the request body
+public record GetLoadByIdQuery(Guid Id) : IQuery<Result<LoadDto>>;
+```
+
+### MediatR Pipeline
+
+A single pipeline applies to both commands and queries. Behaviours are constrained to `IRequest<TResponse>` where `TResponse : IResult, new()`, so they bind to `ICommand<T>` and `IQuery<T>` alike.
+
+```mermaid
+flowchart LR
+    Req["Request"] --> Lg["LoggingBehavior"]
+    Lg --> Ex["UnhandledExceptionBehaviour"]
+    Ex --> V["ValidationBehaviour<br/>(FluentValidation)"]
+    V --> F["FeatureCheckBehaviour"]
+    F --> H["Handler"]
+    H --> Resp["Response"]
+```
+
+`FeatureCheckBehaviour` reads the optional `[RequiresFeature]` attribute on the request type and short-circuits with a `Result.Fail` when the tenant's plan or admin lock disables the feature; the lookup is cached per closed generic instantiation.
+
+Hangfire jobs do not go through the MediatR pipeline, so `[RequiresFeature]` never applies to them - a job must gate features itself. CLAUDE.md holds the canonical rule.
+
+### Repository + Specification
+
+Repositories are scoped per aggregate root; specifications encapsulate reusable query conditions.
+
+```csharp
+public interface IRepository<T> where T : class, IAggregateRoot
+{
+    Task<T?> GetAsync(ISpecification<T> spec, CancellationToken ct = default);
+    Task<IList<T>> GetListAsync(ISpecification<T> spec, CancellationToken ct = default);
+    Task AddAsync(T entity, CancellationToken ct = default);
+    void Update(T entity);
+    void Delete(T entity);
+}
+
+public class ActiveLoadsSpec : Specification<Load>
+{
+    public ActiveLoadsSpec()
+        => Query.Where(l => l.Status == LoadStatus.Active)
+                .OrderByDescending(l => l.CreatedDate);
+}
+```
+
+### Domain Events
+
+Entities raise events from inside their methods. Handlers live next to the feature in `Trackwise.Application/Modules/{Module}/{Feature}/Events/`.
+
+```csharp
+public class Load : AggregateRoot
+{
+    public void Complete()
+    {
+        Status = LoadStatus.Completed;
+        AddDomainEvent(new LoadCompletedEvent(this));
+    }
+}
+```
+
+### Unit of Work
+
+There are two UoWs - one per database type:
+
+- `IMasterUnitOfWork` - master DB (tenants, subscriptions, super admins)
+- `ITenantUnitOfWork` - per-request tenant DB resolved via `ICurrentTenantAccessor`
+
+## Infrastructure Projects
+
+The infrastructure layer is split into fourteen focused projects so each has a single concern.
+
+### Trackwise.Infrastructure.Persistence
+
+Database access, repositories, and multi-tenancy.
+
+- `MasterDbContext` (tenants, subscriptions, super admins) and `TenantDbContext` (per-company operational data)
+- 40+ entity configurations, organized by domain (`Load/`, `Trip/`, `Invoice/`, `Container/`, `Eld/`, `Safety/`, ...)
+- Master and Tenant migrations
+- `IRepository<T>`, `IUnitOfWork`, and tenant-aware `DbContextFactory`s
+- `CurrentTenantAccessor` (`ICurrentTenantAccessor`, resolves the current tenant) and `TenantDatabaseService` (provisions tenant DBs)
+- EF Core interceptors for domain events and auditing
+
+### Trackwise.Infrastructure.Communications
+
+Real-time and outbound messaging.
+
+- SignalR hubs: `TrackingHub`, `ChatHub`, `NotificationHub`, `AIDispatchHub` (mapped by the API at `/hubs/tracking`, `/hubs/chat`, `/hubs/notification`, `/hubs/ai-dispatch`)
+- Email via Resend with Fluid templates
+- Push notifications via Firebase Cloud Messaging
+- Google reCAPTCHA validation
+
+### Trackwise.Infrastructure.AI
+
+LLM dispatch agent and tool registry.
+
+- `ILlmProvider` adapter pattern with `AnthropicLlmProvider` (Claude SDK), `OpenAIResponsesLlmProvider` (OpenAI, `/v1/responses`) and `OpenAICompatibleLlmProvider` (chat completions: DeepSeek, GLM)
+- `AIDispatchService` agent loop (max 25 iterations, prompt caching, adaptive reasoning effort)
+- `AgentToolCatalog` / `AgentToolRegistry` - tools declare themselves; one catalogue behind three surfaces: `GetDispatchAgentTools`, `GetCopilotTools` (permission-scoped), `GetMcpTools` (feature-scoped)
+- Quota tracking against weekly USD budgets, metered on each session's estimated model cost
+- Global, admin-selected dispatch model and reasoning effort (`LlmModelCatalog` + `SystemSettings`); plans differ by budget only
+
+See [AI Dispatch](../ai-dispatch.md).
+
+### Trackwise.Infrastructure.Integrations.Common
+
+The shared kernel for the third-party integration providers - do not hand-roll a fourth copy of any of it:
+
+- `HttpClientJsonExtensions.TryGetFromJsonAsync<T>` - "send + status check + JSON deserialise + log on failure" for reads; and `HttpClientWriteExtensions` / `HttpJsonResult<T>` for writes that need to report success or failure back to the caller
+- `IntegrationJsonOptions` - the shared `JsonSerializerOptions` for provider payloads
+- `WebhookSignature.VerifyHmacSha256` - constant-time HMAC-SHA256 verification for inbound webhooks (see [Webhook conventions](#webhook-conventions))
+- `ProviderFactoryBase` + `AddProviderIntegration` (`ProviderRegistrationExtensions`) - the provider-selection factory base and its DI registration helper, shared by the ELD, load board, fuel card, and accounting factories
+
+The read helper's contract is that it **never throws** - a failure is logged and returns `default`. That is why the QuickBooks helpers in `Integrations.Accounting` are deliberately not folded in here: they throw `QboApiException` so a push error surfaces to the sync job instead of being swallowed. Keep push paths that must report failure out of the read helper.
+
+It is a leaf helper library: it references no other project in the repo.
+
+### Trackwise.Infrastructure.Integrations.Eld
+
+ELD providers for HOS compliance: Samsara, Motive (KeepTruckin), TT ELD, Geotab, and a Demo provider for tests. Factory pattern for provider selection plus webhook handlers signed by the provider.
+
+### Trackwise.Infrastructure.Integrations.LoadBoard
+
+Load board providers: DAT, Truckstop, 123Loadboard, and a Demo provider. Search loads, post trucks, provider-specific request/response mappers.
+
+### Trackwise.Infrastructure.Integrations.FuelCards
+
+Fuel card providers: WEX, EFS, and a Demo provider, selected through `FuelCardProviderFactory`.
+
+- `BearerFuelCardService<TProbeResponse>` base class for the bearer-token providers
+- Per-provider mappers and models, plus a shared `JurisdictionMapper`
+- `FuelCardsOptions` binds the `FuelCards` section, with a nullable entry per provider
+
+### Trackwise.Infrastructure.Integrations.Accounting
+
+Accounting sync providers: QuickBooks Online and a Demo provider, selected through `AccountingProviderFactory`.
+
+- `QuickBooksOAuthClient` for the OAuth token flow, `QuickBooksOnlineService` for the Data API
+- `HttpClientQboExtensions` throws `QboApiException` on failure so push errors reach the sync job
+
+### Trackwise.Infrastructure.Payments
+
+- Stripe subscriptions (platform billing)
+- Stripe Connect destination charges (direct payouts to trucking companies)
+- Payment links with expiration
+- Stripe webhook handling with signature validation
+
+### Trackwise.Infrastructure.Documents
+
+- PDF generation via QuestPDF (invoices, payroll stubs, BOL, POD)
+- Template-based PDF import / extraction
+
+### Trackwise.Infrastructure.Routing
+
+- Heuristic trip optimizer (nearest neighbor)
+- Mapbox Matrix-based optimizer
+- Composite optimizer combining both
+- Mapbox geocoding and trip tracking
+
+### Trackwise.Infrastructure.Storage
+
+- `IBlobStorageService` abstraction with three pluggable providers, selected via the `BlobStorage:Type` configuration value:
+  - **Azure Blob Storage** (`azure`) - production default for Azure-hosted deployments
+  - **Cloudflare R2** (`r2` / `cloudflare`) - S3-compatible storage via the AWS SDK; cost-efficient zero-egress option
+  - **Local file system** (default) - used for development and on-prem
+- Storage abstraction shared by Documents and Communications
+
+```json
+{
+  "BlobStorage": { "Type": "r2" },
+  "R2BlobStorage": {
+    "AccountId": "...",
+    "AccessKeyId": "...",
+    "SecretAccessKey": "...",
+    "BucketName": "trackwise"
+  }
+}
+```
+
+### Trackwise.Infrastructure.Tax
+
+- `ITaxCalculator` selected per the `Tax:Provider` value (`stripe` | `manual`), defaulting to Stripe
+- Stripe Tax calculation API client and `IStripeTaxConfigService` for onboarding info, registered regardless of the selected calculator
+- `ManualTaxCalculator` backed by static rate data: US sales tax, EU VAT rates and rules, other-country rates
+- `ITaxJurisdictionsProvider` for the jurisdiction list
+
+### Trackwise.Infrastructure.Vin
+
+- `IVinDecoderService` fronted by `CompositeVinDecoderService`
+- `WmiPrefixDecoder` for WMI prefix lookup and `NhtsaVinDecoderService` for full-VIN decode via the NHTSA API
+
+## Presentation Projects
+
+| Project                    | Role                                                                                                 |
+| -------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `Trackwise.API`            | REST API, SignalR hubs, Hangfire background jobs, webhooks (Stripe, ELD)                             |
+| `Trackwise.IdentityServer` | OAuth2 / OIDC via Duende IdentityServer, JWT issuance, user management                               |
+| `Trackwise.McpServer`      | Library composed into the API: MCP over Streamable HTTP at `/mcp`, exposing the agent tool catalogue |
+| `Trackwise.TelegramBot`    | Library composed into the API: Telegram bot for driver / dispatcher commands                         |
+| `Trackwise.DbMigrator`     | Console app: standalone EF Core migrations runner (master + tenant)                                  |
+| `Trackwise.HostDefaults`   | Shared library: host bootstrap for the web hosts (`TrackwiseHost.Run`, CORS, data protection)        |
+
+Only **two** projects are independently runnable web hosts (API, IdentityServer). `McpServer` and `TelegramBot` are class libraries with no `Program.cs`; the API composes them (`AddMcpServerInfrastructure` + `MapMcpEndpoint`, `AddTelegramBotInfrastructure` + `MapTelegramWebhook`). `DbMigrator` is a console app. See [Hosts and cross-cutting concerns](#hosts-and-cross-cutting-concerns).
+
+## Hosts and cross-cutting concerns
+
+The two web hosts share a bootstrap: `Program.cs` is a one-line `TrackwiseHost.Run(args, …)` shell (`Trackwise.HostDefaults`) that owns the Serilog logger, the standard HTTP resilience handler, health checks at `/health`, and the top-level try/catch. Each host's real wiring lives in its own `Setup.cs` (`ConfigureServices` + `ConfigurePipeline`); the API additionally schedules its Hangfire jobs. `HostDefaults` also supplies `AddTrackwiseCors`, `AddTrackwiseDataProtection` (app names `Trackwise` / `Trackwise.IdentityServer`, key ring persisted in the master DB), and the `AddIpFixedWindowPolicy` rate-limit helper.
+
+### Rate limiting
+
+| Policy             | Applies to           | Limit                               | Partitioned by                         |
+| ------------------ | -------------------- | ----------------------------------- | -------------------------------------- |
+| _global_ (unnamed) | API, all endpoints   | 100 / min, fixed window             | authenticated user, else `Host` header |
+| `impersonation`    | API + IdentityServer | 5 / 15 min, fixed window (no queue) | client IP                              |
+| `login`            | IdentityServer login | 10 / 15 min, sliding window         | client IP                              |
+| `mcp`              | API `/mcp` endpoint  | 100 / min, fixed window             | API-key subject, else IP               |
+
+Rejections return `429`. The per-IP `impersonation` policy is built by the shared `AddIpFixedWindowPolicy` helper in `HostDefaults`.
+
+### Hangfire dashboard
+
+The dashboard is mounted at `/hangfire` and gated by `HangfireDashboardAuthorizationFilter`: in development, loopback requests are allowed so the local dashboard just works; otherwise the caller must hold the `SuperAdmin` role.
+
+### Webhook conventions
+
+Inbound third-party webhooks land on `WebhookController` (mounted at `/webhooks/*`, `[AllowAnonymous]` - the signature is the auth) and follow two invariants:
+
+- **Signature first, fail closed.** The raw request body is verified before it is parsed - `WebhookSignature.VerifyHmacSha256` (constant-time, in `Integrations.Common`) for the ELD / load-board providers, `EventUtility.ConstructEvent` for Stripe. A configured-but-missing or incorrect signature returns `400`. Stripe specifics live in [stripe-webhooks.md](../stripe-webhooks.md).
+- **Idempotency.** Providers retry, so each processed delivery is recorded in the master-DB `ProcessedWebhookEvent` ledger, unique on `(Provider, EventKey)`. `EventKey` is the provider's event id when present, else a SHA-256 hash of the raw body. A duplicate is a no-op returning `200`. `WebhookEventCleanupJob` prunes old rows daily.
+
+## Multi-Tenancy
+
+TrackWise uses **database-per-tenant** isolation. See [Multi-Tenancy](multi-tenancy.md) for the full architecture, request flow, and provisioning sequence.
+
+## Next Steps
+
+- [Domain Model](domain-model.md) - entity relationships
+- [Multi-Tenancy](multi-tenancy.md) - database isolation strategy
+- [API Overview](../api/overview.md) - REST API design
+- [AI Dispatch](../ai-dispatch.md) - agent architecture and tools
+- [MCP Server](../mcp-server.md) - external AI integration

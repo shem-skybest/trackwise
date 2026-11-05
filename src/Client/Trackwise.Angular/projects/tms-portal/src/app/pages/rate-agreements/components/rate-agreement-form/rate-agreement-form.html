@@ -1,0 +1,211 @@
+<form [formRoot]="form">
+  <ui-stack gap="4">
+    <ui-card>
+      <ui-grid container spacing="3">
+        <ui-grid [size]="{ xs: 12, md: 6 }">
+          <ui-form-field label="Customer" for="customer" [required]="true">
+            <app-search-customer [formField]="form.customer" />
+          </ui-form-field>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 12, md: 6 }">
+          <ui-form-field label="Name" for="name" [required]="true">
+            <ui-text-field
+              id="name"
+              [formField]="form.name"
+              placeholder="HFI rates March 13, 2026"
+            />
+          </ui-form-field>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-form-field label="Rates start" for="effectiveFrom" [required]="true">
+            <ui-date-field
+              inputId="effectiveFrom"
+              [formField]="form.effectiveFrom"
+              [showIcon]="true"
+            />
+          </ui-form-field>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-form-field label="Rates end" for="effectiveTo" hint="Blank until revised">
+            <ui-date-field inputId="effectiveTo" [formField]="form.effectiveTo" [showIcon]="true" />
+          </ui-form-field>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 12, md: 6 }">
+          <ui-form-field label="Fuel" for="fuelMethod" hint="How the card adds gas on top">
+            <ui-select-field
+              id="fuelMethod"
+              [formField]="form.fuelMethod"
+              [options]="fuelOptions"
+              optionLabel="label"
+              optionValue="value"
+            />
+          </ui-form-field>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 12, md: 6 }">
+          <ui-form-field label="Notes" for="notes" class="mb-0">
+            <ui-textarea-field id="notes" [formField]="form.notes" [rows]="2" />
+          </ui-form-field>
+        </ui-grid>
+      </ui-grid>
+    </ui-card>
+
+    <ui-card>
+      <app-rate-terms-fields [field]="form.terms" />
+    </ui-card>
+
+    <ui-card>
+      <ui-stack gap="3">
+        <ui-stack direction="row" align="end" justify="between" gap="3" wrap>
+          <ui-stack gap="0">
+            <ui-typography variant="h5" tag="h2">Rate card</ui-typography>
+            <ui-typography variant="caption" color="muted">
+              One row per {{ isBand() ? "distance band" : "town or province" }} and truck size. A
+              town row beats its province's row; "Any" size covers trucks with no row of their own.
+            </ui-typography>
+          </ui-stack>
+          <ui-form-field label="Rows" for="rowKind" class="mb-0 w-56">
+            <ui-select-field
+              id="rowKind"
+              [formField]="form.rowKind"
+              [options]="rowKindOptions"
+              optionLabel="label"
+              optionValue="value"
+            />
+          </ui-form-field>
+        </ui-stack>
+
+        @if (usesTiers()) {
+          <ui-stack direction="row" align="center" gap="2" wrap>
+            <ui-typography variant="body-sm" color="muted">
+              Gas on top when diesel is at (₱/L):
+            </ui-typography>
+            @for (tier of model().tiers; track $index; let t = $index) {
+              <ui-stack direction="row" align="center" gap="1">
+                <ui-number-field class="w-24" [formField]="form.tiers[t]" [minFractionDigits]="2" />
+                <ui-button
+                  appearance="text"
+                  size="sm"
+                  icon="x"
+                  ariaLabel="Remove tier"
+                  (click)="removeTier(t)"
+                />
+              </ui-stack>
+            }
+            <ui-button
+              appearance="outlined"
+              size="sm"
+              icon="plus"
+              label="Tier"
+              (click)="addTier()"
+            />
+          </ui-stack>
+        }
+
+        @if (usesPercent() && !isBand()) {
+          <app-province-fuel-percent
+            [lines]="model().lines"
+            (apply)="setProvinceFuelPercent($event.province, $event.percent)"
+          />
+        }
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-muted-foreground border-border border-b text-left">
+                <th class="p-2 font-medium">Row</th>
+                @if (isBand()) {
+                  <th class="p-2 font-medium">From km</th>
+                  <th class="p-2 font-medium">To km</th>
+                } @else {
+                  <th class="p-2 font-medium">Town / city</th>
+                  <th class="p-2 font-medium">Province</th>
+                }
+                <th class="p-2 font-medium">Truck</th>
+                <th class="p-2 font-medium">Rate (₱)</th>
+                @if (usesPercent()) {
+                  <th class="p-2 font-medium">Fuel %</th>
+                }
+                @if (usesTiers()) {
+                  @for (tier of model().tiers; track $index) {
+                    <th class="p-2 font-medium whitespace-nowrap">at ₱{{ tier ?? "?" }}</th>
+                  }
+                }
+                <th class="p-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (line of model().lines; track $index; let i = $index) {
+                <tr class="border-border border-b align-top">
+                  <td class="min-w-40 p-1">
+                    <ui-text-field [formField]="form.lines[i].label" placeholder="QUEZON CITY" />
+                  </td>
+                  @if (isBand()) {
+                    <td class="w-24 p-1"><ui-number-field [formField]="form.lines[i].minKm" /></td>
+                    <td class="w-24 p-1"><ui-number-field [formField]="form.lines[i].maxKm" /></td>
+                  } @else {
+                    <td class="min-w-36 p-1"><ui-text-field [formField]="form.lines[i].city" /></td>
+                    <td class="min-w-32 p-1">
+                      <ui-text-field [formField]="form.lines[i].province" />
+                    </td>
+                  }
+                  <td class="w-28 p-1">
+                    <ui-select-field
+                      [formField]="form.lines[i].tonnage"
+                      [options]="tonnageOptions"
+                      optionLabel="label"
+                      optionValue="value"
+                      appendTo="body"
+                    />
+                  </td>
+                  <td class="w-32 p-1"><ui-number-field [formField]="form.lines[i].amount" /></td>
+                  @if (usesPercent()) {
+                    <td class="w-24 p-1">
+                      <ui-number-field [formField]="form.lines[i].fuelPercent" />
+                    </td>
+                  }
+                  @if (usesTiers()) {
+                    @for (tier of model().tiers; track $index; let t = $index) {
+                      <td class="w-28 p-1">
+                        <ui-number-field [formField]="form.lines[i].surcharges[t]" />
+                      </td>
+                    }
+                  }
+                  <td class="p-1 whitespace-nowrap">
+                    <ui-button
+                      appearance="text"
+                      size="sm"
+                      icon="copy"
+                      ariaLabel="Duplicate row"
+                      (click)="duplicateLine(i)"
+                    />
+                    <ui-button
+                      appearance="text"
+                      size="sm"
+                      icon="trash"
+                      ariaLabel="Remove row"
+                      (click)="removeLine(i)"
+                    />
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div>
+          <ui-button appearance="outlined" icon="plus" label="Add row" (click)="addLine()" />
+        </div>
+      </ui-stack>
+    </ui-card>
+
+    <ui-stack direction="row" gap="2">
+      <ui-button
+        type="submit"
+        icon="save"
+        [label]="isEdit() ? 'Save draft' : 'Create draft'"
+        [loading]="isSaving()"
+      />
+      <ui-button appearance="text" icon="arrow-left" label="Cancel" [routerLink]="cancelLink()" />
+    </ui-stack>
+  </ui-stack>
+</form>

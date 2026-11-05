@@ -1,0 +1,127 @@
+<ui-card>
+  <ui-data-container
+    [loading]="isLoading()"
+    [error]="error()"
+    [isEmpty]="isEmpty()"
+    skeletonVariant="table"
+    [skeletonRows]="10"
+    emptyTitle="No container types yet"
+    emptyMessage="Add the boxes your shipments move in, so a container type stops living in two enums."
+    emptyActionLabel="Add Container Type"
+    (retry)="onRetry()"
+    (emptyAction)="onAddContainerType()"
+  >
+    <ui-data-table
+      [value]="data()"
+      dataKey="id"
+      [scrollable]="true"
+      [lazy]="true"
+      [paginator]="true"
+      [showCurrentPageReport]="true"
+      [rows]="pageSize()"
+      [first]="first()"
+      [totalRecords]="totalRecords()"
+      [loading]="isLoading()"
+      [rowsPerPageOptions]="[10, 25, 50, 100]"
+      size="small"
+      (lazyLoad)="onLazyLoad($event)"
+    >
+      <ng-template #header>
+        <tr>
+          <th uiSortHeader="Code">Code</th>
+          <th uiSortHeader="Name">Name</th>
+          <th uiSortHeader="IsoSizeTypeCode">ISO</th>
+          <th uiSortHeader="Category">Category</th>
+          <th uiSortHeader="LengthFeet">Size</th>
+          <th>TEU</th>
+          <th uiSortHeader="IsActive">Status</th>
+          <th uiSortHeader="UpdatedAt">Last changed</th>
+          <th></th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-containerType>
+        <tr
+          class="hover:bg-hover transition-colors duration-150"
+          [class.cursor-pointer]="!containerType.deletedAt"
+          [class.opacity-60]="containerType.deletedAt"
+          (click)="navigateToContainerType(containerType)"
+        >
+          <td>
+            <span class="font-mono text-sm font-semibold">{{ containerType.code }}</span>
+          </td>
+
+          <td>
+            @if (containerType.deletedAt) {
+              <span class="text-foreground max-w-64 truncate font-bold line-through">
+                {{ containerType.name }}
+              </span>
+            } @else {
+              <a
+                [routerLink]="['/master-data/container-types', containerType.id]"
+                class="text-foreground max-w-64 truncate font-bold hover:underline"
+                (click)="$event.stopPropagation()"
+              >
+                {{ containerType.name }}
+              </a>
+            }
+          </td>
+
+          <td class="text-muted-foreground font-mono text-sm">
+            @if (containerType.isoSizeTypeCode) {
+              {{ containerType.isoSizeTypeCode }}
+            } @else {
+              <span class="text-xs italic">Not an ISO container</span>
+            }
+          </td>
+
+          <td class="text-muted-foreground text-sm">{{ containerType.category }}</td>
+
+          <td class="text-muted-foreground text-sm">
+            @if (size(containerType)) {
+              {{ size(containerType) }}
+            } @else {
+              <span class="text-xs italic">&mdash;</span>
+            }
+          </td>
+
+          <td class="text-muted-foreground font-mono text-sm">
+            {{ containerType.teuFactor ?? "—" }}
+          </td>
+
+          <td>
+            @if (containerType.deletedAt) {
+              <ui-badge value="Deleted" severity="danger" size="sm" rounded />
+            } @else if (containerType.isActive) {
+              <ui-badge value="Active" severity="success" size="sm" rounded />
+            } @else {
+              <ui-badge value="Inactive" severity="secondary" size="sm" rounded />
+            }
+          </td>
+
+          <td class="text-muted-foreground text-sm">
+            {{ containerType.updatedAt || containerType.createdAt | date: "dd/MM/yyyy HH:mm" }}
+            @if (containerType.updatedBy || containerType.createdBy) {
+              <span class="block text-xs">
+                {{ containerType.updatedBy || containerType.createdBy }}
+              </span>
+            }
+          </td>
+
+          <td class="text-right">
+            @if (containerType.deletedAt && canManage()) {
+              <ui-button
+                type="button"
+                appearance="text"
+                size="sm"
+                icon="history"
+                label="Restore"
+                (click)="onRestore(containerType, $event)"
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </ui-data-table>
+  </ui-data-container>
+</ui-card>

@@ -1,0 +1,218 @@
+<ui-grid container spacing="3">
+  <ui-grid [size]="{ xs: 12, lg: 9, xl: 8 }">
+    <form [formRoot]="form">
+      <ui-stack gap="4">
+        <!-- Header / Loading -->
+        @if (isLoading()) {
+          <ui-surface variant="elevated" [border]="true">
+            <ui-stack direction="row" align="center" gap="2">
+              <ui-spinner />
+              <ui-typography variant="body" color="muted">Saving tariff...</ui-typography>
+            </ui-stack>
+          </ui-surface>
+        }
+
+        <!-- Tariff Information -->
+        <ui-stack tag="section" gap="3">
+          <ui-stack direction="row" gap="2" align="start">
+            <ui-icon name="file-text" color="secondary" class="mt-1" />
+
+            <ui-stack gap="0">
+              <ui-typography variant="overline" color="secondary">Tariff Information</ui-typography>
+
+              <ui-typography variant="caption" color="muted">
+                Define the basic pricing configuration.
+              </ui-typography>
+            </ui-stack>
+          </ui-stack>
+
+          <ui-surface variant="elevated" [border]="true">
+            <ui-stack gap="3">
+              <!-- Name -->
+              <ui-form-field label="Tariff Name" for="name" [required]="true">
+                <ui-text-field
+                  id="name"
+                  [formField]="form.name"
+                  type="text"
+                  placeholder="e.g. Standard Import Freight Tariff"
+                />
+              </ui-form-field>
+
+              <!-- Mode / Service -->
+              <ui-grid container spacing="3">
+                <ui-grid [size]="{ xs: 12, md: 6 }">
+                  <ui-form-field label="Freight Mode" for="mode" [required]="true">
+                    <ui-select-field
+                      id="mode"
+                      [formField]="form.mode"
+                      [options]="freightModes"
+                      optionLabel="label"
+                      optionValue="value"
+                      placeholder="Select freight mode"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 6 }">
+                  <ui-form-field label="Service Level" for="serviceLevel" [required]="true">
+                    <ui-select-field
+                      id="serviceLevel"
+                      [formField]="form.serviceLevel"
+                      [options]="serviceLevels"
+                      optionLabel="label"
+                      optionValue="value"
+                      placeholder="Select service level"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+              </ui-grid>
+
+              <ui-grid container spacing="3">
+                <ui-grid [size]="{ xs: 12, md: 6 }">
+                  <ui-form-field
+                    label="Origin Lane"
+                    for="originLane"
+                    hint="Optional ZIP code or port UN/LOCODE."
+                  >
+                    <ui-text-field
+                      id="originLane"
+                      [formField]="form.originLane"
+                      type="text"
+                      placeholder="e.g. USLAX"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 6 }">
+                  <ui-form-field
+                    label="Destination Lane"
+                    for="destinationLane"
+                    hint="Optional ZIP code or port UN/LOCODE."
+                  >
+                    <ui-text-field
+                      id="destinationLane"
+                      [formField]="form.destinationLane"
+                      type="text"
+                      placeholder="e.g. CNSHA"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+              </ui-grid>
+
+              <ui-form-field
+                label="Container Type"
+                for="containerTypeId"
+                hint="Optional equipment specification."
+              >
+                <ui-select-field
+                  id="containerTypeId"
+                  [formField]="form.containerTypeId"
+                  [options]="containerTypeOptions()"
+                  optionLabel="label"
+                  optionValue="value"
+                  placeholder="Select container type"
+                />
+              </ui-form-field>
+
+              <!-- Currency / Effective Date -->
+              <ui-grid container spacing="3">
+                <ui-grid [size]="{ xs: 12, md: 6 }">
+                  <ui-form-field
+                    label="Currency"
+                    for="currency"
+                    [required]="true"
+                    hint="Use a 3-letter ISO currency code."
+                  >
+                    <ui-text-field
+                      id="currency"
+                      [formField]="form.currency"
+                      type="text"
+                      placeholder="USD"
+                      [maxlength]="3"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 6 }">
+                  <ui-form-field
+                    label="Effective From"
+                    for="effectiveFrom"
+                    [required]="true"
+                    hint="Date when this tariff becomes effective."
+                  >
+                    <ui-date-field
+                      inputId="effectiveFrom"
+                      [formField]="form.effectiveFrom"
+                      [showIcon]="true"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+              </ui-grid>
+            </ui-stack>
+          </ui-surface>
+        </ui-stack>
+
+        <!-- Carrier & Contract -->
+        <ui-stack tag="section" gap="3">
+          <ui-stack direction="row" gap="2" align="start">
+            <ui-icon name="truck" color="secondary" class="mt-1" />
+
+            <ui-stack gap="0">
+              <ui-typography variant="overline" color="secondary">Carrier & Contract</ui-typography>
+
+              <ui-typography variant="caption" color="muted">
+                Optional references for carrier-specific pricing.
+              </ui-typography>
+            </ui-stack>
+          </ui-stack>
+
+          <ui-surface variant="elevated" [border]="true">
+            <ui-stack gap="3">
+              <!-- Carrier -->
+              <!-- Enable SearchCarrier when the component is ready -->
+              <!--
+              <ui-form-field label="Carrier" for="carrier">
+                <app-search-carrier
+                  [formField]="form.carrier"
+                />
+              </ui-form-field>
+              -->
+
+              <ui-form-field
+                label="Contract Reference"
+                for="contractId"
+                hint="Optional contract ID or external reference."
+              >
+                <ui-text-field
+                  id="contractId"
+                  [formField]="form.contractId"
+                  type="text"
+                  placeholder="e.g. CNT-2026-00125"
+                />
+              </ui-form-field>
+            </ui-stack>
+          </ui-surface>
+        </ui-stack>
+
+        <!-- Actions -->
+        <ui-stack direction="row" gap="2" align="center">
+          <ui-button
+            type="submit"
+            icon="save"
+            [label]="mode() === 'create' ? 'Create Tariff' : 'Save Changes'"
+            [disabled]="isLoading()"
+          />
+
+          <ui-button
+            type="button"
+            appearance="text"
+            icon="arrow-left"
+            label="Cancel"
+            [routerLink]="['/tariffs']"
+            [disabled]="isLoading()"
+          />
+        </ui-stack>
+      </ui-stack>
+    </form>
+  </ui-grid>
+</ui-grid>

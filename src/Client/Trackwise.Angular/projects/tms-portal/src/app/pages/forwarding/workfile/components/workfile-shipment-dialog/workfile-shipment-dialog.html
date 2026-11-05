@@ -1,0 +1,60 @@
+<ui-dialog
+  header="Edit shipment details"
+  [(open)]="open"
+  [modal]="true"
+  width="40rem"
+  (opened)="onOpened()"
+>
+  <form [formRoot]="form">
+    <ui-grid container spacing="3">
+      <ui-grid [size]="{ xs: 12, md: 6 }">
+        <ui-form-field label="Vessel" for="shipVessel">
+          <ui-text-field id="shipVessel" [formField]="form.vesselName" />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12, md: 6 }">
+        <ui-form-field label="Voyage" for="shipVoyage">
+          <ui-text-field id="shipVoyage" [formField]="form.voyageNumber" />
+        </ui-form-field>
+      </ui-grid>
+
+      <ui-grid [size]="{ xs: 12, md: 6 }">
+        <ui-form-field label="Origin" for="shipOrigin" hint="Port of loading">
+          <ui-text-field id="shipOrigin" [formField]="form.origin" />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12, md: 6 }">
+        <ui-form-field label="Destination" for="shipDestination" hint="Port of discharge">
+          <ui-text-field id="shipDestination" [formField]="form.destination" />
+        </ui-form-field>
+      </ui-grid>
+
+      <ui-grid [size]="{ xs: 12, md: 6 }">
+        <ui-form-field label="ETD" for="shipEtd" hint="When the vessel sails">
+          <ui-date-field inputId="shipEtd" [formField]="form.etd" [showIcon]="true" />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12, md: 6 }">
+        <ui-form-field label="ETA" for="shipEta" hint="When it arrives">
+          <ui-date-field inputId="shipEta" [formField]="form.eta" [showIcon]="true" />
+        </ui-form-field>
+      </ui-grid>
+
+      <ui-grid [size]="{ xs: 12, md: 6 }">
+        <ui-form-field label="B/L number" for="shipBl">
+          <ui-text-field id="shipBl" [formField]="form.billOfLadingNumber" />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12, md: 6 }">
+        <ui-form-field label="Commodity" for="shipCommodity">
+          <ui-text-field id="shipCommodity" [formField]="form.commodity" />
+        </ui-form-field>
+      </ui-grid>
+    </ui-grid>
+
+    <div class="mt-4 flex justify-end gap-2">
+      <ui-button appearance="text" label="Cancel" (click)="open.set(false)" />
+      <ui-button type="submit" icon="check" label="Save" [loading]="form().submitting()" />
+    </div>
+  </form>
+</ui-dialog>

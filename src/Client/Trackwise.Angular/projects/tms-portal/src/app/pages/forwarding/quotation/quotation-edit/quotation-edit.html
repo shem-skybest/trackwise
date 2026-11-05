@@ -1,0 +1,16 @@
+<div class="animate-in fade-in space-y-4">
+  <ui-page-header title="Edit Quotation" [backLink]="'/quotations/' + id()" />
+
+  @if (quotation.isLoading()) {
+    <p>Loading quotation…</p>
+  } @else if (quotation.error()) {
+    <p>Failed to load the quotation.</p>
+  } @else if (quotation.value(); as q) {
+    <app-quotation-form
+      [quotation]="q!"
+      submitLabel="Save Changes"
+      [isLoading]="isLoading()"
+      (save)="update($event)"
+    />
+  }
+</div>

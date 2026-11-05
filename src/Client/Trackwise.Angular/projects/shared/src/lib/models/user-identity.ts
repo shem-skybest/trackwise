@@ -1,0 +1,9 @@
+export interface UserIdentity {
+  sub: string;
+  name: string;
+  given_name: string;
+  family_name: string;
+  role?: string;
+  tenant?: string;
+  job_title?: string;
+}

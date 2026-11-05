@@ -1,0 +1,103 @@
+<ui-card>
+  <ui-stack gap="3" class="p-4">
+    <ui-stack direction="row" align="center" justify="between" class="flex-wrap gap-2">
+      <ui-stack gap="1">
+        <ui-typography variant="overline" color="secondary">Truck legs</ui-typography>
+        <ui-typography variant="caption" color="muted">
+          Billed once, on this workfile - legs are never billed on their own.
+        </ui-typography>
+      </ui-stack>
+      @if (canManage()) {
+        <ui-button
+          type="button"
+          appearance="text"
+          size="sm"
+          icon="plus"
+          label="Add leg"
+          (click)="openAdd()"
+        />
+      }
+    </ui-stack>
+
+    @if (legs().length) {
+      <ui-data-table [value]="legs()" [scrollable]="true" size="small">
+        <ng-template #header>
+          <tr>
+            <th>Leg</th>
+            <th>Does</th>
+            <th>From</th>
+            <th>To</th>
+            <th>Containers</th>
+            <th>Pickup</th>
+            <th>Trucker</th>
+            <th>Status</th>
+            @if (canManage()) {
+              <th></th>
+            }
+          </tr>
+        </ng-template>
+        <ng-template #body let-leg>
+          <tr>
+            <td class="font-mono whitespace-nowrap">
+              <a
+                [routerLink]="['/forwarding/workfiles', leg.id]"
+                class="text-primary hover:underline"
+              >
+                {{ leg.referenceNumber }}
+              </a>
+            </td>
+            <td>{{ roleLabel(leg.role) }}</td>
+            <td>{{ leg.from ?? "-" }}</td>
+            <td>{{ leg.to ?? "-" }}</td>
+            <td>
+              @if (leg.containers?.length) {
+                <span class="font-mono text-sm">{{ leg.containers.join(", ") }}</span>
+              } @else {
+                <span class="text-muted-foreground">Loose cargo</span>
+              }
+            </td>
+            <td class="whitespace-nowrap">
+              {{ leg.pickupDate ? (leg.pickupDate | dateFormat: "MMM d, y") : "-" }}
+            </td>
+            <td>{{ leg.truckerName ?? "Own truck" }}</td>
+            <td>
+              <ui-badge
+                [value]="statusLabel(leg.status)"
+                [severity]="statusIntent(leg.status)"
+                rounded
+              />
+            </td>
+            @if (canManage()) {
+              <td class="text-right">
+                @if (leg.canEdit) {
+                  <ui-button
+                    type="button"
+                    appearance="text"
+                    size="sm"
+                    icon="pencil"
+                    ariaLabel="Edit leg"
+                    (click)="openEdit(leg)"
+                  />
+                }
+              </td>
+            }
+          </tr>
+        </ng-template>
+      </ui-data-table>
+    } @else {
+      <ui-typography color="muted">
+        No truck legs yet. Add one for each trip a box makes to or from the port.
+      </ui-typography>
+    }
+  </ui-stack>
+</ui-card>
+
+<app-workfile-leg-dialog
+  [workfileId]="workfileId()"
+  [customerId]="customerId()"
+  [containers]="containers()"
+  [defaultRole]="defaultRole()"
+  [leg]="editing()"
+  [(open)]="dialogOpen"
+  (saved)="changed.emit()"
+/>

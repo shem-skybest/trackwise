@@ -1,0 +1,111 @@
+<ui-card>
+  <ui-data-container
+    [loading]="isLoading()"
+    [error]="error()"
+    [isEmpty]="isEmpty()"
+    skeletonVariant="table"
+    [skeletonRows]="10"
+    emptyTitle="No helpers yet"
+    emptyMessage="Add the helpers who assist your drivers."
+    emptyActionLabel="Add Helper"
+    (retry)="onRetry()"
+    (emptyAction)="onAddHelper()"
+  >
+    <ui-data-table
+      [value]="data()"
+      dataKey="id"
+      [scrollable]="true"
+      [lazy]="true"
+      [paginator]="true"
+      [showCurrentPageReport]="true"
+      [rows]="pageSize()"
+      [first]="first()"
+      [totalRecords]="totalRecords()"
+      [loading]="isLoading()"
+      [rowsPerPageOptions]="[10, 25, 50, 100]"
+      size="small"
+      (lazyLoad)="onLazyLoad($event)"
+    >
+      <ng-template #header>
+        <tr>
+          <th uiSortHeader="Code">Code</th>
+          <th uiSortHeader="Name">Name</th>
+          <th>Phone</th>
+          <th>Branch</th>
+          <th uiSortHeader="IsActive">Status</th>
+          <th uiSortHeader="UpdatedAt">Last changed</th>
+          <th></th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-helper>
+        <tr
+          class="hover:bg-hover transition-colors duration-150"
+          [class.cursor-pointer]="!helper.deletedAt"
+          [class.opacity-60]="helper.deletedAt"
+          (click)="navigateToHelper(helper)"
+        >
+          <td>
+            <span class="font-mono text-sm font-semibold">{{ helper.code }}</span>
+          </td>
+
+          <td>
+            @if (helper.deletedAt) {
+              <span class="text-foreground max-w-64 truncate font-bold line-through">
+                {{ helper.name }}
+              </span>
+            } @else {
+              <a
+                [routerLink]="['/master-data/helpers', helper.id]"
+                class="text-foreground max-w-64 truncate font-bold hover:underline"
+                (click)="$event.stopPropagation()"
+              >
+                {{ helper.name }}
+              </a>
+            }
+          </td>
+
+          <td class="text-muted-foreground">{{ helper.phoneNumber || "—" }}</td>
+
+          <td class="text-muted-foreground">
+            @if (helper.branchName) {
+              {{ helper.branchName }}
+            } @else {
+              <span class="text-xs italic">Every branch</span>
+            }
+          </td>
+
+          <td>
+            @if (helper.deletedAt) {
+              <ui-badge value="Deleted" severity="danger" size="sm" rounded />
+            } @else if (helper.isActive) {
+              <ui-badge value="Active" severity="success" size="sm" rounded />
+            } @else {
+              <ui-badge value="Inactive" severity="secondary" size="sm" rounded />
+            }
+          </td>
+
+          <td class="text-muted-foreground text-sm">
+            {{ helper.updatedAt || helper.createdAt | date: "dd/MM/yyyy HH:mm" }}
+            @if (helper.updatedBy || helper.createdBy) {
+              <span class="block text-xs">{{ helper.updatedBy || helper.createdBy }}</span>
+            }
+          </td>
+
+          <td class="text-right">
+            @if (helper.deletedAt && canManage()) {
+              <ui-button
+                type="button"
+                appearance="text"
+                size="sm"
+                icon="history"
+                label="Restore"
+                (click)="onRestore(helper, $event)"
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </ui-data-table>
+  </ui-data-container>
+</ui-card>

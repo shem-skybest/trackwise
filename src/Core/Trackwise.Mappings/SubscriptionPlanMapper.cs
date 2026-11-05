@@ -1,0 +1,25 @@
+using Trackwise.Domain.Entities;
+using Trackwise.Shared.Models;
+
+namespace Trackwise.Mappings;
+
+public static class SubscriptionPlanMapper
+{
+    public static SubscriptionPlanDto ToDto(this SubscriptionPlan entity)
+    {
+        return new SubscriptionPlanDto
+        {
+            Id = entity.Id,
+            Name = entity.Name,
+            Description = entity.Description,
+            Tier = entity.Tier,
+            Price = entity.Price,
+            PerTruckPrice = entity.PerTruckPrice,
+            MaxTrucks = entity.MaxTrucks,
+            Interval = entity.Interval,
+            IntervalCount = entity.IntervalCount,
+            WeeklyAIBudgetUsd = entity.WeeklyAIBudgetUsd,
+            Features = entity.Features.Select(f => f.Feature).ToList()
+        };
+    }
+}

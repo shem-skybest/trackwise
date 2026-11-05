@@ -1,0 +1,5 @@
+<div class="animate-in fade-in space-y-4">
+  <ui-page-header title="Add a New Quotation" backLink="/quotations" />
+
+  <app-quotation-form [isLoading]="isLoading()" (save)="create($event)" />
+</div>

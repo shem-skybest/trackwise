@@ -1,0 +1,485 @@
+<div class="animate-in fade-in space-y-4">
+  <ui-page-header
+    [title]="quotation()?.customerName ? 'Quotation - ' + quotation()!.customerName! : 'Quotation'"
+    backLink="/quotations"
+  >
+    <ui-button
+      label="preview"
+      type="button"
+      (click)="openQuotationPdfViewer.set(true)"
+      size="sm"
+      icon="eye"
+    />
+  </ui-page-header>
+
+  @if (isLoading()) {
+    <ui-stack direction="row" align="center" gap="2">
+      <ui-spinner />
+      <ui-typography variant="body" color="muted">Loading quotation details...</ui-typography>
+    </ui-stack>
+  } @else if (quotation(); as q) {
+    <!-- Special Approval / Escalation Banner -->
+    @if (q.requiresSpecialApproval || q.approvalEscalationReason) {
+      <ui-alert intent="warning">
+        <div class="flex flex-col gap-1">
+          <span class="font-semibold">Special Approval Required</span>
+          <span>
+            {{
+              q.approvalEscalationReason ||
+                "This quotation contains parameters requiring manager escalation prior to issue."
+            }}
+          </span>
+        </div>
+      </ui-alert>
+    }
+
+    <!-- Financial & High-Level Overview -->
+    <ui-surface variant="elevated" [border]="true">
+      <ui-grid container spacing="3">
+        <ui-grid [size]="{ xs: 6, sm: 4, md: 2 }">
+          <ui-typography variant="caption" color="muted">Status</ui-typography>
+          <div class="mt-1">
+            <span
+              class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold"
+              [class]="statusBadgeClass(q.status)"
+            >
+              {{ formatLabel(q.status) }}
+            </span>
+          </div>
+        </ui-grid>
+
+        <ui-grid [size]="{ xs: 6, sm: 4, md: 2 }">
+          <ui-typography variant="caption" color="muted">Reference No.</ui-typography>
+          <ui-typography variant="body" class="font-mono">
+            {{ q.referenceNumber || "-" }}
+          </ui-typography>
+        </ui-grid>
+
+        <ui-grid [size]="{ xs: 6, sm: 4, md: 2 }">
+          <ui-typography variant="caption" color="muted">Total Selling</ui-typography>
+          <ui-typography
+            variant="body"
+            class="font-mono font-semibold text-emerald-600 dark:text-emerald-400"
+          >
+            {{ q.totalSellingAmount ?? 0 | number: "1.2-2" }} {{ q.currency }}
+          </ui-typography>
+        </ui-grid>
+
+        <ui-grid [size]="{ xs: 6, sm: 4, md: 2 }">
+          <ui-typography variant="caption" color="muted">Total Buying</ui-typography>
+          <ui-typography variant="body" class="font-mono">
+            {{ q.totalBuyingAmount ?? 0 | number: "1.2-2" }} {{ q.currency }}
+          </ui-typography>
+        </ui-grid>
+
+        <ui-grid [size]="{ xs: 6, sm: 4, md: 2 }">
+          <ui-typography variant="caption" color="muted">Net Margin</ui-typography>
+          <ui-typography variant="body" class="font-mono">
+            {{ q.netMarginAmount ?? 0 | number: "1.2-2" }} {{ q.currency }}
+            <span class="text-muted-foreground text-xs">
+              ({{ q.netMarginPercentage ?? 0 | number: "1.1-2" }}%)
+            </span>
+          </ui-typography>
+        </ui-grid>
+
+        <ui-grid [size]="{ xs: 6, sm: 4, md: 2 }">
+          <ui-typography variant="caption" color="muted">Valid Until</ui-typography>
+          <ui-typography variant="body">
+            {{ q.validUntil ? (q.validUntil | date: "mediumDate") : "-" }}
+          </ui-typography>
+        </ui-grid>
+
+        @if (q.approvedBy || q.approvedAt) {
+          <ui-grid [size]="{ xs: 12 }">
+            <div class="text-muted-foreground border-t pt-2 text-xs">
+              Approved by
+              <span class="text-foreground font-medium">{{ q.approvedBy || "System" }}</span>
+              @if (q.approvedAt) {
+                on {{ q.approvedAt | date: "medium" }}
+              }
+            </div>
+          </ui-grid>
+        }
+      </ui-grid>
+    </ui-surface>
+
+    <!-- Transport & Cargo Specs -->
+    <ui-grid container spacing="3">
+      <!-- Routing & Logistics Parameters -->
+      <ui-grid [size]="{ xs: 12, md: 6 }">
+        <ui-surface variant="elevated" [border]="true" class="h-full">
+          <ui-stack gap="3">
+            <ui-stack direction="row" gap="2" align="center">
+              <ui-icon name="truck" color="secondary" />
+              <ui-typography variant="overline" color="secondary">Transport & Lane</ui-typography>
+            </ui-stack>
+
+            <ui-grid container spacing="2">
+              <ui-grid [size]="{ xs: 6 }">
+                <ui-typography variant="caption" color="muted">Transport Mode</ui-typography>
+                <ui-typography variant="body">{{ formatLabel(q.mode) }}</ui-typography>
+              </ui-grid>
+              <ui-grid [size]="{ xs: 6 }">
+                <ui-typography variant="caption" color="muted">Freight Mode</ui-typography>
+                <ui-typography variant="body">{{ formatLabel(q.freightMode) }}</ui-typography>
+              </ui-grid>
+              <ui-grid [size]="{ xs: 6 }">
+                <ui-typography variant="caption" color="muted">Shipment Type</ui-typography>
+                <ui-typography variant="body" class="uppercase">
+                  {{ q.shipmentType || "-" }}
+                </ui-typography>
+              </ui-grid>
+              <ui-grid [size]="{ xs: 6 }">
+                <ui-typography variant="caption" color="muted">Incoterm</ui-typography>
+                <ui-typography variant="body" class="uppercase">
+                  {{ q.incoterm || "-" }}
+                </ui-typography>
+              </ui-grid>
+              <ui-grid [size]="{ xs: 6 }">
+                <ui-typography variant="caption" color="muted">Total Distance</ui-typography>
+                <ui-typography variant="body">
+                  {{
+                    q.totalDistanceKm !== undefined && q.totalDistanceKm !== null
+                      ? q.totalDistanceKm + " km"
+                      : "-"
+                  }}
+                </ui-typography>
+              </ui-grid>
+              <ui-grid [size]="{ xs: 6 }">
+                <ui-typography variant="caption" color="muted">Route Stops</ui-typography>
+                <ui-typography variant="body">{{ q.stops?.length ?? 0 }} stops</ui-typography>
+              </ui-grid>
+            </ui-grid>
+          </ui-stack>
+        </ui-surface>
+      </ui-grid>
+
+      <!-- Cargo & Temperature Requirements -->
+      <ui-grid [size]="{ xs: 12, md: 6 }">
+        <ui-surface variant="elevated" [border]="true" class="h-full">
+          <ui-stack gap="3">
+            <ui-stack direction="row" gap="2" align="center">
+              <ui-icon name="box" color="secondary" />
+              <ui-typography variant="overline" color="secondary">Cargo & Cold Chain</ui-typography>
+            </ui-stack>
+
+            <ui-grid container spacing="2">
+              <ui-grid [size]="{ xs: 6 }">
+                <ui-typography variant="caption" color="muted">Commodity</ui-typography>
+                <ui-typography variant="body">{{ q.commodity || "-" }}</ui-typography>
+              </ui-grid>
+              <ui-grid [size]="{ xs: 6 }">
+                <ui-typography variant="caption" color="muted">Pallet Count</ui-typography>
+                <ui-typography variant="body">{{ q.palletCount ?? "-" }}</ui-typography>
+              </ui-grid>
+              <ui-grid [size]="{ xs: 6 }">
+                <ui-typography variant="caption" color="muted">Total Weight</ui-typography>
+                <ui-typography variant="body">
+                  {{
+                    q.totalWeightKg !== undefined && q.totalWeightKg !== null
+                      ? q.totalWeightKg + " kg"
+                      : "-"
+                  }}
+                </ui-typography>
+              </ui-grid>
+              <ui-grid [size]="{ xs: 6 }">
+                <ui-typography variant="caption" color="muted">Declared Cargo Value</ui-typography>
+                <ui-typography variant="body" class="font-mono">
+                  {{
+                    q.declaredCargoValueAmount !== undefined
+                      ? (q.declaredCargoValueAmount | number: "1.2-2") + " " + q.currency
+                      : "-"
+                  }}
+                </ui-typography>
+              </ui-grid>
+
+              @if (q.temperatureSpec; as temp) {
+                <ui-grid [size]="{ xs: 6 }">
+                  <ui-typography variant="caption" color="muted">Temperature Zone</ui-typography>
+                  <ui-typography variant="body">{{ formatLabel(temp.zone) }}</ui-typography>
+                </ui-grid>
+                <ui-grid [size]="{ xs: 6 }">
+                  <ui-typography variant="caption" color="muted">Setpoint & Variance</ui-typography>
+                  <ui-typography variant="body">
+                    {{ temp.setpointCelsius !== undefined ? temp.setpointCelsius + "°C" : "-" }}
+                    @if (temp.allowableVarianceCelsius !== undefined) {
+                      (±{{ temp.allowableVarianceCelsius }}°C)
+                    }
+                  </ui-typography>
+                </ui-grid>
+                <ui-grid [size]="{ xs: 6 }">
+                  <ui-typography variant="caption" color="muted">Compliance Regime</ui-typography>
+                  <ui-typography variant="body" class="uppercase">
+                    {{ temp.compliance || "Standard" }}
+                  </ui-typography>
+                </ui-grid>
+                <ui-grid [size]="{ xs: 6 }">
+                  <ui-typography variant="caption" color="muted">
+                    Continuous Telematics
+                  </ui-typography>
+                  <ui-typography variant="body">
+                    {{ temp.requiresContinuousTelematics ? "Required" : "No" }}
+                  </ui-typography>
+                </ui-grid>
+              }
+            </ui-grid>
+          </ui-stack>
+        </ui-surface>
+      </ui-grid>
+    </ui-grid>
+
+    @if (q.notes) {
+      <ui-surface variant="elevated" [border]="true">
+        <ui-typography variant="caption" color="muted">Quotation Notes</ui-typography>
+        <ui-typography variant="body" class="mt-1 whitespace-pre-wrap">{{ q.notes }}</ui-typography>
+      </ui-surface>
+    }
+
+    <!-- Action Workflow Controls -->
+    <ui-stack direction="row" wrap="true" gap="2" align="stretch">
+      @if (q.status === "draft") {
+        <ui-button
+          icon="plus"
+          label="Add Line"
+          [disabled]="isBusy()"
+          (click)="addLineDialogVisible.set(true)"
+        />
+        <ui-button
+          icon="send"
+          label="Submit for Approval"
+          [disabled]="isBusy() || !q.lines?.length"
+          (click)="submit()"
+        />
+        <ui-button
+          icon="check"
+          intent="success"
+          label="Approve"
+          [disabled]="isBusy() || !q.lines?.length"
+          (click)="approve()"
+        />
+        <ui-button
+          icon="x"
+          intent="danger"
+          appearance="outlined"
+          label="Reject"
+          [disabled]="isBusy()"
+          (click)="openRejectDialog()"
+        />
+        <ui-button
+          icon="pencil"
+          appearance="outlined"
+          intent="warn"
+          label="Edit"
+          [disabled]="isBusy()"
+          (click)="edit()"
+        />
+      }
+
+      @if (q.status === "pending_approval") {
+        <ui-button
+          icon="check"
+          intent="success"
+          label="Approve"
+          [disabled]="isBusy()"
+          (click)="approve()"
+        />
+        <ui-button
+          icon="x"
+          intent="danger"
+          appearance="outlined"
+          label="Reject"
+          [disabled]="isBusy()"
+          (click)="openRejectDialog()"
+        />
+      }
+
+      @if (q.status === "approved") {
+        <ui-button
+          icon="file-text"
+          intent="primary"
+          label="Issue Quotation"
+          [disabled]="isBusy()"
+          (click)="openIssueDialog()"
+        />
+      }
+
+      @if (q.status === "issued") {
+        <ui-button
+          icon="check"
+          intent="success"
+          label="Accept Quotation"
+          [disabled]="isBusy()"
+          (click)="accept()"
+        />
+        <ui-button
+          icon="x"
+          intent="danger"
+          appearance="outlined"
+          label="Reject"
+          [disabled]="isBusy()"
+          (click)="openRejectDialog()"
+        />
+        <ui-button
+          icon="clock"
+          appearance="text"
+          label="Expire"
+          [disabled]="isBusy()"
+          (click)="expire()"
+        />
+      }
+
+      @if (q.status === "accepted") {
+        <ui-button
+          icon="calendar"
+          intent="primary"
+          label="Convert to Booking"
+          [disabled]="isBusy()"
+          (click)="openConvertDialog()"
+        />
+      }
+    </ui-stack>
+
+    <!-- Quotation Lines Table -->
+    <app-quotation-lines-table
+      [lines]="quotation()?.lines ?? []"
+      (remove)="promptDeleteLine($event)"
+    />
+  }
+</div>
+
+<ui-dialog
+  header="Quotation PDF Preview"
+  [(open)]="openQuotationPdfViewer"
+  [modal]="true"
+  [fullScreen]="true"
+  [draggable]="false"
+  [resizable]="false"
+>
+  @if (openQuotationPdfViewer()) {
+    <app-pdf-viewer
+      [documentId]="quotation()?.id!"
+      [loader]="loadQuotationPdf"
+      [fileName]="quotation()?.referenceNumber + '.pdf'"
+    />
+  }
+</ui-dialog>
+
+<!-- Add Line Dialog -->
+<ui-dialog
+  header="Add Quotation Lines"
+  [(open)]="addLineDialogVisible"
+  [modal]="true"
+  [fullScreen]="true"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <app-quotation-line-form
+    [quotation]="quotation()"
+    (save)="addLines($event)"
+    (dismiss)="addLineDialogVisible.set(false)"
+  />
+</ui-dialog>
+
+<!-- Issue Quotation Dialog -->
+<ui-dialog header="Issue Quotation" [(open)]="issueDialogVisible" [modal]="true" width="400px">
+  <div class="flex flex-col gap-4">
+    <p class="text-subtle-foreground">
+      Specify how many days this quotation remains valid for the customer.
+    </p>
+    <ui-form-field label="Validity (Days)" for="validityDays">
+      <ui-number-field [(value)]="validityDays" [min]="1" />
+    </ui-form-field>
+  </div>
+  <ng-template #footer>
+    <ui-button appearance="text" label="Cancel" (click)="issueDialogVisible.set(false)" />
+    <ui-button
+      intent="primary"
+      label="Issue"
+      icon="send"
+      [disabled]="isBusy() || validityDays() < 1"
+      (click)="confirmIssue()"
+    />
+  </ng-template>
+</ui-dialog>
+
+<!-- Reject Quotation Dialog -->
+<ui-dialog header="Reject Quotation" [(open)]="rejectDialogVisible" [modal]="true" width="450px">
+  <div class="flex flex-col gap-4">
+    <p class="text-subtle-foreground">Please provide a reason for rejecting this quotation.</p>
+    <ui-textarea-field
+      [(value)]="rejectionReason"
+      [rows]="4"
+      class="block w-full"
+      placeholder="Enter rejection reason..."
+    />
+  </div>
+  <ng-template #footer>
+    <ui-button appearance="text" label="Cancel" (click)="rejectDialogVisible.set(false)" />
+    <ui-button
+      intent="danger"
+      label="Reject"
+      icon="x"
+      [disabled]="!rejectionReason().trim() || isBusy()"
+      (click)="confirmReject()"
+    />
+  </ng-template>
+</ui-dialog>
+
+<!-- Convert to Booking Dialog -->
+<ui-dialog header="Convert to Booking" [(open)]="convertDialogVisible" [modal]="true" width="40rem">
+  <div class="flex flex-col gap-4">
+    <p class="text-subtle-foreground">
+      Create a Booking from this quotation. Carrier confirmation and dates can also be added later.
+    </p>
+
+    <ui-form-field label="Container Type" for="convertContainerTypeId">
+      <ui-select-field
+        id="convertContainerTypeId"
+        [(value)]="convertContainerTypeId"
+        [options]="containerTypeOptions()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Select container type (optional)"
+      />
+    </ui-form-field>
+
+    <ui-grid container spacing="3">
+      <ui-grid [size]="{ xs: 12, md: 6 }">
+        <ui-form-field label="Requested Pickup Date" for="convertPickupDate">
+          <ui-date-field id="convertPickupDate" [(value)]="convertPickupDate" />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12, md: 6 }">
+        <ui-form-field label="Requested Delivery Date" for="convertDeliveryDate">
+          <ui-date-field id="convertDeliveryDate" [(value)]="convertDeliveryDate" />
+        </ui-form-field>
+      </ui-grid>
+    </ui-grid>
+
+    <ui-textarea-field
+      [(value)]="convertNotes"
+      [rows]="3"
+      class="block w-full"
+      placeholder="Notes (optional)"
+    />
+  </div>
+  <ng-template #footer>
+    <ui-button appearance="text" label="Cancel" (click)="convertDialogVisible.set(false)" />
+    <ui-button
+      intent="primary"
+      label="Create Booking"
+      icon="calendar"
+      [disabled]="isBusy()"
+      (click)="confirmConvertToBooking()"
+    />
+  </ng-template>
+</ui-dialog>
+
+<!-- Delete Line Confirmation Dialog -->
+<ui-confirm-delete-dialog
+  entityLabel="Quotation Line"
+  [entityName]="lineToDelete()?.chargeName ?? ''"
+  [(visible)]="deleteLineDialogVisible"
+  [deleting]="isDeletingLine()"
+  (confirm)="onConfirmDeleteLine()"
+/>

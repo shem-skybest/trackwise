@@ -1,0 +1,102 @@
+<ui-grid container spacing="3">
+  <ui-grid [size]="{ xs: 12 }">
+    <ui-typography variant="h5" tag="h2">Quotation terms</ui-typography>
+    <ui-typography variant="caption" color="muted">
+      The notes under the quotation's rate table. Leave a term blank when the quotation doesn't say.
+    </ui-typography>
+  </ui-grid>
+
+  <ui-grid [size]="{ xs: 6, md: 3 }">
+    <ui-form-field label="Drops in the rate" for="includedDrops" hint="Blank = one">
+      <ui-number-field id="includedDrops" [formField]="field().includedDrops" />
+    </ui-form-field>
+  </ui-grid>
+  <ui-grid [size]="{ xs: 12, md: 9 }">
+    <ui-typography variant="body-sm" class="mb-1 font-medium">Each further drop</ui-typography>
+    <ui-grid container spacing="2">
+      @for (size of sizes; track size) {
+        <ui-grid [size]="{ xs: 6, sm: 4, md: 2 }">
+          <ui-form-field [label]="sizeLabel(size)" [for]="'extraDrop-' + size" class="mb-0">
+            <ui-number-field
+              [id]="'extraDrop-' + size"
+              [formField]="field().extraDrop[size]"
+              prefixLabel="₱"
+            />
+          </ui-form-field>
+        </ui-grid>
+      }
+    </ui-grid>
+  </ui-grid>
+
+  <ui-grid [size]="{ xs: 6, md: 3 }">
+    <ui-form-field label="Foul trip" for="foulTripPercent" hint="% of the rate">
+      <ui-number-field id="foulTripPercent" [formField]="field().foulTripPercent" suffixLabel="%" />
+    </ui-form-field>
+  </ui-grid>
+  <ui-grid [size]="{ xs: 6, md: 3 }">
+    <ui-form-field label="Backload" for="backloadPercent" hint="% of the rate">
+      <ui-number-field id="backloadPercent" [formField]="field().backloadPercent" suffixLabel="%" />
+    </ui-form-field>
+  </ui-grid>
+  <ui-grid [size]="{ xs: 6, md: 3 }">
+    <ui-form-field label="Demurrage free" for="demurrageFreeHours" hint="Hours of waiting">
+      <ui-number-field
+        id="demurrageFreeHours"
+        [formField]="field().demurrageFreeHours"
+        suffixLabel="h"
+      />
+    </ui-form-field>
+  </ui-grid>
+  <ui-grid [size]="{ xs: 6, md: 3 }">
+    <ui-form-field label="Then per hour" for="demurrageHourlyRate">
+      <ui-number-field
+        id="demurrageHourlyRate"
+        [formField]="field().demurrageHourlyRate"
+        prefixLabel="₱"
+      />
+    </ui-form-field>
+  </ui-grid>
+  <ui-grid [size]="{ xs: 6, md: 3 }">
+    <ui-form-field
+      label="Different location"
+      for="otherLocationCharge"
+      hint="Added for a drop outside the area"
+    >
+      <ui-number-field
+        id="otherLocationCharge"
+        [formField]="field().otherLocationCharge"
+        prefixLabel="₱"
+      />
+    </ui-form-field>
+  </ui-grid>
+  <ui-grid [size]="{ xs: 12, md: 6 }">
+    <ui-form-field
+      label="Bill extra drops"
+      for="billExtraDrops"
+      hint="Off: drops past the rate's are counted but not charged, as SAS bills today"
+    >
+      <ui-toggle-field inputId="billExtraDrops" [formField]="field().billExtraDrops" />
+    </ui-form-field>
+  </ui-grid>
+  <ui-grid [size]="{ xs: 12, md: 6 }">
+    <ui-form-field
+      label="Rates include VAT"
+      for="ratesIncludeVat"
+      hint="On: trips are billed net of 12% VAT, as nSFS records Global and HFI"
+    >
+      <ui-toggle-field inputId="ratesIncludeVat" [formField]="field().ratesIncludeVat" />
+    </ui-form-field>
+  </ui-grid>
+
+  <ui-grid [size]="{ xs: 12, md: 5 }">
+    <ui-form-field label="Tolls and parking" for="tolls" class="mb-0">
+      <ui-select-field
+        id="tolls"
+        [formField]="field().tolls"
+        [options]="tollsOptions"
+        optionLabel="label"
+        optionValue="value"
+      />
+    </ui-form-field>
+  </ui-grid>
+</ui-grid>

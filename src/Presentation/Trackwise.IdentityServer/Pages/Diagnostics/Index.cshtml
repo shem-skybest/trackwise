@@ -1,0 +1,50 @@
+@page
+@model Trackwise.IdentityServer.Pages.Diagnostics.Index
+@{
+    Layout = "_AppLayout";
+    ViewData["Title"] = "Diagnostics";
+}
+
+<div class="mb-8 flex flex-col gap-1">
+    <h1 class="mb-0 text-2xl font-bold">Authentication cookie</h1>
+    <p class="text-muted-foreground text-sm">The claims and properties of your current session.</p>
+</div>
+
+<div class="grid gap-6 lg:grid-cols-2">
+    <div hlm-card>
+        <div hlm-card-header><div hlm-card-title>Claims</div></div>
+        <div hlm-card-content>
+            <dl class="flex flex-col gap-3 text-sm">
+                @foreach (var claim in Model.View.AuthenticateResult.Principal.Claims)
+                {
+                    <div>
+                        <dt class="text-muted-foreground">@claim.Type</dt>
+                        <dd class="break-all">@claim.Value</dd>
+                    </div>
+                }
+            </dl>
+        </div>
+    </div>
+
+    <div hlm-card>
+        <div hlm-card-header><div hlm-card-title>Properties</div></div>
+        <div hlm-card-content>
+            <dl class="flex flex-col gap-3 text-sm">
+                @foreach (var prop in Model.View.AuthenticateResult.Properties.Items)
+                {
+                    <div>
+                        <dt class="text-muted-foreground">@prop.Key</dt>
+                        <dd class="break-all">@prop.Value</dd>
+                    </div>
+                }
+                @if (Model.View.Clients.Any())
+                {
+                    <div>
+                        <dt class="text-muted-foreground">Clients</dt>
+                        <dd>@string.Join(", ", Model.View.Clients)</dd>
+                    </div>
+                }
+            </dl>
+        </div>
+    </div>
+</div>

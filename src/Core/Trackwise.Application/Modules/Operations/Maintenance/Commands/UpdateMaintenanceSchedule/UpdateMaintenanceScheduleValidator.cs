@@ -1,0 +1,3 @@
+namespace Trackwise.Application.Modules.Operations.Maintenance.Commands;
+
+internal sealed class UpdateMaintenanceScheduleValidator : MaintenanceScheduleValidatorBase<UpdateMaintenanceScheduleCommand>;

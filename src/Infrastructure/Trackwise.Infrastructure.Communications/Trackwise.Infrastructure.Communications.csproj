@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- SignalR: never the legacy Microsoft.AspNetCore.SignalR 1.x package (Newtonsoft-era). -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FirebaseAdmin" Version="3.4.0" />
+    <PackageReference Include="Fluid.Core" Version="2.31.0" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.5" />
+    <PackageReference Include="Resend" Version="0.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\Trackwise.Application.Abstractions\Trackwise.Application.Abstractions.csproj" />
+    <ProjectReference Include="..\..\Core\Trackwise.Mappings\Trackwise.Mappings.csproj" />
+    <ProjectReference Include="..\Trackwise.Infrastructure.Integrations.Common\Trackwise.Infrastructure.Integrations.Common.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Email\Templates\*.liquid" />
+  </ItemGroup>
+
+</Project>

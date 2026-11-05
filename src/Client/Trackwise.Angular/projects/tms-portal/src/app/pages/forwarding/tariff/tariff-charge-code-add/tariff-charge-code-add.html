@@ -1,0 +1,108 @@
+<ui-page-header title="Add Charge Code" [backLink]="backLink()" />
+
+<ui-container maxWidth="md">
+  <ui-card>
+    <form [formRoot]="form">
+      <ui-stack gap="4">
+        <ui-stack direction="row" align="center" gap="2">
+          <ui-icon name="tag" color="secondary" />
+          <ui-stack gap="0">
+            <ui-typography variant="h5" tag="h2">Charge code definition</ui-typography>
+            <ui-typography variant="body-sm" color="muted">
+              Create a reusable charge code for this tariff and future pricing matrices.
+            </ui-typography>
+          </ui-stack>
+        </ui-stack>
+
+        <ui-grid container spacing="4">
+          <ui-grid [size]="{ xs: 12, md: 4 }">
+            <ui-form-field label="Code" for="code" [required]="true" hint="Example: TRK, FSC, TOLL">
+              <ui-text-field id="code" [formField]="form.code" [maxlength]="20" />
+            </ui-form-field>
+          </ui-grid>
+          <ui-grid [size]="{ xs: 12, md: 8 }">
+            <ui-form-field label="Name" for="name" [required]="true">
+              <ui-text-field id="name" [formField]="form.name" placeholder="Trucking Freight" />
+            </ui-form-field>
+          </ui-grid>
+          <ui-grid [size]="{ xs: 12, md: 6 }">
+            <ui-form-field label="Category" for="category" [required]="true">
+              <ui-select-field
+                id="category"
+                [formField]="form.category"
+                [options]="categoryOptions"
+                optionLabel="label"
+                optionValue="value"
+              />
+            </ui-form-field>
+          </ui-grid>
+          <ui-grid [size]="{ xs: 12, md: 6 }">
+            <ui-form-field label="Default Unit" for="defaultUnit" [required]="true">
+              <ui-text-field
+                id="defaultUnit"
+                [formField]="form.defaultUnit"
+                placeholder="per trip"
+              />
+            </ui-form-field>
+          </ui-grid>
+          <ui-grid [size]="12">
+            <ui-form-field label="Applicable Modes" for="applicableModes" [required]="true">
+              <ui-multiselect-field
+                id="applicableModes"
+                [formField]="form.applicableModes"
+                [options]="modeOptions"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Select freight modes"
+              />
+            </ui-form-field>
+          </ui-grid>
+          <ui-grid [size]="12">
+            <ui-form-field
+              label="Description"
+              for="description"
+              hint="Explain when this charge applies."
+            >
+              <ui-text-field
+                id="description"
+                [formField]="form.description"
+                placeholder="Base trucking freight charge for domestic hauls"
+              />
+            </ui-form-field>
+          </ui-grid>
+          <ui-grid [size]="{ xs: 12, md: 6 }">
+            <ui-form-field label="Tax Code" for="taxCode" hint="Use none when no tax code applies.">
+              <ui-text-field id="taxCode" [formField]="form.taxCode" placeholder="none" />
+            </ui-form-field>
+          </ui-grid>
+          <ui-grid [size]="{ xs: 12, md: 6 }">
+            <ui-form-field label="Approval" for="requiresApproval">
+              <ui-stack direction="row" align="center" gap="2">
+                <ui-checkbox-field inputId="requiresApproval" [formField]="form.requiresApproval" />
+                <label for="requiresApproval" class="cursor-pointer">
+                  Requires approval before use
+                </label>
+              </ui-stack>
+            </ui-form-field>
+          </ui-grid>
+        </ui-grid>
+
+        <ui-stack direction="row" gap="2">
+          <ui-button
+            type="submit"
+            icon="plus"
+            label="Create Charge Code"
+            [loading]="form().submitting()"
+          />
+          <ui-button
+            type="button"
+            appearance="outlined"
+            icon="arrow-left"
+            label="Cancel"
+            [routerLink]="['/tariffs', tariffId(), 'rates', 'add']"
+          />
+        </ui-stack>
+      </ui-stack>
+    </form>
+  </ui-card>
+</ui-container>

@@ -1,0 +1,18 @@
+<div class="animate-in fade-in space-y-4">
+  <ui-page-header
+    title="Workfiles"
+    subtitle="Operational files between a confirmed booking and billing."
+  />
+
+  <app-workfiles-table
+    [data]="store.data()"
+    [isLoading]="store.isLoading()"
+    [error]="store.error()"
+    [isEmpty]="store.isEmpty()"
+    [totalRecords]="store.totalRecords()"
+    [pageSize]="store.pageSize()"
+    [first]="store.first()"
+    (lazyLoad)="store.onLazyLoad($event)"
+    (retry)="store.retry()"
+  />
+</div>

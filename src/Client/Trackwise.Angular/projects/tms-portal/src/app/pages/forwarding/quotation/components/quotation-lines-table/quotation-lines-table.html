@@ -1,0 +1,64 @@
+<ui-card>
+  @if (lines().length === 0) {
+    <ui-empty-state
+      title="No lines yet"
+      message="Add a line to start pricing this quotation."
+      icon="list"
+    />
+  } @else {
+    <ui-data-table [value]="lines()" dataKey="id">
+      <ng-template #header>
+        <tr>
+          <th>Charge Code</th>
+          <th>Category</th>
+          <th>Service Type</th>
+          <th>Charge Name</th>
+          <th>Quantity</th>
+          <th>Buying</th>
+          <th>Markup</th>
+          <th>Selling</th>
+          <th>Notes</th>
+          <th class="w-12 text-right"></th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-line>
+        <tr>
+          <td class="font-medium">{{ line.chargeCode }}</td>
+          <td>
+            <span
+              class="bg-muted text-muted-foreground inline-flex rounded px-2 py-0.5 text-xs font-semibold uppercase"
+            >
+              {{ line.category ?? "base" }}
+            </span>
+          </td>
+          <td class="text-muted-foreground text-xs">
+            {{ formatText(line.serviceType) }}
+          </td>
+          <td class="text-muted-foreground">{{ line.chargeName }}</td>
+          <td>{{ transform(line.quantity, line.unit) }}</td>
+          <td class="font-mono text-sm">
+            {{ line.buyingAmount | number: "1.2-2" }} {{ line.buyingCurrency }}
+          </td>
+          <td>
+            {{ line.markupType | titlecase }}
+            {{ line.markupType === "percentage" ? line.markupValue + "%" : line.markupValue }}
+          </td>
+          <td class="font-mono text-sm font-semibold">
+            {{ line.sellingAmount | number: "1.2-2" }} {{ line.sellingCurrency }}
+          </td>
+          <td class="text-muted-foreground max-w-40 truncate">{{ line.notes }}</td>
+          <td class="text-right">
+            <ui-button
+              appearance="text"
+              icon="trash"
+              intent="danger"
+              ariaLabel="Remove line"
+              (click)="remove.emit(line.id)"
+            />
+          </td>
+        </tr>
+      </ng-template>
+    </ui-data-table>
+  }
+</ui-card>

@@ -1,0 +1,60 @@
+<ui-stack tag="section" gap="3">
+  <ui-stack direction="row" gap="2" align="center">
+    <ui-icon name="list" color="secondary" />
+    <ui-typography variant="overline" color="secondary">Cold Chain booking numbers</ui-typography>
+  </ui-stack>
+  <ui-surface variant="elevated" [border]="true">
+    @if (numbering(); as numbering) {
+      <ui-stack gap="3">
+        <ui-stack direction="row" align="center" justify="between" gap="3">
+          <div>
+            <ui-typography variant="body">Type the numbers in from nSFS</ui-typography>
+            <ui-typography variant="caption" color="secondary">
+              While nSFS still issues Cold Chain booking numbers, each booking takes the number nSFS
+              gave it, typed in when it's made or later. Switch off at cut-over.
+            </ui-typography>
+          </div>
+          <ui-toggle-field
+            [(value)]="typed"
+            inputId="bookingNumbersTyped"
+            [disabled]="!canManage() || savingTyped()"
+            (valueChange)="onTypedChange($event)"
+          />
+        </ui-stack>
+
+        <div>
+          <ui-typography variant="caption" color="muted">
+            {{ typed() ? "Next booking, once TrackWise issues them" : "Next booking" }}
+          </ui-typography>
+          <div class="text-lg font-medium">{{ numbering.nextReference }}</div>
+          <ui-typography variant="caption" color="muted">
+            {{ numbering.lastIssued }} issued this year. Numbering starts over at 1 every January,
+            as it did in nSFS.
+          </ui-typography>
+        </div>
+
+        @if (canManage()) {
+          <form [formRoot]="form">
+            <ui-form-field
+              label="Next number"
+              for="nextNumber"
+              hint="At cut-over, enter the number after the last one nSFS issued this year. It can only go up."
+            >
+              <ui-number-field
+                id="nextNumber"
+                [formField]="form.nextNumber"
+                [useGrouping]="false"
+              />
+            </ui-form-field>
+            <ui-button
+              type="submit"
+              icon="save"
+              label="Set next number"
+              [loading]="form().submitting()"
+            />
+          </form>
+        }
+      </ui-stack>
+    }
+  </ui-surface>
+</ui-stack>

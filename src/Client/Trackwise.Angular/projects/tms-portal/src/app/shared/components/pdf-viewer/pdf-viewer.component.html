@@ -1,0 +1,22 @@
+<div class="pdf-viewer-wrapper">
+  @if (isLoading()) {
+    <div class="state-container" role="status" aria-live="polite">
+      <div class="spinner"></div>
+      <p>{{ loadingMessage() }}</p>
+    </div>
+  } @else if (errorMessage()) {
+    <div class="state-container error" role="alert">
+      <p class="error-text">{{ errorMessage() }}</p>
+      <button type="button" class="btn-retry" (click)="retry()">Retry</button>
+    </div>
+  } @else if (pdfBlob()) {
+    <ngx-extended-pdf-viewer
+      [src]="pdfBlob()!"
+      [height]="height()"
+      [filenameForDownload]="fileName() ?? undefined"
+      [showDownloadButton]="showDownload()"
+      [showPrintButton]="showPrint()"
+      [showPagingButtons]="true"
+    ></ngx-extended-pdf-viewer>
+  }
+</div>

@@ -1,0 +1,301 @@
+<ui-page-header title="Add Rate" backLink="/tariffs" />
+
+<ui-container maxWidth="md">
+  @if (isLoading()) {
+    <ui-stack align="center" justify="center" class="py-12 text-center">
+      <ui-spinner />
+    </ui-stack>
+  } @else {
+    <ui-card>
+      <form [formRoot]="form">
+        <ui-stack gap="6">
+          <!-- Header -->
+          <ui-stack direction="row" align="center" gap="3">
+            <ui-icon name="table" color="secondary" />
+            <ui-stack gap="0">
+              <ui-typography variant="h5" tag="h2">Rate Definition</ui-typography>
+              <ui-typography variant="body-sm" color="muted">
+                Select a charge code and configure its pricing rules.
+              </ui-typography>
+            </ui-stack>
+          </ui-stack>
+
+          <!-- Core Configuration -->
+          <ui-grid container spacing="4">
+            <ui-grid [size]="{ xs: 12, md: 6 }">
+              <ui-form-field label="Charge Code" for="chargeCodeId" [required]="true">
+                <ui-select-field
+                  id="chargeCodeId"
+                  [formField]="form.chargeCodeId"
+                  [options]="chargeCodeOptions()"
+                  optionLabel="label"
+                  optionValue="value"
+                  placeholder="Select charge code"
+                />
+                <a
+                  class="text-primary mt-2 inline-flex items-center gap-1 text-sm font-medium hover:underline"
+                  [routerLink]="['/tariffs', id(), 'charge-codes', 'add']"
+                >
+                  <ui-icon name="plus" size="sm" />
+                  Create Charge Code
+                </a>
+              </ui-form-field>
+            </ui-grid>
+
+            <ui-grid [size]="{ xs: 12, md: 6 }">
+              <ui-form-field label="Pricing Model" for="pricingModel" [required]="true">
+                <ui-select-field
+                  id="pricingModel"
+                  [formField]="form.pricingModel"
+                  [options]="pricingModels"
+                  optionLabel="label"
+                  optionValue="value"
+                />
+              </ui-form-field>
+            </ui-grid>
+          </ui-grid>
+
+          <hr class="border-border opacity-50" />
+
+          <!-- Dynamic Pricing Inputs -->
+          @switch (model().pricingModel) {
+            @case ("percentage") {
+              <ui-grid container spacing="4">
+                <ui-grid [size]="{ xs: 12, md: 6 }">
+                  <ui-form-field
+                    label="Percentage Rate (%)"
+                    for="percentage"
+                    [required]="true"
+                    hint="Rate percentage, e.g. 2.5 for 2.5%"
+                  >
+                    <ui-number-field id="percentage" [formField]="form.percentage" suffix="%" />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 6 }">
+                  <ui-form-field
+                    label="Percentage Base"
+                    for="percentageBase"
+                    [required]="true"
+                    [hint]="percentageBaseHint()"
+                  >
+                    <ui-select-field
+                      id="percentageBase"
+                      [formField]="form.percentageBase"
+                      [options]="percentageBases"
+                      optionLabel="label"
+                      optionValue="value"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+
+                @if (model().percentageBase === "CUSTOM") {
+                  <ui-grid [size]="{ xs: 12 }">
+                    <ui-form-field
+                      label="Custom Valuation Identifier"
+                      for="customPercentageBase"
+                      [required]="true"
+                      hint="Identifies the quote valuation base (e.g. GOODS_VALUE, CUSTOMS_VAL)"
+                    >
+                      <ui-text-field
+                        id="customPercentageBase"
+                        [formField]="form.customPercentageBase"
+                        placeholder="e.g. GOODS_VALUE"
+                      />
+                    </ui-form-field>
+                  </ui-grid>
+                }
+
+                <ui-grid [size]="{ xs: 12, md: 6 }">
+                  <ui-form-field label="Unit" for="unit" [required]="true">
+                    <ui-text-field id="unit" [formField]="form.unit" placeholder="%" />
+                  </ui-form-field>
+                </ui-grid>
+              </ui-grid>
+            }
+
+            @case ("breakpoint") {
+              <ui-grid container spacing="4">
+                <ui-grid [size]="{ xs: 12, md: 6 }">
+                  <ui-form-field label="Unit of Measure" for="unit" [required]="true">
+                    <ui-text-field
+                      id="unit"
+                      [formField]="form.unit"
+                      placeholder="e.g., per kg, per day"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 6 }">
+                  <ui-form-field
+                    label="Base / Entry Fee"
+                    for="baseAmount"
+                    hint="Optional base charge before tiers apply"
+                  >
+                    <ui-number-field id="baseAmount" [formField]="form.baseAmount" />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12 }">
+                  <ui-form-field
+                    label="Breakpoints (JSON)"
+                    for="breakpointJson"
+                    [required]="true"
+                    hint="Define tier thresholds and amounts"
+                  >
+                    <div class="mb-1 flex justify-end">
+                      <button
+                        type="button"
+                        class="text-primary hover:text-primary-focus inline-flex cursor-pointer items-center gap-1 text-xs font-semibold"
+                        (click)="insertSampleBreakpoint()"
+                      >
+                        <ui-icon name="plus" size="xs" />
+                        Load Sample Tier Template
+                      </button>
+                    </div>
+                    <ui-textarea-field
+                      id="breakpointJson"
+                      [formField]="form.breakpointJson"
+                      [rows]="4"
+                      placeholder='[{"from": 0, "to": 500, "rate": 50}, {"from": 501, "rate": 40}]'
+                    />
+                  </ui-form-field>
+                </ui-grid>
+              </ui-grid>
+            }
+
+            @case ("per_unit") {
+              <ui-grid container spacing="4">
+                <ui-grid [size]="{ xs: 12, md: 6 }">
+                  <!-- Per Unit -->
+                  <ui-form-field
+                    label="Rate per Unit"
+                    for="baseAmount"
+                    [required]="true"
+                    hint="Amount billed per specified unit"
+                  >
+                    <ui-number-field id="baseAmount" [formField]="form.baseAmount" />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 6 }">
+                  <ui-form-field
+                    label="Unit of Measure"
+                    for="unit"
+                    [required]="true"
+                    hint="e.g. per kg, per cbm, per container"
+                  >
+                    <ui-text-field id="unit" [formField]="form.unit" placeholder="per kg" />
+                  </ui-form-field>
+                </ui-grid>
+              </ui-grid>
+            }
+
+            @default {
+              <!-- Flat Fee Model -->
+              <ui-grid container spacing="4">
+                <ui-grid [size]="{ xs: 12, md: 6 }">
+                  <ui-form-field
+                    label="Flat Amount"
+                    for="baseAmount"
+                    [required]="true"
+                    hint="Fixed fee applied in tariff currency"
+                  >
+                    <ui-number-field id="baseAmount" [formField]="form.baseAmount" />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 6 }">
+                  <ui-form-field
+                    label="Unit"
+                    for="unit"
+                    [required]="true"
+                    hint="Billing unit or scope"
+                  >
+                    <ui-text-field id="unit" [formField]="form.unit" placeholder="per shipment" />
+                  </ui-form-field>
+                </ui-grid>
+              </ui-grid>
+            }
+          }
+
+          <!-- Floor & Ceiling (Applicable to Per Unit, Percentage, and Breakpoints) -->
+          @if (model().pricingModel !== "flat") {
+            <div>
+              <ui-typography
+                variant="body-sm"
+                color="muted"
+                class="mb-3 block font-semibold tracking-wider uppercase"
+              >
+                Limits & Thresholds (Optional)
+              </ui-typography>
+              <ui-grid container spacing="4">
+                <ui-grid [size]="{ xs: 12, md: 6 }">
+                  <ui-form-field label="Minimum Charge" for="minimum" hint="Minimum invoice floor">
+                    <ui-number-field id="minimum" [formField]="form.minimum" />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 6 }">
+                  <ui-form-field
+                    label="Maximum Charge"
+                    for="maximum"
+                    hint="Maximum invoice ceiling"
+                  >
+                    <ui-number-field id="maximum" [formField]="form.maximum" />
+                  </ui-form-field>
+                </ui-grid>
+              </ui-grid>
+            </div>
+          }
+
+          <!-- Demurrage / Free Time Settings (Applicable to Per Unit and Breakpoints) -->
+          @if (model().pricingModel === "per_unit" || model().pricingModel === "breakpoint") {
+            <div>
+              <ui-typography
+                variant="body-sm"
+                color="muted"
+                class="mb-3 block font-semibold tracking-wider uppercase"
+              >
+                Free Time & Demurrage (Optional)
+              </ui-typography>
+              <ui-grid container spacing="4">
+                <ui-grid [size]="{ xs: 12, md: 6 }">
+                  <ui-form-field
+                    label="Free Days"
+                    for="freeDays"
+                    hint="Days before charge starts accruing"
+                  >
+                    <ui-number-field id="freeDays" [formField]="form.freeDays" />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 6 }">
+                  <ui-form-field
+                    label="Rate After Free Days"
+                    for="rateAfterFreeDays"
+                    hint="Optional daily rate after free days"
+                  >
+                    <ui-number-field id="rateAfterFreeDays" [formField]="form.rateAfterFreeDays" />
+                  </ui-form-field>
+                </ui-grid>
+              </ui-grid>
+            </div>
+          }
+
+          <!-- Actions -->
+          <ui-stack direction="row" gap="2" class="pt-2">
+            <ui-button type="submit" icon="plus" label="Add Rate" [loading]="form().submitting()" />
+            <ui-button
+              type="button"
+              appearance="outlined"
+              icon="arrow-left"
+              label="Cancel"
+              [routerLink]="['/tariffs', id()]"
+            />
+          </ui-stack>
+        </ui-stack>
+      </form>
+    </ui-card>
+  }
+</ui-container>

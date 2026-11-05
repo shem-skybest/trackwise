@@ -1,0 +1,11 @@
+bun.lock
+openapi.json
+**/.VSCodeCounter
+**/node_modules
+**/dist
+**/assets
+**/.angular
+**/generated
+
+# Built by `bun run build:identity-css`; kept minified
+src/Presentation/Trackwise.IdentityServer/wwwroot/css/app.css

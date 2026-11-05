@@ -1,0 +1,78 @@
+<div class="animate-in fade-in space-y-4">
+  <ui-page-header
+    title="Vessels"
+    addRoute="/master-data/vessels/add"
+    addTooltip="Add a new vessel"
+  />
+
+  <ui-card>
+    <ui-stack gap="3" class="p-4">
+      <ui-grid container spacing="3">
+        <ui-grid [size]="{ xs: 12, md: 4 }">
+          <ui-form-field label="Search" for="search" hint="Name, code or IMO number">
+            <ui-text-field
+              id="search"
+              icon="search"
+              placeholder="Search vessels..."
+              (input)="onSearch($any($event.target).value)"
+            />
+          </ui-form-field>
+        </ui-grid>
+
+        <ui-grid [size]="{ xs: 12, md: 3 }">
+          <ui-form-field label="Type" for="type">
+            <ui-select-field
+              id="type"
+              [options]="typeOptions"
+              optionLabel="label"
+              optionValue="value"
+              [value]="selectedType()"
+              (valueChange)="onTypeChange($event)"
+            />
+          </ui-form-field>
+        </ui-grid>
+
+        <ui-grid [size]="{ xs: 12, md: 2 }">
+          <ui-form-field label="Status" for="status">
+            <ui-select-field
+              id="status"
+              [options]="statusOptions"
+              optionLabel="label"
+              optionValue="value"
+              [value]="selectedStatus()"
+              (valueChange)="onStatusChange($event)"
+            />
+          </ui-form-field>
+        </ui-grid>
+
+        <ui-grid [size]="{ xs: 12, md: 3 }">
+          <ui-form-field label="Deleted records" for="includeDeleted">
+            <ui-select-field
+              id="includeDeleted"
+              [options]="deletedOptions"
+              optionLabel="label"
+              optionValue="value"
+              [value]="includeDeleted()"
+              (valueChange)="onIncludeDeletedChange($event)"
+            />
+          </ui-form-field>
+        </ui-grid>
+      </ui-grid>
+    </ui-stack>
+  </ui-card>
+
+  <app-vessels-table
+    [data]="store.data()"
+    [isLoading]="store.isLoading()"
+    [error]="store.error()"
+    [isEmpty]="store.isEmpty()"
+    [totalRecords]="store.totalRecords()"
+    [pageSize]="store.pageSize()"
+    [first]="store.first()"
+    [canManage]="canManage"
+    (lazyLoad)="store.onLazyLoad($event)"
+    (retry)="store.retry()"
+    (addVessel)="addVessel()"
+    (restoreVessel)="restore($event)"
+  />
+</div>

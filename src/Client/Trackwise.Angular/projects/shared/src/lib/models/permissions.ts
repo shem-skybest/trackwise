@@ -1,0 +1,197 @@
+export const Permission = {
+  AppRole: {
+    View: "Permission.AppRole.View",
+    Manage: "Permission.AppRole.Manage",
+  },
+  Employee: {
+    View: "Permission.Employee.View",
+    Manage: "Permission.Employee.Manage",
+  },
+  Load: {
+    View: "Permission.Load.View",
+    Manage: "Permission.Load.Manage",
+  },
+  Notification: {
+    View: "Permission.Notification.View",
+    Manage: "Permission.Notification.Manage",
+  },
+  Stat: {
+    View: "Permission.Stat.View",
+  },
+  Tenant: {
+    View: "Permission.Tenant.View",
+    Manage: "Permission.Tenant.Manage",
+  },
+  TenantRole: {
+    View: "Permission.TenantRole.View",
+    Manage: "Permission.TenantRole.Manage",
+  },
+  Truck: {
+    View: "Permission.Truck.View",
+    Manage: "Permission.Truck.Manage",
+  },
+  User: {
+    View: "Permission.User.View",
+    Manage: "Permission.User.Manage",
+  },
+  Customer: {
+    View: "Permission.Customer.View",
+    Manage: "Permission.Customer.Manage",
+  },
+  Payment: {
+    View: "Permission.Payment.View",
+    Manage: "Permission.Payment.Manage",
+  },
+  Invoice: {
+    View: "Permission.Invoice.View",
+    Manage: "Permission.Invoice.Manage",
+    Approve: "Permission.Invoice.Approve",
+  },
+  Tax: {
+    View: "Permission.Tax.View",
+    Manage: "Permission.Tax.Manage",
+  },
+  Accounting: {
+    View: "Permission.Accounting.View",
+    Manage: "Permission.Accounting.Manage",
+  },
+  ApiKey: {
+    View: "Permission.ApiKey.View",
+    Manage: "Permission.ApiKey.Manage",
+  },
+  Payroll: {
+    View: "Permission.Payroll.View",
+    Manage: "Permission.Payroll.Manage",
+  },
+  Eld: {
+    View: "Permission.Eld.View",
+    Manage: "Permission.Eld.Manage",
+    Sync: "Permission.Eld.Sync",
+  },
+  Message: {
+    View: "Permission.Message.View",
+    Manage: "Permission.Message.Manage",
+  },
+  Invitation: {
+    View: "Permission.Invitation.View",
+    Manage: "Permission.Invitation.Manage",
+  },
+  Portal: {
+    Access: "Permission.Portal.Access",
+    ViewLoads: "Permission.Portal.ViewLoads",
+    ViewInvoices: "Permission.Portal.ViewInvoices",
+    ViewDocuments: "Permission.Portal.ViewDocuments",
+  },
+  Expense: {
+    View: "Permission.Expense.View",
+    Manage: "Permission.Expense.Manage",
+    Approve: "Permission.Expense.Approve",
+  },
+  LoadBoard: {
+    View: "Permission.LoadBoard.View",
+    Search: "Permission.LoadBoard.Search",
+    Book: "Permission.LoadBoard.Book",
+    Post: "Permission.LoadBoard.Post",
+    Manage: "Permission.LoadBoard.Manage",
+  },
+  FuelCard: {
+    View: "Permission.FuelCard.View",
+    Manage: "Permission.FuelCard.Manage",
+  },
+  Dispatch: {
+    View: "Permission.Dispatch.View",
+    Manage: "Permission.Dispatch.Manage",
+  },
+  BlogPost: {
+    View: "Permission.BlogPost.View",
+    Manage: "Permission.BlogPost.Manage",
+  },
+  IftaRate: {
+    View: "Permission.IftaRate.View",
+    Manage: "Permission.IftaRate.Manage",
+  },
+  Dvir: {
+    View: "Permission.Dvir.View",
+    Manage: "Permission.Dvir.Manage",
+    Review: "Permission.Dvir.Review",
+  },
+  Safety: {
+    View: "Permission.Safety.View",
+    Manage: "Permission.Safety.Manage",
+  },
+  Maintenance: {
+    View: "Permission.Maintenance.View",
+    Manage: "Permission.Maintenance.Manage",
+  },
+  Accident: {
+    View: "Permission.Accident.View",
+    Manage: "Permission.Accident.Manage",
+    Review: "Permission.Accident.Review",
+  },
+  Container: {
+    View: "Permission.Container.View",
+    Manage: "Permission.Container.Manage",
+  },
+  Copilot: {
+    View: "Permission.Copilot.View",
+    Manage: "Permission.Copilot.Manage",
+  },
+  Terminal: {
+    View: "Permission.Terminal.View",
+    Manage: "Permission.Terminal.Manage",
+  },
+  Negotiation: {
+    View: "Permission.Negotiation.View",
+    Manage: "Permission.Negotiation.Manage",
+  },
+
+  // Forwarding Permissions
+  Quotation: {
+    View: "Permission.Quotation.View",
+    Manage: "Permission.Quotation.Manage",
+  },
+  Booking: {
+    View: "Permission.Booking.View",
+    Manage: "Permission.Booking.Manage",
+  },
+  Tariff: {
+    View: "Permission.Tariff.View",
+    Manage: "Permission.Tariff.Manage",
+  },
+  Shipments: {
+    View: "Permission.Shipment.View",
+    Manage: "Permission.Shipment.Manage",
+  },
+  Compliance: {
+    View: "Permission.Compliance.View",
+    Manage: "Permission.Compliance.Manage",
+  },
+  Billing: {
+    View: "Permission.Billing.View",
+    Manage: "Permission.Billing.Manage",
+  },
+  MasterData: {
+    View: "Permission.MasterData.View",
+    Manage: "Permission.MasterData.Manage",
+    Approve: "Permission.MasterData.Approve",
+  },
+  BusinessPartner: {
+    View: "Permission.BusinessPartner.View",
+    Manage: "Permission.BusinessPartner.Manage",
+  },
+  Workfile: {
+    View: "Permission.Workfile.View",
+    Manage: "Permission.Workfile.Manage",
+    Approve: "Permission.Workfile.Approve",
+    ForwardBilling: "Permission.Workfile.ForwardBilling",
+    ClearClosure: "Permission.Workfile.ClearClosure",
+  },
+} as const;
+
+/**
+ * Type representing all possible permission values.
+ * Extracted from the Permission object for strong typing.
+ */
+export type PermissionValue = {
+  [K in keyof typeof Permission]: (typeof Permission)[K][keyof (typeof Permission)[K]];
+}[keyof typeof Permission];

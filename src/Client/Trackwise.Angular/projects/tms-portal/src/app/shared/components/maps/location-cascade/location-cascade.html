@@ -1,0 +1,65 @@
+<ui-grid container spacing="3">
+  <ui-grid [size]="{ xs: 12, md: 6 }">
+    <ui-form-field label="Region" for="region" [required]="true">
+      <ui-select-field
+        id="region"
+        [value]="selectedRegionCode() ?? ''"
+        (selectionChange)="onRegionChange($any($event))"
+        [options]="regionOptions()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Select region"
+        [filter]="true"
+        [disabled]="disabled()"
+      />
+    </ui-form-field>
+  </ui-grid>
+
+  <ui-grid [size]="{ xs: 12, md: 6 }">
+    <ui-form-field label="Province" for="province" [required]="true">
+      <ui-select-field
+        id="province"
+        [value]="selectedProvinceCode() ?? ''"
+        (selectionChange)="onProvinceChange($any($event))"
+        [options]="provinceOptions()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Select province"
+        [filter]="true"
+        [disabled]="disabled() || !selectedRegionCode()"
+      />
+    </ui-form-field>
+  </ui-grid>
+
+  <ui-grid [size]="{ xs: 12, md: 6 }">
+    <ui-form-field label="City / Municipality" for="city" [required]="true">
+      <ui-select-field
+        id="city"
+        [value]="selectedCityCode() ?? ''"
+        (selectionChange)="onCityChange($any($event))"
+        [options]="cityOptions()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Select city or municipality"
+        [filter]="true"
+        [disabled]="disabled() || !selectedProvinceCode()"
+      />
+    </ui-form-field>
+  </ui-grid>
+
+  <ui-grid [size]="{ xs: 12, md: 6 }">
+    <ui-form-field label="Barangay" for="barangay" hint="Optional">
+      <ui-select-field
+        id="barangay"
+        [value]="selectedBarangayCode() ?? ''"
+        (selectionChange)="onBarangayChange($any($event))"
+        [options]="barangayOptions()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Select barangay"
+        [filter]="true"
+        [disabled]="disabled() || !selectedCityCode()"
+      />
+    </ui-form-field>
+  </ui-grid>
+</ui-grid>

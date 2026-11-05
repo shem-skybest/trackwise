@@ -1,0 +1,38 @@
+<ui-dialog
+  header="Make the trip"
+  [(open)]="open"
+  [modal]="true"
+  width="32rem"
+  (opened)="onOpened()"
+>
+  <ui-stack gap="3">
+    <ui-typography variant="body-sm" color="muted">
+      One load per drop ({{ dropCount() }}), from the pickup warehouse. The crew comes from the
+      day's crew plan for the truck - change it on the trip if needed.
+    </ui-typography>
+
+    <ui-form-field
+      label="Truck"
+      for="truck"
+      [hint]="
+        bookedSizeLabel()
+          ? 'Booked as a ' + bookedSizeLabel()
+          : 'Pick later on the trip if not known yet'
+      "
+    >
+      <app-search-truck [(value)]="truck" />
+    </ui-form-field>
+
+    @if (sizeMismatch()) {
+      <ui-alert intent="warning">
+        This is a {{ truckSizeLabel() }}, not a {{ bookedSizeLabel() }}. The trip is still billed at
+        the booked {{ bookedSizeLabel() }} rate; check the client loads only what they booked.
+      </ui-alert>
+    }
+  </ui-stack>
+
+  <ng-template #footer>
+    <ui-button appearance="text" label="Cancel" [disabled]="isBusy()" (click)="open.set(false)" />
+    <ui-button icon="truck" label="Make trip" [loading]="isBusy()" (click)="create()" />
+  </ng-template>
+</ui-dialog>

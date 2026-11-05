@@ -1,0 +1,142 @@
+<ui-grid container spacing="3">
+  <ui-grid [size]="{ xs: 12, lg: 9, xl: 8 }">
+    <form [formRoot]="form">
+      <ui-stack gap="4">
+        <ui-stack tag="section" gap="3">
+          <ui-stack direction="row" gap="2" align="start">
+            <ui-icon name="box" color="secondary" class="mt-1" />
+            <ui-stack gap="0">
+              <ui-typography variant="overline" color="secondary">
+                Container Type Details
+              </ui-typography>
+              <ui-typography variant="caption" color="muted">
+                One record per box, replacing the two vocabularies that used to describe it.
+              </ui-typography>
+            </ui-stack>
+          </ui-stack>
+
+          <ui-surface variant="elevated" [border]="true">
+            <ui-stack gap="3">
+              <ui-grid container spacing="3">
+                <ui-grid [size]="{ xs: 12, md: 8 }">
+                  <ui-form-field label="Name" for="name" [required]="true">
+                    <ui-text-field id="name" [formField]="form.name" type="text" />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field label="Code" for="code" [hint]="codeHint()">
+                    <ui-text-field id="code" [formField]="form.code" type="text" [maxlength]="30" />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field label="Category" for="category" [required]="true">
+                    <ui-select-field
+                      id="category"
+                      [formField]="form.category"
+                      [options]="categoryOptions"
+                      optionLabel="label"
+                      optionValue="value"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field
+                    label="ISO size-type code"
+                    for="isoSizeTypeCode"
+                    hint="Four characters, e.g. 22G1. Blank for non-ISO equipment."
+                  >
+                    <ui-text-field
+                      id="isoSizeTypeCode"
+                      [formField]="form.isoSizeTypeCode"
+                      type="text"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+              </ui-grid>
+            </ui-stack>
+          </ui-surface>
+        </ui-stack>
+
+        <ui-stack tag="section" gap="3">
+          <ui-stack direction="row" gap="2" align="start">
+            <ui-icon name="ruler" color="secondary" class="mt-1" />
+            <ui-stack gap="0">
+              <ui-typography variant="overline" color="secondary">Dimensions</ui-typography>
+              <ui-typography variant="caption" color="muted">
+                Leave the length unset for equipment that has none - a road tanker, or bulk cargo.
+              </ui-typography>
+            </ui-stack>
+          </ui-stack>
+
+          <ui-surface variant="elevated" [border]="true">
+            <ui-stack gap="3">
+              <ui-grid container spacing="3">
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field label="Length" for="lengthFeet">
+                    <ui-select-field
+                      id="lengthFeet"
+                      [formField]="form.lengthFeet"
+                      [options]="lengthOptions"
+                      optionLabel="label"
+                      optionValue="value"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field
+                    label="TEU factor"
+                    for="teuFactor"
+                    hint="1 for a 20', 2 for a 40', 2.25 for a 45'."
+                  >
+                    <ui-number-field
+                      id="teuFactor"
+                      [formField]="form.teuFactor"
+                      [minFractionDigits]="2"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+              </ui-grid>
+
+              <ui-form-field label="High cube" for="isHighCube">
+                <ui-toggle-field
+                  id="isHighCube"
+                  [formField]="form.isHighCube"
+                  label="A foot taller than the standard box"
+                />
+              </ui-form-field>
+
+              <ui-form-field label="Notes" for="notes" hint="Optional">
+                <ui-textarea-field id="notes" [formField]="form.notes" [rows]="3" />
+              </ui-form-field>
+
+              <ui-form-field label="Active" for="isActive">
+                <ui-toggle-field
+                  id="isActive"
+                  [formField]="form.isActive"
+                  label="Offered for new work"
+                />
+              </ui-form-field>
+            </ui-stack>
+          </ui-surface>
+        </ui-stack>
+
+        <ui-stack direction="row" gap="2" align="center">
+          <ui-button type="submit" icon="save" [label]="submitLabel()" [disabled]="isLoading()" />
+
+          <ui-button
+            type="button"
+            appearance="text"
+            icon="arrow-left"
+            label="Cancel"
+            [routerLink]="['/master-data/container-types']"
+            [disabled]="isLoading()"
+          />
+        </ui-stack>
+      </ui-stack>
+    </form>
+  </ui-grid>
+</ui-grid>

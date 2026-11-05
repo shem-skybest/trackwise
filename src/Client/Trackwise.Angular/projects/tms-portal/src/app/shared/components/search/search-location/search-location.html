@@ -1,0 +1,38 @@
+<ui-autocomplete-field
+  class="w-full"
+  [placeholder]="placeholder()"
+  [minQueryLength]="1"
+  [delay]="250"
+  optionLabel="name"
+  [disabled]="disabled()"
+  [suggestions]="suggestions()"
+  [(value)]="value"
+  (completeMethod)="search($event)"
+  (touch)="touch.emit()"
+>
+  <ng-template #empty>
+    <div class="p-2">
+      <span class="text-muted-foreground text-sm">
+        No saved locations matching
+        <b>"{{ lastQuery() }}"</b>
+      </span>
+    </div>
+  </ng-template>
+  <ng-template let-location #item>
+    <div class="flex flex-col">
+      <div class="font-medium">
+        {{ location.name }}
+        <span class="text-muted-foreground text-xs">{{ location.code }}</span>
+      </div>
+      <div class="text-muted-foreground text-xs">
+        {{ location.address?.streetAddress || location.address?.cityOrMunicipality }}
+        @if (location.defaultCutoffTime) {
+          · cut-off {{ formatTimeOfDay(location.defaultCutoffTime) }}
+        }
+        @if (!location.customerId) {
+          · shared
+        }
+      </div>
+    </div>
+  </ng-template>
+</ui-autocomplete-field>

@@ -1,0 +1,64 @@
+<ui-card class="mb-4">
+  <ui-stack gap="3">
+    <ui-stack direction="row" align="center" gap="2">
+      <div class="min-w-0 flex-1">
+        <ui-text-field
+          placeholder="Search tariffs by name, contract or currency..."
+          icon="search"
+          (input)="onSearch($any($event.target).value)"
+        />
+      </div>
+
+      @if (hasFilters()) {
+        <ui-button
+          appearance="text"
+          icon="x"
+          label="Clear filters"
+          size="sm"
+          (click)="clearFilters()"
+        />
+      }
+    </ui-stack>
+
+    <ui-grid container spacing="2">
+      <ui-grid [size]="{ xs: 12, sm: 6, md: 4 }">
+        <ui-form-field label="Freight Mode">
+          <ui-select-field
+            [options]="freightModeFilterOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="All modes"
+            [value]="selectedMode()"
+            (valueChange)="onModeChanged($event)"
+          />
+        </ui-form-field>
+      </ui-grid>
+
+      <ui-grid [size]="{ xs: 12, sm: 6, md: 4 }">
+        <ui-form-field label="Service Level">
+          <ui-select-field
+            [options]="serviceLevelFilterOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="All service levels"
+            [value]="selectedServiceLevel()"
+            (valueChange)="onServiceLevelChanged($event)"
+          />
+        </ui-form-field>
+      </ui-grid>
+
+      <ui-grid [size]="{ xs: 12, sm: 6, md: 4 }">
+        <ui-form-field label="Status">
+          <ui-select-field
+            [options]="statusOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="All statuses"
+            [value]="selectedStatus()"
+            (valueChange)="onStatusChanged($event)"
+          />
+        </ui-form-field>
+      </ui-grid>
+    </ui-grid>
+  </ui-stack>
+</ui-card>

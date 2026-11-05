@@ -1,0 +1,81 @@
+using Trackwise.DbMigrator.Models;
+
+namespace Trackwise.DbMigrator.Abstractions;
+
+/// <summary>
+/// Abstract base class providing common seeder functionality.
+/// </summary>
+public abstract class SeederBase(ILogger logger) : ISeeder
+{
+    protected readonly ILogger logger = logger;
+    protected readonly Random random = new();
+
+    public abstract string Name { get; }
+    public abstract SeederType Type { get; }
+    public virtual int Order => 100;
+    public virtual IReadOnlyList<string> DependsOn => [];
+
+    /// <summary>
+    /// FakeData seeders are always tenant-scoped. Infrastructure seeders default to global
+    /// (master-DB only) - override to true if the seeder needs <c>CurrentTenant</c>.
+    /// </summary>
+    public virtual bool IsTenantScoped => Type == SeederType.FakeData;
+
+    public virtual bool SeedsInProduction => Type == SeederType.Infrastructure;
+
+    public abstract Task SeedAsync(SeederContext context, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Default implementation for ShouldSkipAsync.
+    /// Infrastructure seeders never skip; FakeData seeders skip if data exists.
+    /// </summary>
+    public virtual async Task<bool> ShouldSkipAsync(SeederContext context, CancellationToken cancellationToken = default)
+    {
+        if (Type == SeederType.Infrastructure)
+        {
+            return false;
+        }
+
+        return await HasExistingDataAsync(context, cancellationToken);
+    }
+
+    /// <summary>
+    /// Override in FakeData seeders to check if data already exists.
+    /// </summary>
+    protected virtual Task<bool> HasExistingDataAsync(SeederContext context, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(false);
+    }
+
+    protected void LogSkipping(string reason)
+    {
+        logger.LogInformation("Skipping {SeederName}: {Reason}", Name, reason);
+    }
+
+    /// <summary>
+    /// Closes out a run where an upstream seeder left its shared-context output unset - reachable on
+    /// every re-run, since an already-seeded upstream skips without publishing anything.
+    /// </summary>
+    protected void LogUpstreamSkipped()
+    {
+        LogSkipping("an upstream seeder was skipped this run");
+        LogCompleted(0);
+    }
+
+    protected void LogStarting()
+    {
+        logger.LogInformation("Starting {SeederName}...", Name);
+    }
+
+    protected void LogCompleted(int count = 0)
+    {
+        if (count > 0)
+        {
+            logger.LogInformation("Completed {SeederName}: {Count} entities processed", Name, count);
+        }
+        else
+        {
+            logger.LogInformation("Completed {SeederName}", Name);
+        }
+    }
+}

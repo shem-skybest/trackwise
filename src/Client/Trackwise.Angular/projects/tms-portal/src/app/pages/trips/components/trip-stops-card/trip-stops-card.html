@@ -1,0 +1,216 @@
+<ui-card>
+  <ng-template #header>
+    <ui-stack direction="row" align="center" justify="between" gap="2" class="p-3 pb-0">
+      <ui-stack direction="row" align="center" gap="2">
+        <ui-icon name="map-pin" color="primary" />
+        <ui-typography variant="h6" tag="h5">Stops</ui-typography>
+      </ui-stack>
+      @if (store.trip(); as trip) {
+        <ui-stack direction="row" align="center" gap="3" class="text-sm">
+          <span class="text-muted-foreground">
+            Garage out:
+            <span class="text-foreground">
+              {{ trip.garageDepartedAt ? (trip.garageDepartedAt | dateFormat: "short") : "-" }}
+            </span>
+            · back:
+            <span class="text-foreground">
+              {{ trip.garageArrivedAt ? (trip.garageArrivedAt | dateFormat: "short") : "-" }}
+            </span>
+          </span>
+          @if (canRecordGarage()) {
+            <ui-button
+              appearance="text"
+              size="sm"
+              icon="warehouse"
+              label="Garage times"
+              (click)="garageDialogOpen.set(true)"
+            />
+          }
+        </ui-stack>
+      }
+    </ui-stack>
+  </ng-template>
+
+  <ui-data-table
+    [value]="store.sortedStops()"
+    dataKey="id"
+    sortField="order"
+    selectionMode="single"
+    [paginator]="false"
+  >
+    <ng-template #header>
+      <tr>
+        <th uiSortHeader="order">#</th>
+        <th>Stop</th>
+        <th>Cut-off</th>
+        <th>Arrived</th>
+        <th>Loading / unloading</th>
+        <th>Departed</th>
+        <th>Temp (°C)</th>
+        <th>Cargo</th>
+        <th>Outcome</th>
+        @if (store.isActive()) {
+          <th>Actions</th>
+        }
+      </tr>
+    </ng-template>
+    <ng-template #body let-stop>
+      @let load = loadFor(stop);
+      <tr [uiSelectableRow]="stop">
+        <td>{{ stop.order }}</td>
+        <td>
+          <div class="font-medium">{{ stopLabel(stop) }}</div>
+          <div class="text-muted-foreground text-xs">{{ stop.address | address }}</div>
+        </td>
+        <td>
+          @if (stop.type === "drop_off" && stop.cutOff) {
+            <div>{{ stop.cutOff | dateFormat: "short" }}</div>
+            @if (stop.isLate === true) {
+              <ui-badge value="Late" severity="danger" size="sm" />
+            } @else if (stop.isLate === false) {
+              <ui-badge value="On time" severity="success" size="sm" />
+            }
+          } @else {
+            <span class="text-muted-foreground">-</span>
+          }
+        </td>
+        <td>
+          @if (stop.arrivedAt) {
+            {{ stop.arrivedAt | dateFormat: "short" }}
+            @if (stop.arrivalRecordedBy) {
+              <div class="text-muted-foreground text-xs">by {{ stop.arrivalRecordedBy }}</div>
+            }
+          } @else {
+            <span class="text-muted-foreground">Pending</span>
+          }
+        </td>
+        <td>
+          @if (stop.handlingStartedAt || stop.handlingFinishedAt) {
+            <div>
+              {{
+                stop.handlingStartedAt ? (stop.handlingStartedAt | dateFormat: "shortTime") : "?"
+              }}
+              –
+              {{
+                stop.handlingFinishedAt ? (stop.handlingFinishedAt | dateFormat: "shortTime") : "?"
+              }}
+            </div>
+            @if ((stop.handlingMinutes ?? null) !== null) {
+              <div class="text-muted-foreground text-xs">
+                {{ minutes(stop.handlingMinutes) }}
+                @if ((stop.waitingMinutes ?? null) !== null) {
+                  · waited {{ minutes(stop.waitingMinutes) }}
+                }
+              </div>
+            }
+          } @else {
+            <span class="text-muted-foreground">-</span>
+          }
+        </td>
+        <td>
+          @if (stop.departedAt) {
+            {{ stop.departedAt | dateFormat: "short" }}
+            @if ((stop.dwellMinutes ?? null) !== null) {
+              <div class="text-muted-foreground text-xs">
+                dwell {{ minutes(stop.dwellMinutes) }}
+              </div>
+            }
+          } @else if (stop.arrivedAt) {
+            <span class="text-muted-foreground">
+              {{ stop.type === "pick_up" ? "Loading" : "Unloading" }}
+            </span>
+          } @else {
+            <span class="text-muted-foreground">-</span>
+          }
+        </td>
+        <td>
+          @if (stop.temperatureAtArrival === null && stop.temperatureAtDeparture === null) {
+            <span class="text-muted-foreground">-</span>
+          } @else {
+            <span class="text-sm">
+              In: {{ stop.temperatureAtArrival ?? "-" }} / Out:
+              {{ stop.temperatureAtDeparture ?? "-" }}
+            </span>
+          }
+        </td>
+        <td>
+          @if (load && stop.type === "drop_off") {
+            @if (load.plannedBoxes || load.plannedBags) {
+              <div>
+                @if (load.plannedBoxes) {
+                  {{ load.plannedBoxes }} boxes
+                }
+                @if (load.plannedBags) {
+                  {{ load.plannedBags }} bags
+                }
+              </div>
+            }
+            @if (load.returnedBoxes || load.returnedBags) {
+              <div class="text-danger text-xs">
+                Returned
+                @if (load.returnedBoxes) {
+                  {{ load.returnedBoxes }} boxes
+                }
+                @if (load.returnedBags) {
+                  {{ load.returnedBags }} bags
+                }
+                @if (reasonLabel(load); as reason) {
+                  · {{ reason }}
+                }
+              </div>
+            }
+            @if (load.commodity) {
+              <div class="text-muted-foreground text-xs">{{ load.commodity }}</div>
+            }
+          } @else {
+            <span class="text-muted-foreground">-</span>
+          }
+        </td>
+        <td>
+          @if (stop.type === "drop_off" && stop.departedAt) {
+            <div>{{ outcomeLabel(load) }}</div>
+            @if (load?.outcomeNote) {
+              <div class="text-muted-foreground text-xs">{{ load?.outcomeNote }}</div>
+            }
+          } @else {
+            <span class="text-muted-foreground">-</span>
+          }
+        </td>
+        @if (store.isActive()) {
+          <td>
+            @if (!stop.arrivedAt) {
+              <ui-button
+                intent="success"
+                appearance="text"
+                size="sm"
+                icon="check"
+                label="Arrived"
+                (click)="openEvent(stop, 'arrive')"
+              />
+            } @else if (!stop.departedAt) {
+              <ui-button
+                intent="success"
+                appearance="text"
+                size="sm"
+                icon="log-out"
+                label="Departed"
+                (click)="openEvent(stop, 'depart')"
+              />
+            } @else {
+              <ui-icon name="circle-check" class="text-success" />
+            }
+          </td>
+        }
+      </tr>
+    </ng-template>
+  </ui-data-table>
+</ui-card>
+
+<app-stop-event-dialog
+  [(visible)]="dialogOpen"
+  [mode]="dialogMode()"
+  [stop]="dialogStop()"
+  [load]="dialogLoad()"
+  [visitSize]="dialogVisitSize()"
+/>
+<app-garage-times-dialog [(visible)]="garageDialogOpen" />

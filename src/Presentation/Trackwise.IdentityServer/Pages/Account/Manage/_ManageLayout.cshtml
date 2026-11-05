@@ -1,0 +1,21 @@
+﻿@{
+    Layout = "_AppLayout";
+}
+
+<div class="mb-8 flex flex-col gap-1">
+    <h1 class="mb-0 text-2xl font-bold">Manage your account</h1>
+    <p class="text-muted-foreground text-sm">Change your account settings</p>
+</div>
+
+<div class="grid gap-8 md:grid-cols-[13rem_1fr]">
+    <nav>
+        <partial name="_ManageNav" />
+    </nav>
+    <div class="flex min-w-0 flex-col gap-6">
+        @RenderBody()
+    </div>
+</div>
+
+@section scripts {
+    @await RenderSectionAsync("scripts", required: false)
+}

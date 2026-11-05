@@ -1,0 +1,35 @@
+@page
+@model Trackwise.IdentityServer.Pages.Home.Index
+@{
+    Layout = "_AppLayout";
+    ViewData["Title"] = "Identity";
+}
+
+<div class="mb-8 flex items-center gap-4">
+    <img src="~/logo.png" alt="" class="size-16" />
+    <div class="flex flex-col gap-1">
+        <h1 class="mb-0 text-2xl font-bold">TrackWise Identity</h1>
+        <p class="text-muted-foreground text-sm">Version @Model.Version</p>
+    </div>
+</div>
+
+<div class="grid gap-4 md:grid-cols-3">
+    <a href="~/.well-known/openid-configuration" hlm-card class="hover:bg-muted/50 text-foreground hover:text-foreground transition-colors">
+        <div hlm-card-header>
+            <div hlm-card-title>Discovery document</div>
+            <div hlm-card-description>Metadata and links to every endpoint and the key material.</div>
+        </div>
+    </a>
+    <a href="~/diagnostics" hlm-card class="hover:bg-muted/50 text-foreground hover:text-foreground transition-colors">
+        <div hlm-card-header>
+            <div hlm-card-title>Diagnostics</div>
+            <div hlm-card-description>The claims in your current session.</div>
+        </div>
+    </a>
+    <a href="~/grants" hlm-card class="hover:bg-muted/50 text-foreground hover:text-foreground transition-colors">
+        <div hlm-card-header>
+            <div hlm-card-title>Grants</div>
+            <div hlm-card-description>Applications you have given access to.</div>
+        </div>
+    </a>
+</div>

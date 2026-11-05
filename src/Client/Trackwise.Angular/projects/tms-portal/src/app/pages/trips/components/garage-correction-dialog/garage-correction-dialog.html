@@ -1,0 +1,47 @@
+<ui-dialog
+  header="Correct garage times"
+  [(open)]="open"
+  [modal]="true"
+  width="36rem"
+  (opened)="onOpened()"
+>
+  <form [formRoot]="form">
+    <ui-stack gap="3">
+      <ui-typography variant="body-sm" color="muted">
+        Type times as the crew wrote them (0530). The arrival is dated forward from the departure.
+      </ui-typography>
+
+      <ui-grid container spacing="3">
+        <ui-grid [size]="{ xs: 12, md: 4 }">
+          <ui-form-field label="Day" for="garage-corr-day" [required]="true">
+            <ui-date-field inputId="garage-corr-day" [formField]="form.day" dateFormat="yy-mm-dd" />
+          </ui-form-field>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 4 }">
+          <ui-form-field label="Garage departure" for="garage-corr-out" [hint]="hint('out')">
+            <ui-text-field id="garage-corr-out" [formField]="form.garageOut" placeholder="hhmm" />
+          </ui-form-field>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 4 }">
+          <ui-form-field label="Garage arrival" for="garage-corr-in" [hint]="hint('in')">
+            <ui-text-field id="garage-corr-in" [formField]="form.garageIn" placeholder="hhmm" />
+          </ui-form-field>
+        </ui-grid>
+      </ui-grid>
+
+      <ui-form-field label="Reason for the correction" for="garage-corr-why" [required]="true">
+        <ui-textarea-field id="garage-corr-why" [formField]="form.reason" [rows]="2" />
+      </ui-form-field>
+
+      <div class="flex justify-end gap-2">
+        <ui-button appearance="text" label="Cancel" (click)="open.set(false)" />
+        <ui-button
+          type="submit"
+          icon="save"
+          label="Save correction"
+          [loading]="form().submitting()"
+        />
+      </div>
+    </ui-stack>
+  </form>
+</ui-dialog>

@@ -1,0 +1,16 @@
+<div class="animate-in fade-in space-y-4">
+  <ui-page-header title="Quotations" addRoute="/quotations/add" addTooltip="Add a new quotation" />
+
+  <app-quotations-table
+    [data]="store.data()"
+    [isLoading]="store.isLoading()"
+    [error]="store.error()"
+    [isEmpty]="store.isEmpty()"
+    [totalRecords]="store.totalRecords()"
+    [pageSize]="store.pageSize()"
+    [first]="store.first()"
+    (lazyLoad)="store.onLazyLoad($event)"
+    (retry)="store.retry()"
+    (addQuotation)="addQuotation()"
+  />
+</div>

@@ -1,0 +1,54 @@
+using Trackwise.Application.Abstractions;
+using Trackwise.Application.Attributes;
+using Trackwise.Domain.Primitives.Enums;
+using Trackwise.Shared.Models;
+
+namespace Trackwise.Application.Modules.Integrations.LoadBoard.Commands;
+
+[RequiresFeature(TenantFeature.LoadBoard)]
+public class BookLoadBoardLoadCommand : ICommand<Result<LoadBoardBookingResultDto>>
+{
+    /// <summary>
+    /// ID of the load board listing to book
+    /// </summary>
+    public Guid ListingId { get; set; }
+
+    /// <summary>
+    /// Truck to assign to the load
+    /// </summary>
+    public Guid TruckId { get; set; }
+
+    /// <summary>
+    /// Dispatcher to assign to the load
+    /// </summary>
+    public Guid DispatcherId { get; set; }
+
+    /// <summary>
+    /// Customer ID (if existing customer)
+    /// </summary>
+    public Guid? CustomerId { get; set; }
+
+    /// <summary>
+    /// Customer name (if creating new customer from broker info)
+    /// </summary>
+    public string? CustomerName { get; set; }
+
+    /// <summary>
+    /// Optional notes for the booking
+    /// </summary>
+    public string? Notes { get; set; }
+
+    /// <summary>
+    /// Rate agreed through a broker rate negotiation. Replaces the listing's rate on the created
+    /// load. When a negotiation is open on the listing, the rate the load is booked at - this one,
+    /// or the listing's own rate when it is omitted - is rejected if it falls below the floor the
+    /// negotiation opened against.
+    /// </summary>
+    public decimal? NegotiatedTotalRate { get; set; }
+
+    /// <summary>
+    /// Dispatcher override: book even when the broker's credit is below the tenant's
+    /// minimum score or the broker's authority is inactive.
+    /// </summary>
+    public bool OverrideCreditCheck { get; set; }
+}

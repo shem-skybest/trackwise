@@ -1,0 +1,206 @@
+<ui-surface variant="elevated" [border]="true">
+  <ui-stack gap="3">
+    <ui-stack direction="row" gap="3" align="center" class="flex-wrap">
+      <ui-typography variant="overline" color="secondary">{{ info().title }}</ui-typography>
+      @if (isDrop()) {
+        <span class="font-medium">{{ info().load?.customer?.name }}</span>
+      } @else if (visitSize() > 1) {
+        <span class="text-muted-foreground text-sm">One visit for {{ visitSize() }} loads</span>
+      }
+      <span class="text-muted-foreground text-sm">{{ where() }}</span>
+      @if (planned()) {
+        <span class="text-sm">{{ planned() }}</span>
+      }
+      @if (info().load?.commodity; as commodity) {
+        <span class="text-muted-foreground text-sm">{{ commodity }}</span>
+      }
+      @if (isDrop() && info().stop.cutOff) {
+        <span class="text-sm">Cut-off {{ info().stop.cutOff | date: "HHmm" }}H</span>
+      }
+      @if (info().stop.isLate === true) {
+        <ui-badge value="Late" severity="danger" />
+      } @else if (info().stop.isLate === false) {
+        <ui-badge value="On time" severity="success" />
+      }
+      @if (rescuedBy(); as rescue) {
+        <ui-badge [value]="'Rescue · ' + rescue" severity="warn" />
+      }
+      @if (fromApp()) {
+        <ui-badge value="From the app" severity="info" />
+      }
+      @if (corrections().length) {
+        <ui-badge value="Corrected" severity="warn" />
+      }
+      @if (canCorrect()) {
+        <ui-button
+          class="ml-auto"
+          appearance="text"
+          size="sm"
+          icon="pencil"
+          label="Correct"
+          (click)="correct.emit()"
+        />
+      } @else if (isDrop() && removable()) {
+        <ui-button
+          class="ml-auto"
+          appearance="text"
+          intent="danger"
+          size="sm"
+          icon="trash"
+          label="Remove drop"
+          (click)="remove.emit()"
+        />
+      }
+    </ui-stack>
+
+    <ui-grid container spacing="3">
+      <ui-grid [size]="{ xs: 6, md: 3 }">
+        <ui-form-field label="Arrival" [for]="idPrefix() + '-arrival'" [hint]="hint('arrival')">
+          <ui-text-field
+            [id]="idPrefix() + '-arrival'"
+            [formField]="block().arrival"
+            placeholder="hhmm"
+          />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 6, md: 3 }">
+        <ui-form-field label="Temp at arrival (°C)" [for]="idPrefix() + '-temp-in'">
+          <ui-number-field
+            [id]="idPrefix() + '-temp-in'"
+            [formField]="block().tempArrival"
+            [maxFractionDigits]="1"
+          />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 6, md: 3 }">
+        <ui-form-field
+          [label]="'Start ' + handlingLabel()"
+          [for]="idPrefix() + '-handling-start'"
+          [hint]="hint('handlingStart')"
+        >
+          <ui-text-field
+            [id]="idPrefix() + '-handling-start'"
+            [formField]="block().handlingStart"
+            placeholder="hhmm"
+          />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 6, md: 3 }">
+        <ui-form-field
+          [label]="'Done ' + handlingLabel()"
+          [for]="idPrefix() + '-handling-done'"
+          [hint]="hint('handlingFinish')"
+        >
+          <ui-text-field
+            [id]="idPrefix() + '-handling-done'"
+            [formField]="block().handlingFinish"
+            placeholder="hhmm"
+          />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 6, md: 3 }">
+        <ui-form-field
+          label="Departure"
+          [for]="idPrefix() + '-departure'"
+          [hint]="hint('departure')"
+        >
+          <ui-text-field
+            [id]="idPrefix() + '-departure'"
+            [formField]="block().departure"
+            placeholder="hhmm"
+          />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 6, md: 3 }">
+        <ui-form-field label="Temp at departure (°C)" [for]="idPrefix() + '-temp-out'">
+          <ui-number-field
+            [id]="idPrefix() + '-temp-out'"
+            [formField]="block().tempDeparture"
+            [maxFractionDigits]="1"
+          />
+        </ui-form-field>
+      </ui-grid>
+
+      @if (isDrop()) {
+        <ui-grid [size]="{ xs: 12, md: 6 }">
+          <ui-form-field label="Outcome" [for]="idPrefix() + '-outcome'">
+            <ui-select-field
+              [id]="idPrefix() + '-outcome'"
+              [formField]="block().outcome"
+              [options]="outcomeOptions"
+              optionLabel="label"
+              optionValue="value"
+              appendTo="body"
+            />
+          </ui-form-field>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-form-field label="Boxes back" [for]="idPrefix() + '-boxes-back'">
+            <ui-number-field
+              [id]="idPrefix() + '-boxes-back'"
+              [formField]="block().returnedBoxes"
+              [maxFractionDigits]="0"
+            />
+          </ui-form-field>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-form-field label="Bags back" [for]="idPrefix() + '-bags-back'">
+            <ui-number-field
+              [id]="idPrefix() + '-bags-back'"
+              [formField]="block().returnedBags"
+              [maxFractionDigits]="0"
+            />
+          </ui-form-field>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 12, md: 6 }">
+          <ui-form-field label="Why it came back" [for]="idPrefix() + '-reason'">
+            <ui-select-field
+              [id]="idPrefix() + '-reason'"
+              [formField]="block().returnReason"
+              [options]="reasonOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Only when boxes or bags came back"
+              [showClear]="true"
+              appendTo="body"
+            />
+          </ui-form-field>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 12, md: 6 }">
+          <ui-form-field label="Remarks" [for]="idPrefix() + '-note'">
+            <ui-text-field [id]="idPrefix() + '-note'" [formField]="block().note" />
+          </ui-form-field>
+        </ui-grid>
+      }
+    </ui-grid>
+
+    <app-report-stop-photos [blockKey]="info().key" [stopIds]="stopIds()" [kind]="info().kind" />
+
+    @if (stats().length) {
+      <ui-stack direction="row" gap="4" class="text-muted-foreground text-sm">
+        @for (stat of stats(); track stat) {
+          <span>{{ stat }}</span>
+        }
+      </ui-stack>
+    }
+
+    @if (corrections().length) {
+      <ui-stack gap="2" class="border-border border-t pt-2 text-sm">
+        @for (group of corrections(); track group.correctedAt) {
+          <div>
+            <div class="text-muted-foreground">
+              Corrected {{ group.correctedAt | date: "d MMM, HH:mm" }}
+              @if (group.correctedBy) {
+                by {{ group.correctedBy }}
+              }
+              - {{ group.reason }}
+            </div>
+            @for (change of group.changes; track change.id) {
+              <div>{{ describeChange(change) }}</div>
+            }
+          </div>
+        }
+      </ui-stack>
+    }
+  </ui-stack>
+</ui-surface>

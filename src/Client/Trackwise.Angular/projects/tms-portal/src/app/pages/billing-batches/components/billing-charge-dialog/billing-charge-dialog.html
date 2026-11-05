@@ -1,0 +1,63 @@
+<ui-dialog header="Add charge" [(open)]="open" [modal]="true" width="32rem" (opened)="onOpened()">
+  <form [formRoot]="form">
+    <ui-grid container spacing="3">
+      <ui-grid [size]="{ xs: 12, md: 6 }">
+        <ui-form-field label="Charge" for="chargeKind" [required]="true">
+          <ui-select-field
+            id="chargeKind"
+            [formField]="form.kind"
+            [options]="kindOptions"
+            optionLabel="label"
+            optionValue="value"
+            (valueChange)="onKindChange($event)"
+          />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12, md: 6 }">
+        <ui-form-field label="Amount" for="chargeAmount" [required]="true">
+          <ui-number-field
+            id="chargeAmount"
+            [formField]="form.amount"
+            [minFractionDigits]="2"
+            [maxFractionDigits]="2"
+            [fluid]="true"
+          />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12 }">
+        <ui-form-field
+          label="Description"
+          for="chargeDescription"
+          [required]="true"
+          hint="Printed on the summary, e.g. Demurrage 3 hrs at Alder"
+        >
+          <ui-text-field id="chargeDescription" [formField]="form.description" />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12 }">
+        <ui-form-field label="Trip" for="chargeTrip" hint="Optional">
+          <ui-select-field
+            id="chargeTrip"
+            [formField]="form.tripId"
+            [options]="tripOptions()"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Not for one trip"
+            [showClear]="true"
+          />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12 }">
+        <ui-stack direction="row" gap="2" align="center">
+          <ui-checkbox-field [formField]="form.isVatable" inputId="chargeVatable" />
+          <label for="chargeVatable">VATable (untick for charges billed at cost)</label>
+        </ui-stack>
+      </ui-grid>
+    </ui-grid>
+
+    <div class="mt-4 flex justify-end gap-2">
+      <ui-button appearance="text" label="Cancel" (click)="open.set(false)" />
+      <ui-button type="submit" icon="plus" label="Add charge" [loading]="form().submitting()" />
+    </div>
+  </form>
+</ui-dialog>

@@ -1,0 +1,114 @@
+<ui-card>
+  <ui-data-container
+    [loading]="isLoading()"
+    [error]="error()"
+    [isEmpty]="isEmpty()"
+    skeletonVariant="table"
+    [skeletonRows]="10"
+    emptyTitle="No trailers yet"
+    emptyMessage="Add the trailers your fleet pulls."
+    emptyActionLabel="Add Trailer"
+    (retry)="onRetry()"
+    (emptyAction)="onAddTrailer()"
+  >
+    <ui-data-table
+      [value]="data()"
+      dataKey="id"
+      [scrollable]="true"
+      [lazy]="true"
+      [paginator]="true"
+      [showCurrentPageReport]="true"
+      [rows]="pageSize()"
+      [first]="first()"
+      [totalRecords]="totalRecords()"
+      [loading]="isLoading()"
+      [rowsPerPageOptions]="[10, 25, 50, 100]"
+      size="small"
+      (lazyLoad)="onLazyLoad($event)"
+    >
+      <ng-template #header>
+        <tr>
+          <th uiSortHeader="Code">Code</th>
+          <th uiSortHeader="Name">Name</th>
+          <th uiSortHeader="Type">Type</th>
+          <th>VIN</th>
+          <th>Branch</th>
+          <th uiSortHeader="IsActive">Status</th>
+          <th uiSortHeader="UpdatedAt">Last changed</th>
+          <th></th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-trailer>
+        <tr
+          class="hover:bg-hover transition-colors duration-150"
+          [class.cursor-pointer]="!trailer.deletedAt"
+          [class.opacity-60]="trailer.deletedAt"
+          (click)="navigateToTrailer(trailer)"
+        >
+          <td>
+            <span class="font-mono text-sm font-semibold">{{ trailer.code }}</span>
+          </td>
+
+          <td>
+            @if (trailer.deletedAt) {
+              <span class="text-foreground max-w-64 truncate font-bold line-through">
+                {{ trailer.name }}
+              </span>
+            } @else {
+              <a
+                [routerLink]="['/master-data/trailers', trailer.id]"
+                class="text-foreground max-w-64 truncate font-bold hover:underline"
+                (click)="$event.stopPropagation()"
+              >
+                {{ trailer.name }}
+              </a>
+            }
+          </td>
+
+          <td class="text-muted-foreground">{{ typeLabel(trailer.type) }}</td>
+
+          <td class="text-muted-foreground font-mono text-xs">{{ trailer.vin || "—" }}</td>
+
+          <td class="text-muted-foreground">
+            @if (trailer.branchName) {
+              {{ trailer.branchName }}
+            } @else {
+              <span class="text-xs italic">Every branch</span>
+            }
+          </td>
+
+          <td>
+            @if (trailer.deletedAt) {
+              <ui-badge value="Deleted" severity="danger" size="sm" rounded />
+            } @else if (trailer.isActive) {
+              <ui-badge value="Active" severity="success" size="sm" rounded />
+            } @else {
+              <ui-badge value="Inactive" severity="secondary" size="sm" rounded />
+            }
+          </td>
+
+          <td class="text-muted-foreground text-sm">
+            {{ trailer.updatedAt || trailer.createdAt | date: "dd/MM/yyyy HH:mm" }}
+            @if (trailer.updatedBy || trailer.createdBy) {
+              <span class="block text-xs">{{ trailer.updatedBy || trailer.createdBy }}</span>
+            }
+          </td>
+
+          <td class="text-right">
+            @if (trailer.deletedAt && canManage()) {
+              <ui-button
+                type="button"
+                appearance="text"
+                size="sm"
+                icon="history"
+                label="Restore"
+                (click)="onRestore(trailer, $event)"
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </ui-data-table>
+  </ui-data-container>
+</ui-card>

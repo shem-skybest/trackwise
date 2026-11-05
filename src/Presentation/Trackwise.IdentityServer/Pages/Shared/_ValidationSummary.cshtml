@@ -1,0 +1,7 @@
+﻿@* Model-level errors only: field errors already show under their own field. *@
+@if (ViewContext.ModelState.TryGetValue(string.Empty, out var entry) && entry.Errors.Count > 0)
+{
+    <div hlm-alert variant="destructive">
+        <div hlm-alert-description asp-validation-summary="ModelOnly"></div>
+    </div>
+}

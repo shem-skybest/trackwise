@@ -1,0 +1,167 @@
+import { Component, inject, input, signal, type OnInit } from "@angular/core";
+import { Router } from "@angular/router";
+import {
+  Api,
+  deleteLoad,
+  getLoadById,
+  updateLoad,
+  type UpdateLoadCommand,
+} from "@trackwise/shared/api";
+import { ToastService } from "@/core/services";
+import { LoadForm, PageHeader, type LoadFormValue } from "@/shared/components";
+import { Converters } from "@/shared/utils";
+
+@Component({
+  selector: "app-load-edit",
+  templateUrl: "./load-edit.html",
+  imports: [LoadForm, PageHeader],
+})
+export class LoadEditComponent implements OnInit {
+  private readonly api = inject(Api);
+  private readonly toastService = inject(ToastService);
+  private readonly router = inject(Router);
+
+  protected readonly id = input<string>();
+
+  protected readonly isLoading = signal(false);
+  protected readonly initialData = signal<Partial<LoadFormValue> | null>(null);
+  protected readonly loadNumber = signal<number>(0);
+
+  ngOnInit(): void {
+    const loadId = this.id();
+
+    if (loadId) {
+      this.fetchLoad(loadId);
+    }
+  }
+
+  protected async updateLoad(formValue: LoadFormValue): Promise<void> {
+    const command: UpdateLoadCommand = {
+      id: this.id()!,
+      name: formValue.name!,
+      type: formValue.type!,
+      source: formValue.source!,
+      originAddress: formValue.originAddress!,
+      originLocation: formValue.originLocation,
+      destinationAddress: formValue.destinationAddress!,
+      destinationLocation: formValue.destinationLocation,
+      deliveryCost: formValue.deliveryCost!,
+      distance: formValue.distance,
+      assignedDispatcherId: formValue.assignedDispatcherId!,
+      assignedTruckId: formValue.assignedTruckId ?? undefined,
+      customerId: formValue.customer?.id,
+      status: formValue.status!,
+      requestedPickupDate: formValue.requestedPickupDate ?? null,
+      requestedDeliveryDate: formValue.requestedDeliveryDate ?? null,
+      containerId: formValue.containerId ?? null,
+      originTerminalId: formValue.originTerminalId ?? null,
+      destinationTerminalId: formValue.destinationTerminalId ?? null,
+      originSiteId: formValue.originSiteId ?? null,
+      destinationSiteId: formValue.destinationSiteId ?? null,
+      notes: formValue.notes ?? null,
+      commodity: formValue.commodity ?? null,
+      plannedBoxes: formValue.plannedBoxes ?? null,
+      plannedBags: formValue.plannedBags ?? null,
+      // The generated UpdateLoadCommand may be stale (missing hazmat fields) - re-run
+      // `bun run gen:api:live` after restarting the API to pick up the latest spec.
+      ...({
+        isHazmat: formValue.isHazmat ?? false,
+        hazmatClass: formValue.hazmatClass ?? undefined,
+        unNumber: formValue.unNumber ?? null,
+      } as Partial<UpdateLoadCommand>),
+    };
+
+    await this.api.invoke(updateLoad, { id: this.id()!, body: command });
+    this.toastService.showSuccess("Load has been updated successfully");
+  }
+
+  protected async deleteLoad(): Promise<void> {
+    this.isLoading.set(true);
+    await this.api.invoke(deleteLoad, { id: this.id()! });
+    this.toastService.showSuccess("A load has been deleted successfully");
+    this.router.navigateByUrl("/loads");
+
+    this.isLoading.set(false);
+  }
+
+  private async fetchLoad(loadId: string): Promise<void> {
+    this.isLoading.set(true);
+
+    const load = await this.api.invoke(getLoadById, { id: loadId });
+    if (!load) {
+      return;
+    }
+
+    this.initialData.set({
+      name: load.name ?? undefined,
+      type: load.type,
+      source: load.source ?? "manual",
+      customer: load.customer,
+      originAddress: load.originAddress,
+      originLocation: load.originLocation,
+      destinationAddress: load.destinationAddress,
+      destinationLocation: load.destinationLocation,
+      deliveryCost: load.deliveryCost,
+      distance: Converters.metersTo(load.distance ?? 0, "mi"),
+      status: load.status,
+      assignedDispatcherId: load.assignedDispatcherId ?? undefined,
+      assignedDispatcherName: load.assignedDispatcherName ?? undefined,
+      assignedTruckId: load.assignedTruckId ?? undefined,
+      requestedPickupDate: load.requestedPickupDate ?? null,
+      requestedDeliveryDate: load.requestedDeliveryDate ?? null,
+      notes: load.notes ?? null,
+      commodity: load.commodity ?? null,
+      plannedBoxes: load.plannedBoxes ?? null,
+      plannedBags: load.plannedBags ?? null,
+      originSiteId: load.originSiteId ?? null,
+      destinationSiteId: load.destinationSiteId ?? null,
+      // Pass minimal DTOs for the autocompletes; the form picks up the IDs at submit
+      container: load.containerId
+        ? {
+            id: load.containerId,
+            number: load.containerNumber ?? null,
+            containerTypeCode: load.containerTypeCode,
+          }
+        : null,
+      originTerminal: load.originTerminalId
+        ? {
+            id: load.originTerminalId,
+            name: load.originTerminalName ?? null,
+            code: load.originTerminalCode ?? null,
+            countryCode: null,
+            address: {
+              streetAddress: "",
+              subdivision: null,
+              barangay: null,
+              cityOrMunicipality: "",
+              province: "",
+              region: "",
+              zipcode: "",
+              country: "PH",
+            },
+          }
+        : null,
+      destinationTerminal: load.destinationTerminalId
+        ? {
+            id: load.destinationTerminalId,
+            name: load.destinationTerminalName ?? null,
+            code: load.destinationTerminalCode ?? null,
+            countryCode: null,
+            address: {
+              streetAddress: "",
+              subdivision: null,
+              barangay: null,
+              cityOrMunicipality: "",
+              province: "",
+              region: "",
+              zipcode: "",
+              country: "PH",
+            },
+          }
+        : null,
+    });
+
+    this.loadNumber.set(load.number ?? 0);
+    this.isLoading.set(false);
+  }
+}

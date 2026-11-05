@@ -1,0 +1,44 @@
+import { Component, inject, signal } from "@angular/core";
+import { Router, RouterModule } from "@angular/router";
+import { ToastService } from "@trackwise/shared";
+import { Api, createTenant, type CreateTenantCommand } from "@trackwise/shared/api";
+import { Card, PageHeader } from "@trackwise/shared/ui";
+import { TenantForm, type TenantFormValue } from "@/shared/components";
+
+@Component({
+  selector: "adm-tenant-add",
+  templateUrl: "./tenant-add.html",
+  imports: [Card, PageHeader, RouterModule, TenantForm],
+})
+export class TenantAdd {
+  private readonly api = inject(Api);
+  private readonly toastService = inject(ToastService);
+  private readonly router = inject(Router);
+
+  protected readonly isLoading = signal<boolean>(false);
+
+  protected async onSave(formValue: TenantFormValue): Promise<void> {
+    this.isLoading.set(true);
+
+    const command: CreateTenantCommand = {
+      name: formValue.name,
+      companyName: formValue.companyName,
+      billingEmail: formValue.billingEmail,
+      dotNumber: formValue.dotNumber,
+      companyAddress: formValue.companyAddress,
+      ownerEmail: formValue.ownerEmail,
+      ownerFirstName: formValue.ownerFirstName,
+      ownerLastName: formValue.ownerLastName,
+      operatingMode: formValue.operatingMode,
+      region: formValue.region,
+    };
+
+    await this.api.invoke(createTenant, { body: command });
+    this.toastService.showSuccess(
+      "Tenant has been created successfully. Owner will receive login credentials via email.",
+    );
+
+    this.router.navigateByUrl("/tenants");
+    this.isLoading.set(false);
+  }
+}

@@ -1,0 +1,127 @@
+@if (selection().length) {
+  <ui-stack direction="row" align="center" gap="2" class="bg-subtle mb-3 flex-wrap rounded-md p-2">
+    <span class="text-sm font-medium">{{ selection().length }} selected</span>
+    @if (canManage() && selectedWithOps().length) {
+      <ui-button
+        size="sm"
+        icon="send"
+        [label]="'Forward ' + selectedWithOps().length + ' to office'"
+        [disabled]="busy()"
+        (click)="forward.emit(selectedWithOps())"
+      />
+    }
+    @if (canReview() && selectedReviewable().length) {
+      <ui-button
+        size="sm"
+        icon="check"
+        [label]="'Check ' + selectedReviewable().length"
+        [disabled]="busy()"
+        (click)="check.emit(selectedReviewable())"
+      />
+      <ui-button
+        size="sm"
+        appearance="outlined"
+        intent="danger"
+        icon="x"
+        [label]="'Disallow ' + selectedReviewable().length"
+        [disabled]="busy()"
+        (click)="disallow.emit(selectedReviewable())"
+      />
+    }
+  </ui-stack>
+}
+
+<ui-data-table
+  [value]="expenses()"
+  dataKey="id"
+  [selectionMode]="selectable() ? 'multiple' : undefined"
+  [selection]="selection()"
+  (selectionChange)="setSelection($any($event))"
+  [paginator]="expenses().length > 50"
+  [rows]="50"
+  size="small"
+>
+  <ng-template #header>
+    <tr>
+      @if (selectable()) {
+        <th style="width: 3rem"><ui-table-header-checkbox /></th>
+      }
+      <th>Date</th>
+      <th>For</th>
+      <th>Truck / trip</th>
+      <th>Paid by</th>
+      <th class="text-right">Amount</th>
+      <th>Receipt</th>
+      <th>Status</th>
+      @if (canManage()) {
+        <th style="width: 6rem"></th>
+      }
+    </tr>
+  </ng-template>
+  <ng-template #body let-expense>
+    <tr>
+      @if (selectable()) {
+        <td><ui-table-checkbox [value]="expense" /></td>
+      }
+      <td class="text-sm whitespace-nowrap">
+        {{ isoToDate(expense.spentOn) | date: "MMM d" }}
+      </td>
+      <td>
+        <div class="text-sm font-medium">{{ expense.description }}</div>
+        <div class="text-muted-foreground text-xs">{{ categoryLabel(expense.category) }}</div>
+      </td>
+      <td class="text-sm">
+        {{ expense.truckNumber ?? "-" }}
+        @if (expense.tripId) {
+          <a
+            [routerLink]="['/trips', expense.tripId]"
+            class="text-primary ml-1 text-xs hover:underline"
+          >
+            #{{ expense.tripNumber }}
+          </a>
+        }
+      </td>
+      <td class="text-sm">{{ expense.spentByName ?? "-" }}</td>
+      <td class="text-right font-medium">{{ expense.amount | currencyFormat }}</td>
+      <td class="text-muted-foreground text-sm">{{ expense.receiptNumber ?? "-" }}</td>
+      <td>
+        <ui-badge
+          [value]="statusLabel(expense.status)"
+          [severity]="statusIntent(expense.status)"
+          size="sm"
+          rounded
+          [uiTooltip]="
+            expense.status === 'disallowed'
+              ? expense.disallowedReason
+              : expense.forwardedOn
+                ? 'Forwarded ' + expense.forwardedOn
+                : ''
+          "
+        />
+      </td>
+      @if (canManage()) {
+        <td class="text-right">
+          @if (expense.status === "with_ops") {
+            <ui-button
+              size="sm"
+              appearance="text"
+              icon="pencil"
+              ariaLabel="Edit expense"
+              [disabled]="busy()"
+              (click)="edit.emit(expense)"
+            />
+            <ui-button
+              size="sm"
+              appearance="text"
+              intent="danger"
+              icon="trash"
+              ariaLabel="Delete expense"
+              [disabled]="busy()"
+              (click)="remove.emit(expense)"
+            />
+          }
+        </td>
+      }
+    </tr>
+  </ng-template>
+</ui-data-table>

@@ -1,0 +1,136 @@
+<ui-data-container
+  [loading]="store.isLoading()"
+  [error]="store.error()"
+  [isEmpty]="store.isEmpty()"
+  skeletonVariant="table"
+  [skeletonRows]="8"
+  emptyTitle="No fill-ups"
+  emptyMessage="Log each fill-up from its receipt: truck, card, liters, amount and the odometer."
+  (retry)="store.retry()"
+>
+  <ui-data-table
+    [value]="store.data()"
+    dataKey="id"
+    [lazy]="true"
+    [paginator]="true"
+    [showCurrentPageReport]="true"
+    [rows]="store.pageSize()"
+    [first]="store.first()"
+    [totalRecords]="store.totalRecords()"
+    [loading]="store.isLoading()"
+    [rowsPerPageOptions]="[50, 100, 200]"
+    size="small"
+    (lazyLoad)="store.onLazyLoad($event)"
+  >
+    <ng-template #header>
+      <tr>
+        <th uiSortHeader="ExpenseDate">Filled</th>
+        <th>Truck</th>
+        <th>Card</th>
+        <th class="text-right">Liters</th>
+        <th class="text-right">Per liter</th>
+        <th class="text-right">Amount</th>
+        <th class="text-right">Odometer</th>
+        <th class="text-right">Km / L</th>
+        <th>Station</th>
+        <th>Review</th>
+        <th></th>
+      </tr>
+    </ng-template>
+    <ng-template #body let-fill>
+      <tr>
+        <td class="text-sm whitespace-nowrap">{{ fill.filledAt | date: "MMM d, h:mm a" }}</td>
+        <td class="text-sm whitespace-nowrap">
+          <span class="font-medium">{{ fill.truckNumber ?? "-" }}</span>
+          @if (fill.tripId) {
+            <a
+              [routerLink]="['/trips', fill.tripId]"
+              class="text-primary ml-1 text-xs hover:underline"
+            >
+              #{{ fill.tripNumber }}
+            </a>
+          }
+        </td>
+        <td class="text-sm">{{ cardLabel(fill.fleetCard) }}</td>
+        <td class="text-right">{{ fill.liters | number: "1.0-3" }}</td>
+        <td class="text-right text-sm">{{ fill.pricePerLiter | currencyFormat }}</td>
+        <td class="text-right font-medium">{{ fill.amount | currencyFormat }}</td>
+        <td class="text-right text-sm">
+          {{ (fill.odometerReading | number) ?? "-" }}
+        </td>
+        <td
+          class="text-right text-sm"
+          [uiTooltip]="
+            fill.kmSincePrevious
+              ? (fill.kmSincePrevious | number) + ' km since the last reading'
+              : ''
+          "
+        >
+          {{ (fill.kmPerLiter | number: "1.2-2") ?? "-" }}
+        </td>
+        <td class="text-muted-foreground max-w-48 truncate text-sm" [uiTooltip]="fill.notes ?? ''">
+          {{ fill.station ?? "-" }}
+        </td>
+        <td>
+          <ui-badge
+            [value]="reviewLabel(fill.status)"
+            [severity]="reviewIntent(fill.status)"
+            size="sm"
+            rounded
+            [uiTooltip]="fill.flaggedReason ?? ''"
+          />
+        </td>
+        <td class="text-right whitespace-nowrap">
+          @if (fill.hasReceipt) {
+            <ui-button
+              size="sm"
+              appearance="text"
+              icon="receipt"
+              ariaLabel="Open receipt"
+              (click)="receipt.emit(fill)"
+            />
+          }
+          @if (canReview() && fill.status === "pending") {
+            <ui-button
+              size="sm"
+              appearance="text"
+              intent="success"
+              icon="check"
+              ariaLabel="Verify fill-up"
+              [disabled]="busy()"
+              (click)="verify.emit(fill)"
+            />
+            <ui-button
+              size="sm"
+              appearance="text"
+              intent="danger"
+              icon="flag"
+              ariaLabel="Flag fill-up"
+              [disabled]="busy()"
+              (click)="flag.emit(fill)"
+            />
+          }
+          @if (canManage() && fill.status !== "approved" && fill.status !== "paid") {
+            <ui-button
+              size="sm"
+              appearance="text"
+              icon="pencil"
+              ariaLabel="Edit fill-up"
+              [disabled]="busy()"
+              (click)="edit.emit(fill)"
+            />
+            <ui-button
+              size="sm"
+              appearance="text"
+              intent="danger"
+              icon="trash"
+              ariaLabel="Delete fill-up"
+              [disabled]="busy()"
+              (click)="remove.emit(fill)"
+            />
+          }
+        </td>
+      </tr>
+    </ng-template>
+  </ui-data-table>
+</ui-data-container>

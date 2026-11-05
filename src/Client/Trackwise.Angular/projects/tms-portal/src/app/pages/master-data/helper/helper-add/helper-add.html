@@ -1,0 +1,5 @@
+<div class="animate-in fade-in space-y-4">
+  <ui-page-header title="Add a New Helper" backLink="/master-data/helpers" />
+
+  <app-helper-form [isLoading]="isLoading()" (save)="create($event)" />
+</div>

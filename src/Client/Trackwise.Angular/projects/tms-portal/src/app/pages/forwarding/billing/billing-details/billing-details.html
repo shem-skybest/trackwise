@@ -1,0 +1,452 @@
+<div class="animate-in fade-in mx-auto max-w-7xl space-y-6 pb-12">
+  <div class="bg-background sticky top-0 z-10 border-b pt-1 pb-4">
+    <ui-page-header
+      class="mb-0 min-w-0"
+      [title]="pageTitle()"
+      [subtitle]="subtitle()"
+      backLink="/billing-invoicing"
+    />
+
+    @if (billing()) {
+      <div
+        class="flex flex-wrap items-center gap-2 md:justify-end"
+        role="toolbar"
+        aria-label="Invoice actions"
+      >
+        <!-- Secondary actions -->
+        @if (isPendingApproval() && canApprove) {
+          <ui-button
+            icon="x"
+            intent="danger"
+            appearance="outlined"
+            label="Reject"
+            [disabled]="isBusy()"
+            (click)="openRejectDialog()"
+          />
+        }
+
+        @if (canCancel()) {
+          <ui-button
+            icon="x"
+            intent="danger"
+            appearance="outlined"
+            label="Cancel Invoice"
+            [disabled]="isBusy()"
+            (click)="openCancelDialog()"
+          />
+        }
+
+        @if (hasPrimaryAction()) {
+          <span class="mx-1 hidden h-6 border-l md:block" aria-hidden="true"></span>
+        }
+
+        <!-- Primary action: at most one per status, always last -->
+        @if (isDraft() && canManage) {
+          <ui-button
+            icon="check"
+            label="Submit for Approval"
+            [disabled]="isBusy()"
+            (click)="submit()"
+          />
+        }
+
+        @if (isPendingApproval() && canApprove) {
+          <ui-button
+            icon="check"
+            intent="success"
+            label="Approve"
+            [disabled]="isBusy()"
+            (click)="approve()"
+          />
+        }
+
+        @if (isRejected() && canManage) {
+          <ui-button
+            icon="pencil"
+            label="Reopen as Draft"
+            [disabled]="isBusy()"
+            (click)="reopen()"
+          />
+        }
+
+        @if (isApproved() && canManage) {
+          <ui-button
+            icon="check"
+            intent="success"
+            label="Issue Invoice"
+            [disabled]="isBusy()"
+            (click)="issueDialogVisible.set(true)"
+          />
+        }
+
+        @if (canSend() && canManage) {
+          <ui-button
+            icon="send"
+            [label]="hasSent() ? 'Resend' : 'Send to Customer'"
+            [disabled]="isBusy()"
+            (click)="openSendDialog()"
+          />
+        }
+      </div>
+    }
+  </div>
+
+  @if (isLoading()) {
+    <div class="flex min-h-75 items-center justify-center">
+      <ui-stack direction="row" align="center" gap="3">
+        <ui-spinner />
+        <ui-typography variant="body" color="muted">Loading billing details...</ui-typography>
+      </ui-stack>
+    </div>
+  } @else if (billing(); as b) {
+    @if (isRejected()) {
+      <ui-alert intent="danger">
+        <div class="flex flex-col gap-0.5">
+          <span class="font-semibold">This invoice was rejected</span>
+          <span class="text-sm opacity-90">
+            See the notes below for the reason. Reopen it as a draft to make changes.
+          </span>
+        </div>
+      </ui-alert>
+    }
+
+    @if (isCancelled()) {
+      <ui-alert intent="danger">
+        <div class="flex flex-col gap-0.5">
+          <span class="font-semibold">This invoice has been cancelled</span>
+          <span class="text-sm opacity-90">
+            {{ b.cancellationReason || "See the notes below for the reason." }}
+          </span>
+        </div>
+      </ui-alert>
+    }
+    @if (isOverdue()) {
+      <ui-alert intent="danger">
+        <div class="flex flex-col gap-0.5">
+          <span class="font-semibold">This invoice is overdue</span>
+          <span class="text-sm opacity-90">
+            It was due on {{ b.dueDate | date: "mediumDate" }} and still has a balance of
+            {{ balanceDue() | currency: currency() }}.
+          </span>
+        </div>
+      </ui-alert>
+    }
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <!-- Left column -->
+      <div class="space-y-6 lg:col-span-2">
+        <!-- Line items -->
+        <ui-surface variant="elevated" [border]="true">
+          <div class="flex items-center justify-between border-b pb-3">
+            <div>
+              <h3 class="text-base font-semibold">Line Items</h3>
+              <p class="text-muted-foreground text-xs">
+                Currency: {{ currency() }} · Tax: {{ label(b.taxBehavior) }}
+              </p>
+            </div>
+            <span class="bg-secondary inline-flex rounded-full px-2.5 py-1 text-xs font-medium">
+              {{ sortedLineItems().length }} items
+            </span>
+          </div>
+
+          @if (sortedLineItems().length) {
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm">
+                <thead>
+                  <tr
+                    class="text-muted-foreground border-b text-xs font-medium tracking-wider uppercase"
+                  >
+                    <th class="py-2.5 pr-3">Description</th>
+                    <th class="py-2.5 pr-3">Type</th>
+                    <th class="py-2.5 pr-3 text-right">Tax</th>
+                    <th class="py-2.5 text-right">Total</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-border/60 divide-y">
+                  @for (item of sortedLineItems(); track item.id) {
+                    <tr class="hover:bg-muted/30 transition-colors">
+                      <td class="py-3 pr-3">
+                        <div class="font-medium">{{ item.description }}</div>
+                        @if (item.notes) {
+                          <div class="text-muted-foreground text-xs">{{ item.notes }}</div>
+                        }
+                      </td>
+                      <td class="py-3 pr-3">
+                        <span class="bg-muted inline-flex rounded px-2 py-0.5 text-xs font-medium">
+                          {{ label(item.type) }}
+                        </span>
+                      </td>
+                      <td class="text-muted-foreground py-3 pr-3 text-right font-mono text-xs">
+                        @if (item.taxRatePercent) {
+                          {{ item.taxAmount | currency: currency() }}
+                          ({{ item.taxRatePercent | number: "1.0-2" }}%)
+                        } @else {
+                          —
+                        }
+                      </td>
+                      <td class="py-3 text-right font-mono font-medium">
+                        {{ item.total | currency: currency() }}
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+                <tfoot class="text-sm">
+                  <tr class="border-t-2">
+                    <td colspan="3" class="text-muted-foreground pt-3 text-right text-xs uppercase">
+                      Subtotal
+                    </td>
+                    <td class="pt-3 text-right font-mono">
+                      {{ b.subtotal?.amount | currency: currency() }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="3" class="text-muted-foreground py-1 text-right text-xs uppercase">
+                      Tax
+                    </td>
+                    <td class="py-1 text-right font-mono">
+                      {{ b.taxTotal?.amount | currency: currency() }}
+                    </td>
+                  </tr>
+                  <tr class="border-t font-semibold">
+                    <td colspan="3" class="pt-2 text-right text-xs uppercase">Total</td>
+                    <td class="text-success pt-2 text-right text-base font-semibold">
+                      {{ b.total?.amount | currency: currency() }}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          } @else {
+            <p class="text-muted-foreground py-6 text-center text-sm">No line items.</p>
+          }
+        </ui-surface>
+
+        <!-- Payments -->
+        <ui-surface variant="elevated" [border]="true">
+          <div class="flex items-center justify-between border-b pb-3">
+            <h3 class="text-base font-semibold">Payments</h3>
+            <div class="text-right">
+              <span class="text-muted-foreground block text-xs">Balance Due</span>
+              <span
+                class="text-warning font-mono font-semibold"
+                [class.text-emerald-600]="balanceDue() <= 0"
+                [class.dark:text-emerald-400]="balanceDue() <= 0"
+              >
+                {{ balanceDue() | currency: currency() }}
+              </span>
+            </div>
+          </div>
+
+          @if (b.payments?.length) {
+            <div class="divide-border/60 divide-y">
+              @for (p of b.payments; track p.id) {
+                <div class="flex items-center justify-between py-2.5 text-sm">
+                  <span class="text-muted-foreground font-mono text-xs">{{ p.id }}</span>
+                  <span class="font-mono font-medium">
+                    {{ p.amount?.amount | currency: currency() }}
+                  </span>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="text-muted-foreground py-6 text-center text-sm">No payments recorded.</p>
+          }
+        </ui-surface>
+
+        @if (b.notes) {
+          <ui-surface variant="elevated" [border]="true">
+            <h3 class="border-b pb-3 text-base font-semibold">Notes</h3>
+            <p class="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">
+              {{ b.notes }}
+            </p>
+          </ui-surface>
+        }
+      </div>
+
+      <!-- Right column -->
+      <div class="space-y-6">
+        <!-- Summary -->
+        <ui-surface variant="elevated" [border]="true">
+          <div class="flex items-center justify-between border-b pb-3">
+            <span class="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+              Status
+            </span>
+            <span
+              class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-bold"
+              [class]="statusClass()"
+            >
+              {{ label(b.status) }}
+            </span>
+          </div>
+
+          <div class="space-y-3 text-sm">
+            <div>
+              <span class="text-muted-foreground block text-xs">Invoice Number</span>
+              <span class="font-mono font-medium">{{ b.number }}</span>
+            </div>
+            @if (b.bookingReference) {
+              <div>
+                <span class="text-muted-foreground block text-xs">Booking</span>
+                <a
+                  class="text-primary font-mono font-medium hover:underline"
+                  [routerLink]="['/bookings-executions', b.bookingId]"
+                >
+                  {{ b.bookingReference }}
+                </a>
+              </div>
+            }
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <span class="text-muted-foreground block text-xs">Issued</span>
+                <span class="font-medium">{{ b.createdDate | date: "mediumDate" }}</span>
+              </div>
+              <div>
+                <span class="text-muted-foreground block text-xs">Due</span>
+                <span class="font-medium" [class.text-destructive]="isOverdue()">
+                  {{ b.dueDate ? (b.dueDate | date: "mediumDate") : "—" }}
+                </span>
+              </div>
+            </div>
+            <div class="border-t pt-3">
+              <span class="text-muted-foreground block text-xs">Sent</span>
+              @if (b.sentAt) {
+                <span class="font-medium">{{ b.sentAt | date: "medium" }}</span>
+                <div class="text-muted-foreground text-xs">to {{ b.sentToEmail }}</div>
+              } @else {
+                <span class="text-muted-foreground">Not sent yet</span>
+              }
+            </div>
+          </div>
+        </ui-surface>
+
+        <!-- Customer -->
+        @if (b.customer; as c) {
+          <ui-surface variant="elevated" [border]="true">
+            <h4 class="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+              Bill To
+            </h4>
+            <div class="space-y-3 text-sm">
+              <div>
+                <div class="text-foreground font-medium">{{ c.name }}</div>
+                @if (c.phone) {
+                  <div class="text-muted-foreground text-xs">{{ c.phone }}</div>
+                }
+              </div>
+              @if (c.address; as a) {
+                <div class="text-muted-foreground text-xs leading-relaxed">
+                  <div>{{ a.streetAddress }}</div>
+                  <div>{{ a.cityOrMunicipality }}, {{ a.province }}</div>
+                  <div>{{ a.region }} {{ a.zipcode }} {{ a.country }}</div>
+                </div>
+              }
+              <div class="grid grid-cols-2 gap-2 border-t pt-3">
+                <div>
+                  <span class="text-muted-foreground block text-xs">Billing Cycle</span>
+                  <span class="font-medium">{{ label(c.billingCycle) }}</span>
+                </div>
+                <div>
+                  <span class="text-muted-foreground block text-xs">VAT</span>
+                  <span class="font-medium">{{ c.isVatExempt ? "Exempt" : "Applicable" }}</span>
+                </div>
+              </div>
+            </div>
+          </ui-surface>
+        }
+      </div>
+    </div>
+  } @else {
+    <p class="text-muted-foreground py-12 text-center text-sm">Invoice not found.</p>
+  }
+</div>
+
+<!-- Issue Dialog -->
+<ui-dialog header="Issue Invoice" [(open)]="issueDialogVisible" [modal]="true" width="450px">
+  <div class="space-y-3 py-2">
+    <p class="text-muted-foreground text-sm">
+      Issuing locks the line items and starts the payment terms from today.
+    </p>
+    <div class="bg-muted/50 text-muted-foreground rounded-lg p-3 text-xs">
+      Check the totals and customer details before continuing. You will not be able to edit the
+      invoice after this.
+    </div>
+  </div>
+  <ng-template #footer>
+    <ui-button appearance="text" label="Go Back" (click)="issueDialogVisible.set(false)" />
+    <ui-button
+      intent="success"
+      icon="check"
+      label="Issue Invoice"
+      [disabled]="isBusy()"
+      (click)="confirmIssue()"
+    />
+  </ng-template>
+</ui-dialog>
+
+<!-- Reject Dialog -->
+<ui-dialog header="Reject Invoice" [(open)]="rejectDialogVisible" [modal]="true" width="450px">
+  <div class="space-y-3 py-2">
+    <p class="text-muted-foreground text-sm">Tell the submitter what needs to change.</p>
+    <ui-textarea-field
+      [(value)]="rejectReason"
+      [rows]="3"
+      class="w-full"
+      placeholder="E.g., Missing detention charge, wrong customer..."
+    />
+  </div>
+  <ng-template #footer>
+    <ui-button appearance="text" label="Go Back" (click)="rejectDialogVisible.set(false)" />
+    <ui-button
+      intent="danger"
+      icon="x"
+      label="Reject Invoice"
+      [disabled]="!rejectReason().trim() || isBusy()"
+      (click)="confirmReject()"
+    />
+  </ng-template>
+</ui-dialog>
+
+<!-- Send Dialog -->
+<ui-dialog header="Send Invoice" [(open)]="sendDialogVisible" [modal]="true" width="450px">
+  <div class="space-y-3 py-2">
+    <ui-form-field label="Recipient Email" for="sendEmail" [required]="true">
+      <ui-text-field id="sendEmail" type="email" [(value)]="sendEmail" />
+    </ui-form-field>
+  </div>
+  <ng-template #footer>
+    <ui-button appearance="text" label="Cancel" (click)="sendDialogVisible.set(false)" />
+    <ui-button
+      icon="send"
+      label="Send"
+      [disabled]="!sendEmail().trim() || isBusy()"
+      (click)="confirmSend()"
+    />
+  </ng-template>
+</ui-dialog>
+
+<!-- Cancel Dialog -->
+<ui-dialog header="Cancel Invoice" [(open)]="cancelDialogVisible" [modal]="true" width="450px">
+  <div class="space-y-3 py-2">
+    <p class="text-muted-foreground text-sm">
+      Please provide a reason for cancellation.
+      <span class="text-destructive mt-1 block font-medium">
+        A cancelled invoice cannot be reopened.
+      </span>
+    </p>
+    <ui-textarea-field
+      [(value)]="cancelReason"
+      [rows]="3"
+      class="w-full"
+      placeholder="E.g., Billed to the wrong customer, booking was cancelled..."
+    />
+  </div>
+  <ng-template #footer>
+    <ui-button appearance="text" label="Keep Invoice" (click)="cancelDialogVisible.set(false)" />
+    <ui-button
+      intent="danger"
+      icon="x"
+      label="Confirm Cancellation"
+      [disabled]="!cancelReason().trim() || isBusy()"
+      (click)="confirmCancel()"
+    />
+  </ng-template>
+</ui-dialog>

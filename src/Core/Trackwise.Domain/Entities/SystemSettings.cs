@@ -1,0 +1,15 @@
+using Trackwise.Domain.Core;
+
+namespace Trackwise.Domain.Entities;
+
+/// <summary>
+/// Key-value store for system-wide configuration settings (master database).
+/// Used for Stripe IDs, the global AI model selection, feature flags, and other infrastructure settings.
+/// </summary>
+public class SystemSettings : Entity, IMasterEntity
+{
+    public required string Key { get; set; }
+    public required string Value { get; set; }
+    public string? Description { get; set; }
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+}

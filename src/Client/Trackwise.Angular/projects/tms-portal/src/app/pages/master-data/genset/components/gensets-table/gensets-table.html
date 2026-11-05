@@ -1,0 +1,116 @@
+<ui-card>
+  <ui-data-container
+    [loading]="isLoading()"
+    [error]="error()"
+    [isEmpty]="isEmpty()"
+    skeletonVariant="table"
+    [skeletonRows]="10"
+    emptyTitle="No gensets yet"
+    emptyMessage="Add the genset units cold-chain bookings can attach to."
+    emptyActionLabel="Add Genset"
+    (retry)="onRetry()"
+    (emptyAction)="onAddGenset()"
+  >
+    <ui-data-table
+      [value]="data()"
+      dataKey="id"
+      [scrollable]="true"
+      [lazy]="true"
+      [paginator]="true"
+      [showCurrentPageReport]="true"
+      [rows]="pageSize()"
+      [first]="first()"
+      [totalRecords]="totalRecords()"
+      [loading]="isLoading()"
+      [rowsPerPageOptions]="[10, 25, 50, 100]"
+      size="small"
+      (lazyLoad)="onLazyLoad($event)"
+    >
+      <ng-template #header>
+        <tr>
+          <th uiSortHeader="Code">Code</th>
+          <th uiSortHeader="Name">Name</th>
+          <th uiSortHeader="Status">Status</th>
+          <th>Serial Number</th>
+          <th>Branch</th>
+          <th uiSortHeader="IsActive">Active</th>
+          <th uiSortHeader="UpdatedAt">Last changed</th>
+          <th></th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-genset>
+        <tr
+          class="hover:bg-hover transition-colors duration-150"
+          [class.cursor-pointer]="!genset.deletedAt"
+          [class.opacity-60]="genset.deletedAt"
+          (click)="navigateToGenset(genset)"
+        >
+          <td>
+            <span class="font-mono text-sm font-semibold">{{ genset.code }}</span>
+          </td>
+
+          <td>
+            @if (genset.deletedAt) {
+              <span class="text-foreground max-w-64 truncate font-bold line-through">
+                {{ genset.name }}
+              </span>
+            } @else {
+              <a
+                [routerLink]="['/master-data/gensets', genset.id]"
+                class="text-foreground max-w-64 truncate font-bold hover:underline"
+                (click)="$event.stopPropagation()"
+              >
+                {{ genset.name }}
+              </a>
+            }
+          </td>
+
+          <td>
+            <ui-badge [value]="statusLabel(genset.status)" [severity]="statusSeverity(genset.status)" size="sm" rounded />
+          </td>
+
+          <td class="text-muted-foreground font-mono text-xs">{{ genset.serialNumber || "—" }}</td>
+
+          <td class="text-muted-foreground">
+            @if (genset.branchName) {
+              {{ genset.branchName }}
+            } @else {
+              <span class="text-xs italic">Every branch</span>
+            }
+          </td>
+
+          <td>
+            @if (genset.deletedAt) {
+              <ui-badge value="Deleted" severity="danger" size="sm" rounded />
+            } @else if (genset.isActive) {
+              <ui-badge value="Active" severity="success" size="sm" rounded />
+            } @else {
+              <ui-badge value="Inactive" severity="secondary" size="sm" rounded />
+            }
+          </td>
+
+          <td class="text-muted-foreground text-sm">
+            {{ genset.updatedAt || genset.createdAt | date: "dd/MM/yyyy HH:mm" }}
+            @if (genset.updatedBy || genset.createdBy) {
+              <span class="block text-xs">{{ genset.updatedBy || genset.createdBy }}</span>
+            }
+          </td>
+
+          <td class="text-right">
+            @if (genset.deletedAt && canManage()) {
+              <ui-button
+                type="button"
+                appearance="text"
+                size="sm"
+                icon="history"
+                label="Restore"
+                (click)="onRestore(genset, $event)"
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </ui-data-table>
+  </ui-data-container>
+</ui-card>

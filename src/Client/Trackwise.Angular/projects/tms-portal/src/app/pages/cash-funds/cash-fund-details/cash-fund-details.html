@@ -1,0 +1,202 @@
+<ui-page-header
+  [title]="fund() ? 'Fund · ' + (fund()!.custodianName ?? '') : 'Operational fund'"
+  backLink="/cash-funds"
+>
+  @if (fund()) {
+    @if (isOpen()) {
+      @if (canManage) {
+        <ui-button
+          appearance="outlined"
+          icon="pencil"
+          label="Edit"
+          [disabled]="isBusy()"
+          (click)="fundDialogOpen.set(true)"
+        />
+        @if (fund()!.withOpsCount) {
+          <ui-button
+            appearance="outlined"
+            icon="send"
+            label="Forward all to office"
+            [disabled]="isBusy()"
+            (click)="forwardAll()"
+          />
+        }
+        <ui-button icon="plus" label="Add expense" [disabled]="isBusy()" (click)="addExpense()" />
+      }
+      @if (canReview) {
+        <ui-button
+          icon="lock"
+          label="Liquidate"
+          [disabled]="isBusy() || toReview() > 0"
+          (click)="liquidate()"
+        />
+      }
+      @if (canManage && canDelete()) {
+        <ui-button
+          intent="danger"
+          appearance="outlined"
+          icon="trash"
+          label="Delete"
+          [disabled]="isBusy()"
+          (click)="remove()"
+        />
+      }
+    } @else if (canReview) {
+      <ui-button
+        appearance="outlined"
+        icon="undo"
+        label="Reopen"
+        [disabled]="isBusy()"
+        (click)="reopen()"
+      />
+    }
+  }
+</ui-page-header>
+
+@if (isLoading()) {
+  <ui-stack align="center" justify="center" class="py-16 text-center"><ui-spinner /></ui-stack>
+} @else if (fund(); as fund) {
+  <ui-stack gap="4">
+    <ui-card>
+      <ui-grid container spacing="4">
+        <ui-grid [size]="{ xs: 12, md: 3 }">
+          <ui-info-item label="Held by" [value]="fund.custodianName ?? '-'" />
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Period">
+            {{ isoToDate(fund.periodStart) | date: "MMM d" }} -
+            {{ isoToDate(fund.periodEnd) | date: "mediumDate" }}
+          </ui-info-item>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item
+            label="nSFS cash advance"
+            [value]="fund.advanceReference ?? 'Not recorded'"
+          />
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Status">
+            <ui-badge
+              [value]="statusLabel(fund.status)"
+              [severity]="statusIntent(fund.status)"
+              size="sm"
+              rounded
+            />
+            @if (fund.liquidatedBy) {
+              <span class="text-muted-foreground ml-2 text-xs">
+                by {{ fund.liquidatedBy }}, {{ fund.liquidatedAt | date: "mediumDate" }}
+              </span>
+            }
+          </ui-info-item>
+        </ui-grid>
+      </ui-grid>
+
+      <ui-grid container spacing="4" class="mt-4">
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Advance" [value]="fund.amount | currencyFormat" />
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Spent" [value]="fund.spentTotal | currencyFormat" />
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Balance">
+            <span
+              class="font-semibold"
+              [class.text-success]="(fund.balance ?? 0) >= 0"
+              [class.text-destructive]="(fund.balance ?? 0) < 0"
+            >
+              {{ fund.balance | currencyFormat }}
+            </span>
+            <span class="text-muted-foreground ml-1 text-xs">
+              {{ (fund.balance ?? 0) < 0 ? "owed to custodian" : "to return" }}
+            </span>
+          </ui-info-item>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Disallowed (crew owes)">
+            @if (fund.disallowedTotal) {
+              <span class="text-destructive">{{ fund.disallowedTotal | currencyFormat }}</span>
+            } @else {
+              <span class="text-muted-foreground">None</span>
+            }
+          </ui-info-item>
+        </ui-grid>
+      </ui-grid>
+
+      @if (fund.notes) {
+        <ui-typography variant="body-sm" color="muted" class="mt-4 block whitespace-pre-wrap">
+          {{ fund.notes }}
+        </ui-typography>
+      }
+    </ui-card>
+
+    <ui-card>
+      <ui-stack direction="row" align="center" justify="between" class="mb-3">
+        <ui-typography variant="h5" tag="h2">Expenses</ui-typography>
+        <ui-typography variant="body-sm" color="muted">
+          {{ fund.expenseCount }} lines
+          @if (fund.withOpsCount) {
+            · {{ fund.withOpsCount }} with Ops
+          }
+          @if (fund.forwardedCount) {
+            · {{ fund.forwardedCount }} awaiting the office
+          }
+        </ui-typography>
+      </ui-stack>
+      @if (fund.expenses?.length) {
+        <app-cash-expenses-table
+          [expenses]="fund.expenses!"
+          [canManage]="canManage && isOpen()"
+          [canReview]="canReview && isOpen()"
+          [busy]="isBusy()"
+          (edit)="editExpense($event)"
+          (remove)="removeExpense($event)"
+          (forward)="forward($event)"
+          (check)="check($event)"
+          (disallow)="openDisallow($event)"
+        />
+      } @else {
+        <ui-empty-state
+          title="Nothing spent yet"
+          message="Add each passway, parking fee or toll the crew paid out of this fund."
+        />
+      }
+    </ui-card>
+  </ui-stack>
+
+  <app-cash-fund-dialog [fund]="fund" [(open)]="fundDialogOpen" (saved)="onSaved($event)" />
+  <app-cash-expense-dialog
+    [fundId]="fund.id!"
+    [expense]="editingExpense()"
+    [(open)]="expenseDialogOpen"
+    (saved)="onSaved($event)"
+  />
+} @else {
+  <ui-empty-state title="Fund not found" message="It may have been deleted." />
+}
+
+<ui-dialog [(open)]="disallowOpen" header="Disallow receipts" [modal]="true" width="28rem">
+  <ui-form-field label="Why" for="disallowReason" [required]="true">
+    <ui-textarea-field
+      id="disallowReason"
+      [(value)]="disallowReason"
+      [rows]="3"
+      placeholder="No official receipt, not a company expense…"
+    />
+  </ui-form-field>
+  <ui-typography variant="body-sm" color="muted" class="mt-2 block">
+    The crew owes these back; they no longer count against the fund.
+  </ui-typography>
+
+  <ng-template #footer>
+    <ui-button appearance="text" label="Cancel" (click)="disallowOpen.set(false)" />
+    <ui-button
+      intent="danger"
+      icon="x"
+      [label]="'Disallow ' + disallowIds().length"
+      [disabled]="!disallowReason().trim()"
+      [loading]="isBusy()"
+      (click)="confirmDisallow()"
+    />
+  </ng-template>
+</ui-dialog>

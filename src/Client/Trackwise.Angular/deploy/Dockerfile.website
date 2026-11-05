@@ -1,0 +1,23 @@
+# Stage 1: Build
+FROM node:24-alpine AS builder
+ARG PROJECT_DIR=src/Client/Trackwise.Angular
+WORKDIR /app
+
+RUN npm install -g bun
+
+COPY package.json bun.lock ./
+COPY src/Client/Trackwise.Angular/package.json src/Client/Trackwise.Angular/
+COPY src/Client/Trackwise.DemoVideo/package.json src/Client/Trackwise.DemoVideo/
+RUN bun install --frozen-lockfile
+
+COPY ${PROJECT_DIR}/ ${PROJECT_DIR}/
+WORKDIR /app/${PROJECT_DIR}
+RUN bun run gen:api && npm run build:shared && npm run build:website
+
+# Stage 2: Runtime (Node.js for SSR)
+FROM node:24-alpine
+ARG PROJECT_DIR=src/Client/Trackwise.Angular
+WORKDIR /app
+COPY --from=builder /app/${PROJECT_DIR}/dist/website .
+EXPOSE 7005
+CMD ["node", "server/server.mjs"]

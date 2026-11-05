@@ -1,0 +1,73 @@
+<!-- <ui-dialog
+  header="Repeat this booking"
+  [(open)]="open"
+  [modal]="true"
+  width="34rem"
+  (opened)="onOpened()"
+>
+  <ui-stack gap="3">
+    <ui-typography variant="body-sm" color="muted">
+      Same client, warehouse, drops, truck size and notes, booked again on each day you pick. Each
+      day becomes its own booking with its own number and estimate.
+    </ui-typography>
+
+    <ui-form-field label="Every" for="repeatWeekdays" [required]="true">
+      <ui-multiselect-field
+        id="repeatWeekdays"
+        [(value)]="weekdays"
+        [options]="weekdayOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Pick the weekdays"
+      />
+    </ui-form-field>
+
+    <ui-stack direction="row" gap="3">
+      <ui-form-field label="From" for="repeatFrom" class="flex-1" [required]="true">
+        <ui-date-field id="repeatFrom" [(value)]="from" dateFormat="yy-mm-dd" appendTo="body" />
+      </ui-form-field>
+      <ui-form-field label="Until" for="repeatUntil" class="flex-1" [required]="true">
+        <ui-date-field id="repeatUntil" [(value)]="until" dateFormat="yy-mm-dd" appendTo="body" />
+      </ui-form-field>
+    </ui-stack>
+
+    @if (tooMany()) {
+      <ui-alert intent="warning">
+        That's more than {{ maxDays }} days. Shorten the range or pick fewer weekdays.
+      </ui-alert>
+    } @else if (dates().length === 0) {
+      <ui-typography variant="body-sm" color="muted">No days in that range yet.</ui-typography>
+    } @else {
+      <div>
+        <ui-typography variant="caption" color="muted">
+          {{ dates().length }} booking{{ dates().length === 1 ? "" : "s" }}
+        </ui-typography>
+        <ui-typography variant="body-sm">
+          @for (day of preview(); track day.getTime(); let last = $last) {
+            {{ day | date: "EEE d MMM" }}{{ last ? "" : ", " }}
+          }
+          @if (moreCount() > 0) {
+            and {{ moreCount() }} more
+          }
+        </ui-typography>
+      </div>
+    }
+
+    <ui-checkbox-field
+      inputId="repeatConfirm"
+      label="Confirm them now (the client's standing order is firm)"
+      [(value)]="confirmNow"
+    />
+  </ui-stack>
+
+  <ng-template #footer>
+    <ui-button appearance="text" label="Cancel" [disabled]="isBusy()" (click)="open.set(false)" />
+    <ui-button
+      icon="copy"
+      [label]="dates().length > 1 ? 'Make ' + dates().length + ' bookings' : 'Make booking'"
+      [loading]="isBusy()"
+      [disabled]="dates().length === 0 || tooMany()"
+      (click)="repeat()"
+    />
+  </ng-template>
+</ui-dialog> -->

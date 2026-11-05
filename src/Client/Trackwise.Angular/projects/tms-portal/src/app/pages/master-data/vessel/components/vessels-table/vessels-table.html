@@ -1,0 +1,123 @@
+<ui-card>
+  <ui-data-container
+    [loading]="isLoading()"
+    [error]="error()"
+    [isEmpty]="isEmpty()"
+    skeletonVariant="table"
+    [skeletonRows]="10"
+    emptyTitle="No vessels yet"
+    emptyMessage="Add the ships your shipments move on, so a vessel stops being a name someone types."
+    emptyActionLabel="Add Vessel"
+    (retry)="onRetry()"
+    (emptyAction)="onAddVessel()"
+  >
+    <ui-data-table
+      [value]="data()"
+      dataKey="id"
+      [scrollable]="true"
+      [lazy]="true"
+      [paginator]="true"
+      [showCurrentPageReport]="true"
+      [rows]="pageSize()"
+      [first]="first()"
+      [totalRecords]="totalRecords()"
+      [loading]="isLoading()"
+      [rowsPerPageOptions]="[10, 25, 50, 100]"
+      size="small"
+      (lazyLoad)="onLazyLoad($event)"
+    >
+      <ng-template #header>
+        <tr>
+          <th uiSortHeader="Code">Code</th>
+          <th uiSortHeader="Name">Name</th>
+          <th uiSortHeader="ImoNumber">IMO</th>
+          <th uiSortHeader="Type">Type</th>
+          <th uiSortHeader="FlagCountryCode">Flag</th>
+          <th>Branch</th>
+          <th uiSortHeader="IsActive">Status</th>
+          <th uiSortHeader="UpdatedAt">Last changed</th>
+          <th></th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-vessel>
+        <tr
+          class="hover:bg-hover transition-colors duration-150"
+          [class.cursor-pointer]="!vessel.deletedAt"
+          [class.opacity-60]="vessel.deletedAt"
+          (click)="navigateToVessel(vessel)"
+        >
+          <td>
+            <span class="font-mono text-sm font-semibold">{{ vessel.code }}</span>
+          </td>
+
+          <td>
+            @if (vessel.deletedAt) {
+              <span class="text-foreground max-w-64 truncate font-bold line-through">
+                {{ vessel.name }}
+              </span>
+            } @else {
+              <a
+                [routerLink]="['/master-data/vessels', vessel.id]"
+                class="text-foreground max-w-64 truncate font-bold hover:underline"
+                (click)="$event.stopPropagation()"
+              >
+                {{ vessel.name }}
+              </a>
+            }
+          </td>
+
+          <td class="text-muted-foreground font-mono text-sm">
+            @if (vessel.imoNumber) {
+              {{ vessel.imoNumber }}
+            } @else {
+              <span class="text-xs italic">None</span>
+            }
+          </td>
+
+          <td class="text-muted-foreground">{{ typeLabel(vessel.type) }}</td>
+
+          <td class="text-muted-foreground">{{ vessel.flagCountryCode || "—" }}</td>
+
+          <td class="text-muted-foreground">
+            @if (vessel.branchName) {
+              {{ vessel.branchName }}
+            } @else {
+              <span class="text-xs italic">Every branch</span>
+            }
+          </td>
+
+          <td>
+            @if (vessel.deletedAt) {
+              <ui-badge value="Deleted" severity="danger" size="sm" rounded />
+            } @else if (vessel.isActive) {
+              <ui-badge value="Active" severity="success" size="sm" rounded />
+            } @else {
+              <ui-badge value="Inactive" severity="secondary" size="sm" rounded />
+            }
+          </td>
+
+          <td class="text-muted-foreground text-sm">
+            {{ vessel.updatedAt || vessel.createdAt | date: "dd/MM/yyyy HH:mm" }}
+            @if (vessel.updatedBy || vessel.createdBy) {
+              <span class="block text-xs">{{ vessel.updatedBy || vessel.createdBy }}</span>
+            }
+          </td>
+
+          <td class="text-right">
+            @if (vessel.deletedAt && canManage()) {
+              <ui-button
+                type="button"
+                appearance="text"
+                size="sm"
+                icon="history"
+                label="Restore"
+                (click)="onRestore(vessel, $event)"
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </ui-data-table>
+  </ui-data-container>
+</ui-card>

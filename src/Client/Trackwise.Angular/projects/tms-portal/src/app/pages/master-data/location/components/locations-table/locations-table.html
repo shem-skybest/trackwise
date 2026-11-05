@@ -1,0 +1,143 @@
+<ui-card>
+  <ui-data-container
+    [loading]="isLoading()"
+    [error]="error()"
+    [isEmpty]="isEmpty()"
+    skeletonVariant="table"
+    [skeletonRows]="10"
+    emptyTitle="No locations yet"
+    emptyMessage="Add the delivery points, warehouses and yards your work runs to, and the zones grouping them."
+    emptyActionLabel="Add Location"
+    (retry)="onRetry()"
+    (emptyAction)="onAddLocation()"
+  >
+    <ui-data-table
+      [value]="data()"
+      dataKey="id"
+      [scrollable]="true"
+      [lazy]="true"
+      [paginator]="true"
+      [showCurrentPageReport]="true"
+      [rows]="pageSize()"
+      [first]="first()"
+      [totalRecords]="totalRecords()"
+      [loading]="isLoading()"
+      [rowsPerPageOptions]="[10, 25, 50, 100]"
+      size="small"
+      (lazyLoad)="onLazyLoad($event)"
+    >
+      <ng-template #header>
+        <tr>
+          <th uiSortHeader="Code">Code</th>
+          <th uiSortHeader="Name">Name</th>
+          <th uiSortHeader="Type">Type</th>
+          <th>Customer</th>
+          <th>Cut-off</th>
+          <th>Zone</th>
+          <th>Place</th>
+          <th>Branch</th>
+          <th uiSortHeader="IsActive">Status</th>
+          <th uiSortHeader="UpdatedAt">Last changed</th>
+          <th></th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-location>
+        <tr
+          class="hover:bg-hover transition-colors duration-150"
+          [class.cursor-pointer]="!location.deletedAt"
+          [class.opacity-60]="location.deletedAt"
+          (click)="navigateToLocation(location)"
+        >
+          <td>
+            <span class="font-mono text-sm font-semibold">{{ location.code }}</span>
+          </td>
+
+          <td>
+            @if (location.deletedAt) {
+              <span class="text-foreground max-w-64 truncate font-bold line-through">
+                {{ location.name }}
+              </span>
+            } @else {
+              <a
+                [routerLink]="['/master-data/locations', location.id]"
+                class="text-foreground max-w-64 truncate font-bold hover:underline"
+                (click)="$event.stopPropagation()"
+              >
+                {{ location.name }}
+              </a>
+            }
+          </td>
+
+          <td class="text-muted-foreground">{{ typeLabel(location.type) }}</td>
+
+          <td class="text-muted-foreground">
+            @if (location.customerName) {
+              {{ location.customerName }}
+            } @else if (location.type !== "zone") {
+              <span class="text-xs italic">Shared</span>
+            }
+          </td>
+
+          <td class="text-muted-foreground text-sm">
+            {{ formatTimeOfDay(location.defaultCutoffTime) }}
+          </td>
+
+          <td class="text-muted-foreground">
+            @if (location.parentLocationName) {
+              {{ location.parentLocationName }}
+            } @else {
+              <span class="text-xs italic">Unfiled</span>
+            }
+          </td>
+
+          <td class="text-muted-foreground">
+            @if (place(location); as where) {
+              {{ where }}
+            } @else {
+              <span class="text-xs italic">A grouping, not a place</span>
+            }
+          </td>
+
+          <td class="text-muted-foreground">
+            @if (location.branchName) {
+              {{ location.branchName }}
+            } @else {
+              <span class="text-xs italic">Every branch</span>
+            }
+          </td>
+
+          <td>
+            @if (location.deletedAt) {
+              <ui-badge value="Deleted" severity="danger" size="sm" rounded />
+            } @else if (location.isActive) {
+              <ui-badge value="Active" severity="success" size="sm" rounded />
+            } @else {
+              <ui-badge value="Inactive" severity="secondary" size="sm" rounded />
+            }
+          </td>
+
+          <td class="text-muted-foreground text-sm">
+            {{ location.updatedAt || location.createdAt | date: "dd/MM/yyyy HH:mm" }}
+            @if (location.updatedBy || location.createdBy) {
+              <span class="block text-xs">{{ location.updatedBy || location.createdBy }}</span>
+            }
+          </td>
+
+          <td class="text-right">
+            @if (location.deletedAt && canManage()) {
+              <ui-button
+                type="button"
+                appearance="text"
+                size="sm"
+                icon="history"
+                label="Restore"
+                (click)="onRestore(location, $event)"
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </ui-data-table>
+  </ui-data-container>
+</ui-card>

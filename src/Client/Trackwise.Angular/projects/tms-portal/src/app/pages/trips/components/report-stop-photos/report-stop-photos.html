@@ -1,0 +1,71 @@
+<ui-stack gap="2">
+  <ui-typography variant="overline" color="secondary">{{ label() }}</ui-typography>
+
+  <div
+    class="border-border flex flex-wrap items-center gap-3 rounded-md border border-dashed p-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    [class.bg-muted]="dragging()"
+    tabindex="0"
+    role="group"
+    [attr.aria-label]="label() + ' - paste, drop or browse'"
+    (paste)="onPaste($event)"
+    (dragover)="onDragOver($event)"
+    (dragleave)="dragging.set(false)"
+    (drop)="onDrop($event)"
+  >
+    @for (photo of photos(); track photo.id; let i = $index) {
+      <div class="group relative">
+        <button
+          type="button"
+          class="border-border bg-muted block h-20 w-20 overflow-hidden rounded-md border"
+          [attr.aria-label]="'Open ' + (photo.fileName ?? 'photo')"
+          [title]="(photo.capturedBy ?? '') + ' · ' + (photo.capturedAt | date: 'MMM d, HH:mm')"
+          (click)="open(i)"
+        >
+          @if (store.urls()[photo.id!]; as url) {
+            <img [src]="url" [alt]="photo.fileName ?? 'Photo'" class="h-full w-full object-cover" />
+          } @else {
+            <span class="flex h-full items-center justify-center">
+              <ui-icon name="image" class="text-muted-foreground" />
+            </span>
+          }
+        </button>
+        <ui-button
+          class="absolute -top-2 -right-2"
+          appearance="solid"
+          intent="danger"
+          size="sm"
+          icon="x"
+          [rounded]="true"
+          ariaLabel="Remove photo"
+          (click)="remove(photo)"
+        />
+      </div>
+    }
+
+    @if (uploading()) {
+      <ui-spinner />
+    }
+
+    <div class="flex flex-col gap-1">
+      <ui-button
+        appearance="outlined"
+        size="sm"
+        icon="upload"
+        label="Add photos"
+        [disabled]="uploading()"
+        (click)="fileInput.click()"
+      />
+      <span class="text-muted-foreground text-xs">or click here and paste (Ctrl+V), or drop</span>
+    </div>
+    <input
+      #fileInput
+      type="file"
+      class="hidden"
+      multiple
+      [accept]="accept"
+      (change)="onBrowse($event)"
+    />
+  </div>
+</ui-stack>
+
+<ui-lightbox [images]="images()" [(open)]="lightboxOpen" [(activeIndex)]="lightboxIndex" />

@@ -1,0 +1,140 @@
+<div class="animate-in fade-in space-y-4">
+  <ui-page-header
+    title="Rate Agreements"
+    [addRoute]="canManage ? '/rate-agreements/add' : null"
+    addTooltip="New rate agreement"
+  >
+    <ui-button
+      appearance="outlined"
+      icon="calculator"
+      label="Route costing"
+      routerLink="/rate-agreements/costing"
+    />
+  </ui-page-header>
+
+  <ui-grid container spacing="4">
+    <ui-grid [size]="{ xs: 12, lg: 9 }">
+      <ui-stack gap="4">
+        <ui-card>
+          <ui-grid container spacing="3">
+            <ui-grid [size]="{ xs: 12, md: 4 }">
+              <ui-form-field label="Search" for="search" class="mb-0">
+                <ui-text-field
+                  id="search"
+                  placeholder="Agreement name"
+                  (input)="onSearch($any($event.target).value)"
+                />
+              </ui-form-field>
+            </ui-grid>
+            <ui-grid [size]="{ xs: 12, md: 4 }">
+              <ui-form-field label="Customer" for="customer" class="mb-0">
+                <app-search-customer
+                  [value]="customer()"
+                  (valueChange)="onCustomerChange($event)"
+                />
+              </ui-form-field>
+            </ui-grid>
+            <ui-grid [size]="{ xs: 6, md: 2 }">
+              <ui-form-field label="Status" for="status" class="mb-0">
+                <ui-select-field
+                  id="status"
+                  [options]="statusOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  [value]="status()"
+                  (valueChange)="onStatusChange($event)"
+                />
+              </ui-form-field>
+            </ui-grid>
+            <ui-grid [size]="{ xs: 6, md: 2 }">
+              <ui-form-field label="In force today" for="inForce" class="mb-0">
+                <ui-toggle-field
+                  id="inForce"
+                  [value]="inForceToday()"
+                  (valueChange)="onInForceChange($event)"
+                />
+              </ui-form-field>
+            </ui-grid>
+          </ui-grid>
+        </ui-card>
+
+        <ui-card>
+          <ui-data-container
+            [loading]="store.isLoading()"
+            [error]="store.error()"
+            [isEmpty]="store.isEmpty()"
+            skeletonVariant="table"
+            [skeletonRows]="8"
+            emptyTitle="No rate agreements"
+            emptyMessage="A client's contracted truck-trip rates, one agreement per price revision."
+            (retry)="store.retry()"
+          >
+            <ui-data-table
+              [value]="store.data()"
+              dataKey="id"
+              [lazy]="true"
+              [paginator]="true"
+              [showCurrentPageReport]="true"
+              [rows]="store.pageSize()"
+              [first]="store.first()"
+              [totalRecords]="store.totalRecords()"
+              [loading]="store.isLoading()"
+              [rowsPerPageOptions]="[25, 50, 100]"
+              size="small"
+              (lazyLoad)="store.onLazyLoad($event)"
+            >
+              <ng-template #header>
+                <tr>
+                  <th uiSortHeader="Name">Agreement</th>
+                  <th>Customer</th>
+                  <th uiSortHeader="EffectiveFrom">In force</th>
+                  <th>Fuel</th>
+                  <th class="text-right">Rates</th>
+                  <th uiSortHeader="Status">Status</th>
+                </tr>
+              </ng-template>
+              <ng-template #body let-agreement>
+                <tr class="hover:bg-hover cursor-pointer" (click)="open(agreement)">
+                  <td>
+                    <a
+                      [routerLink]="['/rate-agreements', agreement.id]"
+                      class="text-foreground font-semibold hover:underline"
+                      (click)="$event.stopPropagation()"
+                    >
+                      {{ agreement.name }}
+                    </a>
+                  </td>
+                  <td>{{ agreement.customerName }}</td>
+                  <td class="text-sm whitespace-nowrap">
+                    {{ isoToDate(agreement.effectiveFrom) | date: "mediumDate" }} -
+                    @if (agreement.effectiveTo) {
+                      {{ isoToDate(agreement.effectiveTo) | date: "mediumDate" }}
+                    } @else {
+                      <span class="text-muted-foreground">open</span>
+                    }
+                  </td>
+                  <td class="text-muted-foreground text-sm">
+                    {{ fuelMethodLabel(agreement.fuelMethod) }}
+                  </td>
+                  <td class="text-right">{{ agreement.lineCount }}</td>
+                  <td>
+                    <ui-badge
+                      [value]="statusLabel(agreement.status)"
+                      [severity]="statusIntent(agreement.status)"
+                      size="sm"
+                      rounded
+                    />
+                  </td>
+                </tr>
+              </ng-template>
+            </ui-data-table>
+          </ui-data-container>
+        </ui-card>
+      </ui-stack>
+    </ui-grid>
+
+    <ui-grid [size]="{ xs: 12, lg: 3 }">
+      <app-diesel-price-card [canManage]="canManage" />
+    </ui-grid>
+  </ui-grid>
+</div>

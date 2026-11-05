@@ -1,0 +1,40 @@
+﻿@page
+@model Trackwise.IdentityServer.Pages.Account.ResetPassword.ResetPasswordModel
+@{
+    ViewData["Title"] = "Reset password";
+}
+
+<form method="post">
+    <input asp-for="Input.Code" type="hidden" />
+
+    <div hlm-field-group>
+        <div class="flex flex-col items-center gap-1 text-center">
+            <h1 class="mb-0 text-2xl font-bold">Reset your password</h1>
+            <p class="text-muted-foreground text-sm text-balance">Choose a new password for your account</p>
+        </div>
+
+        <partial name="_ValidationSummary" />
+
+        <div hlm-field>
+            <label hlm-field-label asp-for="Input.Email">Email</label>
+            <input hlm-input asp-for="Input.Email" autocomplete="email" />
+            <span hlm-field-error asp-validation-for="Input.Email"></span>
+        </div>
+
+        <div hlm-field>
+            <label hlm-field-label asp-for="Input.Password">New password</label>
+            <input hlm-input asp-for="Input.Password" autocomplete="new-password" />
+            <span hlm-field-error asp-validation-for="Input.Password"></span>
+        </div>
+
+        <div hlm-field>
+            <label hlm-field-label asp-for="Input.ConfirmPassword">Confirm password</label>
+            <input hlm-input asp-for="Input.ConfirmPassword" autocomplete="new-password" />
+            <span hlm-field-error asp-validation-for="Input.ConfirmPassword"></span>
+        </div>
+
+        <div hlm-field>
+            <button hlm-btn type="submit">Reset password</button>
+        </div>
+    </div>
+</form>

@@ -1,0 +1,10 @@
+<img [src]="companyLogoUrl() ?? 'images/logo.png'" class="brand-logo" alt="Company logo" />
+
+@if (!collapsed() && companyName(); as name) {
+  <div class="brand-text">
+    <h4 class="brand-company">{{ name }}</h4>
+    @if (systemName(); as system) {
+      <p class="brand-system" [title]="system">{{ system }}</p>
+    }
+  </div>
+}

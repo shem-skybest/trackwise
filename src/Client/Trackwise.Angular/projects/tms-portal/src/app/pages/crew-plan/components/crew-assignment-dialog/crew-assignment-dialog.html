@@ -1,0 +1,61 @@
+<ui-dialog
+  [(open)]="visible"
+  [modal]="true"
+  [header]="title()"
+  width="560px"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <form [formRoot]="form">
+    <ui-stack gap="3">
+      <ui-form-field label="Unit status" for="unitStatus" [required]="true">
+        <ui-select-field
+          id="unitStatus"
+          [formField]="form.unitStatus"
+          [options]="statusOptions"
+          optionLabel="label"
+          optionValue="value"
+          appendTo="body"
+        />
+      </ui-form-field>
+
+      <ui-form-field
+        label="Driver"
+        for="driver"
+        hint="Only crew available or on reserve that day are offered."
+      >
+        <app-search-employee
+          [formField]="form.driver"
+          [roles]="drivingRoles"
+          [availableOn]="row()?.date ?? null"
+          placeholder="Type driver name"
+        />
+      </ui-form-field>
+
+      <ui-form-field label="Helper" for="helper">
+        <app-search-helper [formField]="form.helper" [availableOn]="row()?.date ?? null" />
+      </ui-form-field>
+
+      <ui-form-field
+        label="Second helper"
+        for="secondHelper"
+        hint="Only for trucks running with two."
+      >
+        <app-search-helper [formField]="form.secondHelper" [availableOn]="row()?.date ?? null" />
+      </ui-form-field>
+
+      <ui-form-field
+        label="Notes"
+        for="notes"
+        hint="The unit's concern, type of repair, or why it's off the road."
+      >
+        <ui-textarea-field id="notes" [formField]="form.notes" [rows]="2" />
+      </ui-form-field>
+
+      <ui-stack direction="row" justify="end" gap="2">
+        <ui-button intent="secondary" appearance="outlined" label="Cancel" (click)="close()" />
+        <ui-button type="submit" label="Save" icon="check" [loading]="form().submitting()" />
+      </ui-stack>
+    </ui-stack>
+  </form>
+</ui-dialog>

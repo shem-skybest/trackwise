@@ -1,0 +1,11 @@
+using Trackwise.Application.Abstractions;
+using Trackwise.Shared.Models;
+
+namespace Trackwise.Application.Modules.Operations.Tracking.Commands;
+
+public class SendTrackingLinkEmailCommand : ICommand<Result>
+{
+    public required Guid TrackingLinkId { get; set; }
+    public required string RecipientEmail { get; set; }
+    public string? PersonalMessage { get; set; }
+}

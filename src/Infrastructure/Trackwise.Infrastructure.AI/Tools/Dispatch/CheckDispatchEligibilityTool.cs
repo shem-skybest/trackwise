@@ -1,0 +1,50 @@
+using System.ComponentModel;
+using Trackwise.Application.Abstractions.Agents;
+using Trackwise.Application.Abstractions.Dispatch;
+using Trackwise.Shared.Identity.Policies;
+
+namespace Trackwise.Infrastructure.AI.Tools.Dispatch;
+
+internal sealed class CheckDispatchEligibilityTool(IDispatchEligibilityService eligibilityService)
+    : AgentTool<CheckDispatchEligibilityTool.Input>, IAgentToolMetadata
+{
+    internal sealed record Input
+    {
+        [Description("The truck ID (GUID)")]
+        [AgentEntityId(AgentEntityKind.Truck)]
+        public required Guid TruckId { get; init; }
+
+        [Description("The load ID (GUID)")]
+        [AgentEntityId(AgentEntityKind.Load)]
+        public required Guid LoadId { get; init; }
+
+        [Description("Optional driver ID (GUID). When omitted, the truck's currently assigned main driver is used.")]
+        public Guid? DriverId { get; init; }
+    }
+
+    public static AgentToolDefinition Definition => new(
+        "check_dispatch_eligibility",
+        "Check if a truck (and optionally a specific driver) is eligible to carry a load based on driver license class + endorsements, US Hazmat / EU ADR rules, ADR cert validity, truck Hazmat-placarding, and DOT medical certificate. Returns is_eligible and a list of issues with reason codes (severity: error blocks dispatch, warning is informational). Call this BEFORE dispatch_trip or assign_load_to_truck on hazmat / ADR loads, and whenever the human asks 'can driver X carry load Y'.")
+    {
+        RequiredPermission = Permission.Dispatch.View,
+        Surfaces = AgentSurfaces.All
+    };
+
+    protected override async Task<string> ExecuteAsync(Input input, CancellationToken ct)
+    {
+        var result = await eligibilityService.CheckAsync(input.TruckId, input.LoadId, input.DriverId, ct);
+
+        return ToolResult.Ok(new
+        {
+            is_eligible = result.IsEligible,
+            issues = result.Issues
+                .Select(i => new
+                {
+                    code = i.Code.ToString(),
+                    severity = i.Severity.ToString().ToLowerInvariant(),
+                    message = i.Message
+                })
+                .ToArray()
+        });
+    }
+}

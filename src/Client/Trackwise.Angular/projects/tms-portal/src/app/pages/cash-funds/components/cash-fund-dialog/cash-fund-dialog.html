@@ -1,0 +1,58 @@
+<ui-dialog
+  [header]="isEdit() ? 'Edit fund' : 'New operational fund'"
+  [(open)]="open"
+  [modal]="true"
+  width="34rem"
+  (opened)="onOpened()"
+>
+  <form [formRoot]="form">
+    <ui-grid container spacing="3">
+      <ui-grid [size]="{ xs: 12 }">
+        <ui-form-field label="Held by" for="custodian" [required]="true">
+          <app-search-employee id="custodian" [formField]="form.custodian" />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 6 }">
+        <ui-form-field label="From" for="periodStart" [required]="true">
+          <ui-date-field inputId="periodStart" [formField]="form.periodStart" [showIcon]="true" />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 6 }">
+        <ui-form-field label="To" for="periodEnd" [required]="true">
+          <ui-date-field inputId="periodEnd" [formField]="form.periodEnd" [showIcon]="true" />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 6 }">
+        <ui-form-field label="Advance" for="amount" [required]="true">
+          <ui-number-field
+            id="amount"
+            [formField]="form.amount"
+            [minFractionDigits]="2"
+            [maxFractionDigits]="2"
+            [fluid]="true"
+          />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 6 }">
+        <ui-form-field label="nSFS cash advance no." for="advanceReference" hint="e.g. CA-RFV…">
+          <ui-text-field id="advanceReference" [formField]="form.advanceReference" />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12 }">
+        <ui-form-field label="Notes" for="fundNotes" hint="Optional">
+          <ui-textarea-field id="fundNotes" [formField]="form.notes" [rows]="2" />
+        </ui-form-field>
+      </ui-grid>
+    </ui-grid>
+
+    <div class="mt-4 flex justify-end gap-2">
+      <ui-button appearance="text" label="Cancel" (click)="open.set(false)" />
+      <ui-button
+        type="submit"
+        icon="save"
+        [label]="isEdit() ? 'Save' : 'Create fund'"
+        [loading]="form().submitting()"
+      />
+    </div>
+  </form>
+</ui-dialog>

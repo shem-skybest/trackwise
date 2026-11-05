@@ -1,0 +1,298 @@
+/**
+ * spartan-vega.css - the sections of spartan's "vega" style these pages use, copied verbatim from
+ * https://github.com/spartan-ng/spartan/blob/4851f7c656223eaa7b4eadd41ab69b53c273a0eb/libs/registry/src/styles/style-vega.css
+ *
+ * The Angular helm directives put these `spartan-*` classes on their host; here the Hlm* tag helpers
+ * (TagHelpers/) do the same job. To pick up an upstream change, re-copy the section rather than
+ * editing it here, and rebuild with `bun run build:identity-css` from the repo root.
+ */
+
+.style-vega {
+  /* MARK: Alert */
+  .spartan-alert {
+    @apply grid gap-0.5 rounded-lg border px-4 py-3 text-start text-sm has-data-[slot=alert-action]:relative has-data-[slot=alert-action]:pr-18 has-[>ng-icon]:grid-cols-[auto_1fr] has-[>ng-icon]:gap-x-2.5 *:[ng-icon]:row-span-2 *:[ng-icon]:translate-y-0.5 *:[ng-icon]:text-current *:[ng-icon:not([class*='text-'])]:text-[length:--spacing(4)];
+  }
+
+  .spartan-alert-variant-default {
+    @apply bg-card text-card-foreground;
+  }
+
+  .spartan-alert-variant-destructive {
+    @apply text-destructive bg-card *:data-[slot=alert-description]:text-destructive/90 *:[ng-icon]:text-current;
+  }
+
+  .spartan-alert-title {
+    @apply font-medium group-has-[>ng-icon]/alert:col-start-2;
+  }
+
+  .spartan-alert-description {
+    @apply text-muted-foreground text-sm text-balance md:text-pretty [&_p:not(:last-child)]:mb-4;
+  }
+
+  .spartan-alert-action {
+    @apply absolute end-3 top-2.5;
+  }
+
+  /* MARK: Badge */
+  .spartan-badge {
+    @apply h-5 gap-1 rounded-4xl border border-transparent px-2 py-0.5 text-xs font-medium transition-all has-data-[icon=inline-end]:pe-1.5 has-data-[icon=inline-start]:ps-1.5 [&>ng-icon]:text-[length:--spacing(3)];
+  }
+
+  .spartan-badge-variant-default {
+    @apply bg-primary text-primary-foreground [a]:hover:bg-primary/80;
+  }
+
+  .spartan-badge-variant-secondary {
+    @apply bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80;
+  }
+
+  .spartan-badge-variant-outline {
+    @apply border-border text-foreground [a]:hover:bg-muted [a]:hover:text-muted-foreground;
+  }
+
+  .spartan-badge-variant-destructive {
+    @apply bg-destructive/10 [a]:hover:bg-destructive/20 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive dark:bg-destructive/20;
+  }
+
+  .spartan-badge-variant-ghost {
+    @apply hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50;
+  }
+
+  .spartan-badge-variant-link {
+    @apply text-primary underline-offset-4 hover:underline;
+  }
+
+  /* MARK: Button */
+  .spartan-button {
+    @apply focus-visible:border-ring focus-visible:ring-ring/50 data-[matches-spartan-invalid=true]:ring-destructive/20 dark:data-[matches-spartan-invalid=true]:ring-destructive/40 data-[matches-spartan-invalid=true]:border-destructive dark:data-[matches-spartan-invalid=true]:border-destructive/50 rounded-md border border-transparent bg-clip-padding text-sm font-medium focus-visible:ring-3 active:not-aria-[haspopup]:translate-y-px data-[matches-spartan-invalid=true]:ring-3 [&_ng-icon:not([class*='text-'])]:text-[length:--spacing(4)];
+  }
+
+  .spartan-button-variant-default {
+    @apply bg-primary text-primary-foreground hover:bg-primary/80;
+  }
+
+  .spartan-button-variant-outline {
+    @apply border-border bg-background hover:bg-muted hover:text-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 aria-expanded:bg-muted aria-expanded:text-foreground shadow-xs;
+  }
+
+  .spartan-button-variant-secondary {
+    @apply bg-secondary text-secondary-foreground aria-expanded:bg-secondary aria-expanded:text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)];
+  }
+
+  .spartan-button-variant-ghost {
+    @apply hover:bg-muted hover:text-foreground dark:hover:bg-muted/50 aria-expanded:bg-muted aria-expanded:text-foreground;
+  }
+
+  .spartan-button-variant-destructive {
+    @apply bg-destructive/10 hover:bg-destructive/20 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/20 text-destructive focus-visible:border-destructive/40 dark:hover:bg-destructive/30;
+  }
+
+  .spartan-button-variant-link {
+    @apply text-primary underline-offset-4 hover:underline;
+  }
+
+  .spartan-button-size-xs {
+    @apply h-6 gap-1 rounded-[min(var(--radius-md),8px)] px-2 text-xs in-data-[slot=button-group]:rounded-md has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_ng-icon:not([class*='text-'])]:text-[length:--spacing(3)];
+  }
+
+  .spartan-button-size-sm {
+    @apply h-8 gap-1 rounded-[min(var(--radius-md),10px)] px-2.5 in-data-[slot=button-group]:rounded-md has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5;
+  }
+
+  .spartan-button-size-default {
+    @apply h-9 gap-1.5 px-2.5 in-data-[slot=button-group]:rounded-md has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2;
+  }
+
+  .spartan-button-size-lg {
+    @apply h-10 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2;
+  }
+
+  .spartan-button-size-icon-xs {
+    @apply size-6 rounded-[min(var(--radius-md),8px)] in-data-[slot=button-group]:rounded-md [&_ng-icon:not([class*='text-'])]:text-[length:--spacing(3)];
+  }
+
+  .spartan-button-size-icon-sm {
+    @apply size-8 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-md;
+  }
+
+  .spartan-button-size-icon {
+    @apply size-9;
+  }
+
+  .spartan-button-size-icon-lg {
+    @apply size-10;
+  }
+
+  /* MARK: Card */
+  .spartan-card {
+    @apply ring-foreground/10 bg-card text-card-foreground gap-(--card-spacing) overflow-hidden rounded-xl py-(--card-spacing) text-sm shadow-xs ring-1 [--card-spacing:--spacing(6)] has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:--spacing(4)] *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl;
+  }
+
+  .spartan-card-header {
+    @apply gap-1 rounded-t-xl px-(--card-spacing) [.border-b]:pb-(--card-spacing);
+  }
+
+  .spartan-card-title {
+    @apply text-base leading-normal font-medium group-data-[size=sm]/card:text-sm;
+  }
+
+  .spartan-card-description {
+    @apply text-muted-foreground text-sm;
+  }
+
+  .spartan-card-content {
+    @apply px-(--card-spacing);
+  }
+
+  .spartan-card-footer {
+    @apply rounded-b-xl px-(--card-spacing) [.border-t]:pt-(--card-spacing);
+  }
+
+  /* MARK: Checkbox */
+  .spartan-checkbox {
+    @apply border-input dark:bg-input/30 data-checked:bg-primary data-checked:text-primary-foreground dark:data-checked:bg-primary data-checked:border-primary data-[matches-spartan-invalid=true]:aria-checked:border-primary data-[matches-spartan-invalid=true]:border-destructive dark:data-[matches-spartan-invalid=true]:border-destructive/50 focus-visible:border-ring focus-visible:ring-ring/50 data-[matches-spartan-invalid=true]:ring-destructive/20 dark:data-[matches-spartan-invalid=true]:ring-destructive/40 flex size-4 items-center justify-center rounded-[4px] border shadow-xs transition-shadow group-has-disabled/field:opacity-50 focus-visible:ring-3 data-[matches-spartan-invalid=true]:ring-3;
+  }
+
+  .spartan-checkbox-indicator {
+    @apply [&>ng-icon]:text-[length:--spacing(3.5)];
+  }
+
+  /* MARK: Dialog */
+  .spartan-dialog-overlay {
+    @apply data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 isolate bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs;
+  }
+
+  .spartan-dialog-content {
+    @apply bg-popover text-popover-foreground data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 ring-foreground/10 grid max-w-[calc(100%-2rem)] gap-6 rounded-xl p-6 text-sm ring-1 duration-100 sm:max-w-md;
+  }
+
+  .spartan-dialog-close {
+    @apply absolute end-4 top-4;
+  }
+
+  .spartan-dialog-header {
+    @apply gap-2;
+  }
+
+  .spartan-dialog-footer {
+    @apply gap-2;
+  }
+
+  .spartan-dialog-title {
+    @apply leading-none font-medium;
+  }
+
+  .spartan-dialog-description {
+    @apply text-muted-foreground *:[a]:hover:text-foreground text-sm *:[a]:underline *:[a]:underline-offset-3;
+  }
+
+  /* MARK: Field */
+  .spartan-field-set {
+    @apply gap-6 has-[>[data-slot=checkbox-group]]:gap-3 has-[>[data-slot=radio-group]]:gap-3;
+  }
+
+  .spartan-field-legend {
+    @apply mb-3 font-medium data-[variant=label]:text-sm data-[variant=legend]:text-base;
+  }
+
+  .spartan-field-group {
+    @apply gap-7 data-[slot=checkbox-group]:gap-3 *:data-[slot=field-group]:gap-4;
+  }
+
+  .spartan-field {
+    @apply data-[matches-spartan-invalid=true]:text-destructive gap-3;
+  }
+
+  .spartan-field-content {
+    @apply gap-1;
+  }
+
+  .spartan-field-label {
+    @apply has-data-checked:bg-primary/5 has-data-checked:border-primary/30 dark:has-data-checked:border-primary/20 dark:has-data-checked:bg-primary/10 gap-2 leading-snug group-data-[disabled=true]/field:opacity-50 has-[>[data-slot=field]]:rounded-md has-[>[data-slot=field]]:border *:data-[slot=field]:p-3;
+  }
+
+  .spartan-field-title {
+    @apply gap-2 text-sm leading-snug font-medium group-data-[disabled=true]/field:opacity-50;
+  }
+
+  .spartan-field-description {
+    @apply text-muted-foreground text-start text-sm [[data-variant=legend]+&]:-mt-1.5;
+  }
+
+  .spartan-field-separator {
+    @apply -my-2 h-5 text-sm group-data-[variant=outline]/field-group:-mb-2;
+  }
+
+  .spartan-field-separator-content {
+    @apply text-muted-foreground px-2;
+  }
+
+  .spartan-field-error {
+    @apply text-destructive text-sm;
+  }
+
+  /* MARK: Input */
+  .spartan-input {
+    @apply dark:bg-input/30 border-input focus-visible:border-ring focus-visible:ring-ring/50 data-[matches-spartan-invalid=true]:ring-destructive/20 dark:data-[matches-spartan-invalid=true]:ring-destructive/40 data-[matches-spartan-invalid=true]:border-destructive dark:data-[matches-spartan-invalid=true]:border-destructive/50 h-9 rounded-md border bg-transparent px-2.5 py-1 text-base shadow-xs transition-[color,box-shadow] file:h-7 file:text-sm file:font-medium focus-visible:ring-3 data-[matches-spartan-invalid=true]:ring-3 md:text-sm;
+  }
+
+  /* MARK: Label */
+  .spartan-label {
+    @apply gap-2 text-sm leading-none font-medium group-data-[disabled=true]:opacity-50 peer-disabled:opacity-50;
+  }
+
+  /* MARK: Separator */
+  .spartan-separator {
+    @apply bg-border shrink-0;
+  }
+
+  .spartan-separator-horizontal {
+    @apply h-px w-full;
+  }
+
+  .spartan-separator-vertical {
+    @apply h-full w-px;
+  }
+
+  /* MARK: Table */
+  .spartan-table-container {
+    @apply relative w-full overflow-x-auto;
+  }
+
+  .spartan-table {
+    @apply w-full caption-bottom text-sm;
+  }
+
+  .spartan-table-header {
+    @apply [&_tr]:border-b;
+  }
+
+  .spartan-table-body {
+    @apply [&_tr:last-child]:border-0;
+  }
+
+  .spartan-table-footer {
+    @apply bg-muted/50 border-t font-medium [&>tr]:last:border-b-0;
+  }
+
+  .spartan-table-row {
+    @apply hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors;
+  }
+
+  .spartan-table-head {
+    @apply text-foreground h-10 px-2 text-start align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pe-0;
+  }
+
+  .spartan-table-cell {
+    @apply p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pe-0;
+  }
+
+  .spartan-table-caption {
+    @apply text-muted-foreground mt-4 text-sm;
+  }
+
+  /* MARK: Textarea */
+  .spartan-textarea {
+    @apply border-input dark:bg-input/30 focus-visible:border-ring focus-visible:ring-ring/50 data-[matches-spartan-invalid=true]:ring-destructive/20 dark:data-[matches-spartan-invalid=true]:ring-destructive/40 data-[matches-spartan-invalid=true]:border-destructive dark:data-[matches-spartan-invalid=true]:border-destructive/50 rounded-md border bg-transparent px-2.5 py-2 text-base shadow-xs transition-[color,box-shadow] focus-visible:ring-3 data-[matches-spartan-invalid=true]:ring-3 md:text-sm;
+  }
+}

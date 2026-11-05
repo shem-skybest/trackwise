@@ -1,0 +1,37 @@
+using Trackwise.Application.Abstractions;
+using Trackwise.Domain.Entities;
+using Trackwise.Domain.Persistence;
+using Trackwise.Mappings;
+using Trackwise.Shared.Models;
+
+namespace Trackwise.Application.Modules.IdentityAccess.Customers.Commands;
+
+internal sealed class CreateCustomerHandler(ITenantUnitOfWork tenantUow)
+    : IAppRequestHandler<CreateCustomerCommand, Result<CustomerDto>>
+{
+    public async Task<Result<CustomerDto>> Handle(CreateCustomerCommand req, CancellationToken ct)
+    {
+        var existingCustomer = await tenantUow.Repository<Customer>().GetAsync(i => i.Name == req.Name, ct);
+
+        if (existingCustomer is not null)
+        {
+            return Result<CustomerDto>.Fail($"A customer named '{req.Name}' already exists");
+        }
+
+        var newCustomer = new Customer
+        {
+            Name = req.Name,
+            Email = req.Email,
+            Phone = req.Phone,
+            Address = req.Address,
+            Status = req.Status,
+            Notes = req.Notes,
+            TaxId = req.TaxId,
+            IsVatExempt = req.IsVatExempt,
+            BillingCycle = req.BillingCycle
+        };
+        await tenantUow.Repository<Customer>().AddAsync(newCustomer, ct);
+        await tenantUow.SaveChangesAsync(ct);
+        return Result<CustomerDto>.Ok(newCustomer.ToDto());
+    }
+}

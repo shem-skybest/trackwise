@@ -1,0 +1,62 @@
+using Trackwise.Domain.Primitives.Enums;
+using Trackwise.Domain.Primitives.ValueObjects;
+
+namespace Trackwise.Shared.Models;
+
+public record LoadBoardListingDto
+{
+    public Guid? Id { get; set; }
+    public required string ExternalListingId { get; set; }
+    public LoadBoardProviderType ProviderType { get; set; }
+    public string? ProviderName { get; set; }
+
+    public required Address OriginAddress { get; set; }
+    public required GeoPoint OriginLocation { get; set; }
+    public required Address DestinationAddress { get; set; }
+    public required GeoPoint DestinationLocation { get; set; }
+
+    public decimal? RatePerMile { get; set; }
+    public decimal? TotalRate { get; set; }
+    public string? Currency { get; set; }
+    public double? Distance { get; set; }
+    public int? Weight { get; set; }
+    public int? Length { get; set; }
+
+    public DateTime? PickupDateStart { get; set; }
+    public DateTime? PickupDateEnd { get; set; }
+    public DateTime? DeliveryDateStart { get; set; }
+    public DateTime? DeliveryDateEnd { get; set; }
+
+    public string? EquipmentType { get; set; }
+    public string? Commodity { get; set; }
+
+    public string? BrokerName { get; set; }
+    public string? BrokerPhone { get; set; }
+    public string? BrokerEmail { get; set; }
+    public string? BrokerMcNumber { get; set; }
+
+    /// <summary>
+    /// Broker credit score normalized to 0-100, when the provider or a credit check supplied one.
+    /// </summary>
+    public int? BrokerCreditScore { get; set; }
+
+    /// <summary>
+    /// Average days the broker takes to pay carriers.
+    /// </summary>
+    public int? BrokerDaysToPay { get; set; }
+
+    public DateTime? BrokerCreditCheckedAt { get; set; }
+
+    public LoadBoardListingStatus Status { get; set; }
+    public DateTime? BookedAt { get; set; }
+    public DateTime ExpiresAt { get; set; }
+
+    public bool IsBookable => Status == LoadBoardListingStatus.Available && ExpiresAt > DateTime.UtcNow;
+
+    /// <summary>
+    /// If booked, the internal Load ID
+    /// </summary>
+    public Guid? LoadId { get; set; }
+
+    public string? Notes { get; set; }
+}

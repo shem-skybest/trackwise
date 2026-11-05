@@ -1,0 +1,36 @@
+<ui-dialog header="Add Route Stop" [(open)]="isOpen" [modal]="true" width="450px">
+  <form [formRoot]="form" class="p-2">
+    <ui-form-field>
+      <ui-select-field
+        label="Stop Type"
+        [options]="stopTypeOptions"
+        [formField]="form.stopType"
+        optionLabel="label"
+        optionValue="value"
+      />
+    </ui-form-field>
+
+    <ui-form-field>
+      <ui-select-field
+        label="Selection location"
+        [formField]="form.locationId"
+        [options]="locationOptions()"
+        placeholder="Select location for the selected client"
+        optionLabel="label"
+        optionValue="value"
+      />
+    </ui-form-field>
+
+    <div class="dialog-actions">
+      <ui-stack direction="row" justify="end" gap="2">
+        <ui-button appearance="outlined" type="button" label="Cancel" (click)="close()" />
+        <ui-button
+          type="submit"
+          (click)="onSubmit()"
+          [disabled]="!form().valid()"
+          label="Add Stop"
+        />
+      </ui-stack>
+    </div>
+  </form>
+</ui-dialog>
