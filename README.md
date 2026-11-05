@@ -193,3 +193,5 @@ Pull requests welcome. Fork, branch off `main`, open a PR. See the [development 
 [PolyForm Noncommercial License 1.0.0][license]
 
 The source is public and free for noncommercial use: personal projects, research, education, and evaluation. Any commercial use requires a paid commercial license from the author, with no time limit or automatic conversion. This includes running Trackwise inside a for-profit company and offering it to others as a product or hosted service.
+
+<!-- ruleset test, do not merge -->
