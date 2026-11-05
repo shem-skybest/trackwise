@@ -1,0 +1,49 @@
+<ui-dialog
+  [(open)]="visible"
+  [modal]="true"
+  [header]="title()"
+  width="480px"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <form [formRoot]="form">
+    <ui-stack gap="3">
+      <ui-form-field
+        label="Status"
+        for="crewStatus"
+        [required]="true"
+        hint="Absent, on leave and suspended also take them off any truck planned that day."
+      >
+        <ui-select-field
+          id="crewStatus"
+          [formField]="form.status"
+          [options]="statusOptions"
+          optionLabel="label"
+          optionValue="value"
+          appendTo="body"
+        />
+      </ui-form-field>
+
+      <ui-form-field
+        label="Through"
+        for="until"
+        hint="For leave or a suspension: the last day it applies. Empty means just this day."
+      >
+        <ui-date-field id="until" [formField]="form.until" dateFormat="yy-mm-dd" appendTo="body" />
+      </ui-form-field>
+
+      <ui-form-field
+        label="Notes"
+        for="statusNotes"
+        hint="The leave type, the seminar, which unit."
+      >
+        <ui-textarea-field id="statusNotes" [formField]="form.notes" [rows]="2" />
+      </ui-form-field>
+
+      <ui-stack direction="row" justify="end" gap="2">
+        <ui-button intent="secondary" appearance="outlined" label="Cancel" (click)="close()" />
+        <ui-button type="submit" label="Save" icon="check" [loading]="form().submitting()" />
+      </ui-stack>
+    </ui-stack>
+  </form>
+</ui-dialog>

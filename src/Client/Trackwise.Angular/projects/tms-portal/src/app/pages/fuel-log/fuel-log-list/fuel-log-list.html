@@ -1,0 +1,128 @@
+<div class="animate-in fade-in space-y-4">
+  <ui-page-header
+    title="Fuel Log"
+    subtitle="Fill-ups per truck and fleet card, checked against the receipts"
+  >
+    @if (canManage) {
+      <ui-button icon="plus" label="Log fill-up" (click)="openNew()" />
+    }
+  </ui-page-header>
+
+  <ui-card>
+    <ui-grid container spacing="3">
+      <ui-grid [size]="{ xs: 12, md: 4 }">
+        <ui-form-field label="Period" for="period" class="mb-0">
+          <ui-date-range-picker
+            inputId="period"
+            [dates]="period()"
+            (datesChange)="onPeriodChange($event)"
+          />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12, md: 3 }">
+        <ui-form-field label="Truck" for="truckFilter" class="mb-0">
+          <ui-select-field
+            id="truckFilter"
+            [options]="trucks()"
+            optionLabel="name"
+            optionValue="id"
+            placeholder="All trucks"
+            [filter]="true"
+            [showClear]="true"
+            [value]="truckId()"
+            (valueChange)="onTruckChange($event)"
+          />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 6, md: 2 }">
+        <ui-form-field label="Card" for="cardFilter" class="mb-0">
+          <ui-select-field
+            id="cardFilter"
+            [options]="cardOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="All cards"
+            [showClear]="true"
+            [value]="fleetCard()"
+            (valueChange)="onCardChange($event)"
+          />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 6, md: 3 }">
+        <ui-form-field label="Review" for="statusFilter" class="mb-0">
+          <ui-select-field
+            id="statusFilter"
+            [options]="statusOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Any"
+            [showClear]="true"
+            [value]="status()"
+            (valueChange)="onStatusChange($event)"
+          />
+        </ui-form-field>
+      </ui-grid>
+    </ui-grid>
+  </ui-card>
+
+  @if (summary(); as totals) {
+    <app-fuel-summary [summary]="totals" />
+  }
+
+  <ui-card>
+    <ui-tabs [value]="tab()" (valueChange)="tab.set($any($event))">
+      <ui-tab-list>
+        <ui-tab value="fills">Fill-ups</ui-tab>
+        <ui-tab value="trucks">By truck</ui-tab>
+      </ui-tab-list>
+      <ui-tab-panels>
+        <ui-tab-panel value="fills">
+          <app-fuel-fill-ups-table
+            [canManage]="canManage"
+            [canReview]="canReview"
+            [busy]="busy()"
+            (edit)="openEdit($event)"
+            (verify)="verify($event)"
+            (flag)="openFlag($event)"
+            (remove)="remove($event)"
+            (receipt)="openReceipt($event)"
+          />
+        </ui-tab-panel>
+        <ui-tab-panel value="trucks">
+          <app-fuel-trucks-table [trucks]="summary()?.byTruck ?? []" />
+        </ui-tab-panel>
+      </ui-tab-panels>
+    </ui-tabs>
+  </ui-card>
+</div>
+
+<app-fuel-fill-up-dialog [(open)]="dialogOpen" [fillUp]="editing()" (saved)="onSaved()" />
+
+<ui-dialog
+  [open]="flagging() !== null"
+  (openChange)="!$event && flagging.set(null)"
+  header="Flag fill-up"
+  [modal]="true"
+  width="28rem"
+>
+  <ui-form-field label="What's wrong" for="flagReason" [required]="true">
+    <ui-textarea-field
+      id="flagReason"
+      [(value)]="flagReason"
+      [rows]="3"
+      placeholder="Liters don't match the receipt, wrong truck…"
+    />
+  </ui-form-field>
+
+  <ng-template #footer>
+    <ui-button appearance="text" label="Cancel" (click)="flagging.set(null)" />
+    <ui-button
+      intent="danger"
+      icon="flag"
+      label="Flag"
+      [disabled]="!flagReason().trim()"
+      [loading]="busy()"
+      (click)="confirmFlag()"
+    />
+  </ng-template>
+</ui-dialog>

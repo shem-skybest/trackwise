@@ -1,0 +1,107 @@
+import { Permission } from "@trackwise/shared/models/permissions";
+import type { NavSection } from "@/shared/layout/nav-menu";
+
+export const masterDataNav: NavSection = {
+  id: "master-data",
+  label: "Master Data",
+  items: [
+    {
+      id: "Branches",
+      label: "Branches",
+      icon: "building-2",
+      route: "/master-data/branches",
+      permission: Permission.MasterData.View,
+    },
+    {
+      id: "Ports",
+      label: "Ports",
+      icon: "ship",
+      route: "/master-data/ports",
+      permission: Permission.MasterData.View,
+    },
+    {
+      id: "Locations",
+      label: "Locations",
+      icon: "map-pin",
+      route: "/master-data/locations",
+      permission: Permission.MasterData.View,
+    },
+    {
+      id: "Vessels",
+      label: "Vessels",
+      icon: "sailboat",
+      route: "/master-data/vessels",
+      permission: Permission.MasterData.View,
+    },
+    {
+      id: "Commodities",
+      label: "Commodities",
+      icon: "package",
+      route: "/master-data/commodities",
+      permission: Permission.MasterData.View,
+    },
+    {
+      id: "ContainerTypes",
+      label: "Container Types",
+      icon: "container",
+      route: "/master-data/container-types",
+      permission: Permission.MasterData.View,
+    },
+    {
+      id: "Currencies",
+      label: "Currencies",
+      icon: "coins",
+      route: "/master-data/currencies",
+      permission: Permission.MasterData.View,
+    },
+    {
+      id: "BusinessPartners",
+      label: "Business Partners",
+      icon: "building-2",
+      route: "/master-data/partners",
+      permission: Permission.MasterData.View,
+    },
+    {
+      id: "Trucks",
+      label: "Trucks",
+      icon: "car",
+      route: "/master-data/trucks",
+      permission: Permission.MasterData.View,
+    },
+    {
+      id: "Trailers",
+      label: "Trailers",
+      icon: "truck",
+      route: "/master-data/trailers",
+      permission: Permission.MasterData.View,
+    },
+    {
+      id: "Employees",
+      label: "Employees",
+      icon: "users",
+      route: "/master-data/employees",
+      permission: Permission.MasterData.View,
+    },
+    {
+      id: "Helpers",
+      label: "Helpers",
+      icon: "user",
+      route: "/master-data/helpers",
+      permission: Permission.MasterData.View,
+    },
+    {
+      id: "Gensets",
+      label: "Gensets",
+      icon: "zap",
+      route: "/master-data/gensets",
+      permission: Permission.MasterData.View,
+    },
+    {
+      id: "Approvals",
+      label: "Approvals",
+      icon: "shield-check",
+      route: "/master-data/approvals",
+      permission: Permission.MasterData.View,
+    },
+  ],
+};

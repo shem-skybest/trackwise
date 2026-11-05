@@ -1,0 +1,49 @@
+<div class="animate-in fade-in space-y-4">
+  <ui-page-header
+    title="Billing & Invoicing"
+    subtitle="View and manage all booking billing and invoicing records"
+    [addRoute]="canManage ? '/billing-invoicing/create' : null"
+    addTooltip="New Billing & Invoicing"
+  ></ui-page-header>
+
+  <!-- Filter Bar: Search, Customer, Status -->
+  <div class="flex flex-wrap items-center gap-3">
+    <div class="relative min-w-[240px] flex-1">
+      <input
+        type="search"
+        (debounce)="(300)"
+        placeholder="Search invoices..."
+        class="border-input bg-background placeholder:text-muted-foreground focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+        (input)="onSearchChange($any($event.target).value)"
+      />
+    </div>
+
+    <!-- Status Filter -->
+    <ui-multiselect-field
+      id="status-filter"
+      class="min-w-48"
+      [options]="statusOptions"
+      optionLabel="label"
+      optionValue="value"
+      placeholder="All Statuses"
+      [showClear]="true"
+      [fluid]="false"
+      [value]="selectedStatuses()"
+      (selectionChange)="onStatusChange($event)"
+      (cleared)="onStatusChange([])"
+    />
+  </div>
+
+  <!-- Table with Pagination and OrderBy integration -->
+  <app-billing-table
+    [data]="store.data()"
+    [isLoading]="store.isLoading()"
+    [error]="store.error()"
+    [isEmpty]="store.isEmpty()"
+    [totalRecords]="store.totalRecords()"
+    [pageSize]="store.pageSize()"
+    [first]="store.first()"
+    (lazyLoad)="store.onLazyLoad($event)"
+    (retry)="store.load()"
+  />
+</div>

@@ -1,0 +1,82 @@
+<ui-data-table [value]="rows()" [loading]="isLoading()">
+  <ng-template #header>
+    <tr>
+      <th class="w-20">Call time</th>
+      <th>Booking</th>
+      <th>Client</th>
+      <th>Truck</th>
+      <th>Pickup and drops</th>
+      <th>Status</th>
+      @if (canManage) {
+        <th class="w-32"></th>
+      }
+    </tr>
+  </ng-template>
+
+  <ng-template #body let-item>
+    <tr>
+      <td class="font-medium">{{ item.callTime || "-" }}</td>
+      <td>
+        <a
+          class="text-primary hover:underline"
+          [routerLink]="['/forwarding/bookings-executions', item.booking.id]"
+        >
+          {{ item.booking.referenceNumber ?? "No number yet" }}
+        </a>
+      </td>
+      <td>{{ item.booking.customerName }}</td>
+      <td>{{ item.truckSize }}</td>
+      <td class="max-w-md text-sm">
+        <div class="text-muted-foreground">From {{ item.booking.pickupSiteName ?? "-" }}</div>
+        <div class="truncate" [title]="item.drops">{{ item.drops }}</div>
+      </td>
+      <td>
+        @if (item.isConfirmed) {
+          <ui-badge value="Needs a truck" severity="warn" />
+        } @else {
+          <ui-badge value="To confirm" severity="secondary" />
+        }
+      </td>
+      @if (canManage) {
+        <td class="text-right whitespace-nowrap">
+          @if (item.isConfirmed) {
+            <ui-button
+              size="sm"
+              icon="truck"
+              label="Make trip"
+              (click)="openTripDialog(item.booking)"
+            />
+          } @else {
+            <ui-button
+              size="sm"
+              appearance="outlined"
+              intent="success"
+              icon="check"
+              label="Confirm"
+              [loading]="busyId() === item.booking.id"
+              (click)="confirm(item.booking)"
+            />
+          }
+        </td>
+      }
+    </tr>
+  </ng-template>
+
+  <ng-template #empty>
+    <tr>
+      <td [attr.colspan]="canManage ? 7 : 6" class="text-muted-foreground py-12 text-center">
+        Every Cold Chain booking for this day has a trip.
+      </td>
+    </tr>
+  </ng-template>
+</ui-data-table>
+
+@if (tripFor(); as booking) {
+  <app-create-trip-dialog
+    [bookingId]="booking.id!"
+    [bookedSize]="booking.truckSize"
+    [dropCount]="booking.dropNames?.length ?? 0"
+    [(open)]="tripDialogVisible"
+    (created)="onTripCreated()"
+  />
+}

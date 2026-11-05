@@ -1,0 +1,42 @@
+﻿@page
+@using Trackwise.IdentityServer.Pages.Account.Manage
+@model Trackwise.IdentityServer.Pages.Account.Manage.ChangePassword.ChangePasswordModel
+@{
+    ViewData["Title"] = "Change password";
+    ViewData["ActivePage"] = ManageNavPages.ChangePassword;
+}
+
+<partial name="_StatusMessage" for="StatusMessage" />
+
+<form id="change-password-form" method="post">
+    <div hlm-card>
+        <div hlm-card-header>
+            <div hlm-card-title>Password</div>
+            <div hlm-card-description>Enter your current password, then the new one twice.</div>
+        </div>
+        <div hlm-card-content>
+            <div hlm-field-group class="max-w-md">
+                <partial name="_ValidationSummary" />
+
+                <div hlm-field>
+                    <label hlm-field-label asp-for="Input.OldPassword"></label>
+                    <input hlm-input asp-for="Input.OldPassword" autocomplete="current-password" />
+                    <span hlm-field-error asp-validation-for="Input.OldPassword"></span>
+                </div>
+                <div hlm-field>
+                    <label hlm-field-label asp-for="Input.NewPassword"></label>
+                    <input hlm-input asp-for="Input.NewPassword" autocomplete="new-password" />
+                    <span hlm-field-error asp-validation-for="Input.NewPassword"></span>
+                </div>
+                <div hlm-field>
+                    <label hlm-field-label asp-for="Input.ConfirmPassword"></label>
+                    <input hlm-input asp-for="Input.ConfirmPassword" autocomplete="new-password" />
+                    <span hlm-field-error asp-validation-for="Input.ConfirmPassword"></span>
+                </div>
+            </div>
+        </div>
+        <div hlm-card-footer class="border-t">
+            <button hlm-btn type="submit">Update password</button>
+        </div>
+    </div>
+</form>

@@ -1,0 +1,129 @@
+<ui-grid container spacing="3">
+  <ui-grid [size]="{ xs: 12, lg: 9, xl: 8 }">
+    <form [formRoot]="form">
+      <ui-stack gap="4">
+        <ui-stack tag="section" gap="3">
+          <ui-stack direction="row" gap="2" align="start">
+            <ui-icon name="ship" color="secondary" class="mt-1" />
+            <ui-stack gap="0">
+              <ui-typography variant="overline" color="secondary">Vessel Details</ui-typography>
+              <ui-typography variant="caption" color="muted">
+                The canonical record for this ship, replacing the name typed onto each workfile.
+              </ui-typography>
+            </ui-stack>
+          </ui-stack>
+
+          <ui-surface variant="elevated" [border]="true">
+            <ui-stack gap="3">
+              <ui-grid container spacing="3">
+                <ui-grid [size]="{ xs: 12, md: 8 }">
+                  <ui-form-field label="Name" for="name" [required]="true">
+                    <ui-text-field id="name" [formField]="form.name" type="text" />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field label="Code" for="code" [hint]="codeHint()">
+                    <ui-text-field id="code" [formField]="form.code" type="text" [maxlength]="30" />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field label="Type" for="type" [required]="true">
+                    <ui-select-field
+                      id="type"
+                      [formField]="form.type"
+                      [options]="typeOptions"
+                      optionLabel="label"
+                      optionValue="value"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field
+                    label="IMO number"
+                    for="imoNumber"
+                    hint="Seven digits. Blank for craft that have none."
+                  >
+                    <ui-text-field id="imoNumber" [formField]="form.imoNumber" type="text" />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field label="Call sign" for="callSign" hint="Optional">
+                    <ui-text-field id="callSign" [formField]="form.callSign" type="text" />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field label="Flag" for="flagCountryCode" hint="Country of registry">
+                    <ui-select-field
+                      id="flagCountryCode"
+                      [formField]="form.flagCountryCode"
+                      [options]="flagOptions"
+                      optionLabel="label"
+                      optionValue="value"
+                      [filter]="true"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field
+                    label="TEU capacity"
+                    for="teuCapacity"
+                    hint="Leave empty where it does not apply"
+                  >
+                    <ui-number-field id="teuCapacity" [formField]="form.teuCapacity" />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field
+                    label="Branch"
+                    for="branchId"
+                    hint="One branch, or every branch if shared"
+                  >
+                    <ui-select-field
+                      id="branchId"
+                      [formField]="form.branchId"
+                      [options]="branchOptions()"
+                      optionLabel="label"
+                      optionValue="value"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+              </ui-grid>
+
+              <ui-form-field label="Notes" for="notes" hint="Optional">
+                <ui-textarea-field id="notes" [formField]="form.notes" [rows]="3" />
+              </ui-form-field>
+
+              <ui-form-field label="Active" for="isActive">
+                <ui-toggle-field
+                  id="isActive"
+                  [formField]="form.isActive"
+                  label="Offered for new work"
+                />
+              </ui-form-field>
+            </ui-stack>
+          </ui-surface>
+        </ui-stack>
+
+        <ui-stack direction="row" gap="2" align="center">
+          <ui-button type="submit" icon="save" [label]="submitLabel()" [disabled]="isLoading()" />
+
+          <ui-button
+            type="button"
+            appearance="text"
+            icon="arrow-left"
+            label="Cancel"
+            [routerLink]="['/master-data/vessels']"
+            [disabled]="isLoading()"
+          />
+        </ui-stack>
+      </ui-stack>
+    </form>
+  </ui-grid>
+</ui-grid>

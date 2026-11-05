@@ -1,0 +1,181 @@
+<ui-page-header [title]="tariff()?.name ?? 'Tariff Details'" backLink="/tariffs">
+  @if (tariff()) {
+    <ui-button icon="plus" label="Add Rate" [routerLink]="['/tariffs', id(), 'rates', 'add']" />
+    @if (tariff()!.isActive) {
+      <ui-button icon="copy" label="Supersede" [routerLink]="['/tariffs', id(), 'supersede']" />
+    }
+  }
+</ui-page-header>
+
+@if (isLoading()) {
+  <ui-stack align="center" justify="center" class="py-16 text-center"><ui-spinner /></ui-stack>
+} @else if (tariff(); as tariff) {
+  <ui-stack gap="4">
+    <ui-card>
+      <ui-grid container spacing="4">
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Mode" [value]="tariff.mode | titlecase" />
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Service" [value]="tariff.serviceLevel | titlecase" />
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Currency" [value]="tariff.currency | uppercase" />
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item
+            label="Effective From"
+            [value]="(tariff.effectiveFrom | date: 'mediumDate') ?? '-'"
+          />
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Version" [value]="'v' + tariff.version" />
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Status" [value]="tariff.isActive ? 'Active' : 'Inactive'" />
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Origin Lane" [value]="tariff.originLane ?? '-'" />
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Destination Lane" [value]="tariff.destinationLane ?? '-'" />
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Container Type" [value]="tariff.containerTypeName ?? '-'" />
+        </ui-grid>
+      </ui-grid>
+    </ui-card>
+
+    <ui-tabs value="0">
+      <ui-tab-list>
+        <ui-tab value="0">
+          <ui-icon name="table" class="mr-2" />
+          Cost Matrix
+        </ui-tab>
+        <ui-tab value="1">
+          <ui-icon name="history" class="mr-2" />
+          History
+          @if (tariff.history?.length) {
+            <ui-count-badge [value]="tariff.history!.length" severity="info" class="ml-1" />
+          }
+        </ui-tab>
+      </ui-tab-list>
+
+      <ui-tab-panels>
+        <ui-tab-panel value="0">
+          <ui-stack direction="row" align="center" justify="between" class="mb-4">
+            <ui-stack direction="row" align="center" gap="2">
+              <ui-icon name="table" color="secondary" />
+              <ui-typography variant="h5" tag="h2">Cost Matrix</ui-typography>
+            </ui-stack>
+            <ui-typography variant="body-sm" color="muted">
+              {{ tariff.rates?.length ?? 0 }} rates
+            </ui-typography>
+          </ui-stack>
+
+          @if (tariff.rates?.length) {
+            <ui-data-table [value]="tariff.rates!" [scrollable]="true">
+              <ng-template #header>
+                <tr>
+                  <th>Charge Code</th>
+                  <th>Pricing Model</th>
+                  <th>Unit</th>
+                  <th class="text-right">Base Amount</th>
+                  <th class="text-right">Minimum</th>
+                  <th class="text-right">Maximum</th>
+                  <th class="text-right">Actions</th>
+                </tr>
+              </ng-template>
+              <ng-template #body let-rate>
+                <tr>
+                  <td>
+                    <span class="font-semibold">
+                      {{ rate.chargeCode?.code ?? rate.chargeCodeId }}
+                    </span>
+                    <span class="text-muted-foreground ml-2">{{ rate.chargeCode?.name }}</span>
+                  </td>
+                  <td>{{ rate.pricingModel | titlecase }}</td>
+                  <td>{{ rate.unit }}</td>
+                  <td class="text-right">
+                    {{ rate.baseAmount | currency: tariff.currency ?? "USD" }}
+                  </td>
+                  <td class="text-right">
+                    {{
+                      (rate.minimum ?? null) !== null
+                        ? (rate.minimum | currency: tariff.currency ?? "USD")
+                        : "-"
+                    }}
+                  </td>
+                  <td class="text-right">
+                    {{
+                      (rate.maximum ?? null) !== null
+                        ? (rate.maximum | currency: tariff.currency ?? "USD")
+                        : "-"
+                    }}
+                  </td>
+                  <td class="text-right">
+                    <ui-button
+                      type="button"
+                      (click)="promptDeleteRate(rate)"
+                      size="sm"
+                      icon="trash"
+                      intent="danger"
+                    />
+                  </td>
+                </tr>
+              </ng-template>
+            </ui-data-table>
+          } @else {
+            <ui-empty-state
+              title="No rates yet"
+              message="Add a charge code and pricing rule to build this cost matrix."
+            />
+          }
+        </ui-tab-panel>
+
+        <ui-tab-panel value="1">
+          @if (tariff.history?.length) {
+            <ui-data-table [value]="tariff.history!" [scrollable]="true">
+              <ng-template #header>
+                <tr>
+                  <th>Previous Version</th>
+                  <th>New Version</th>
+                  <th>Changed By</th>
+                  <th>Reason</th>
+                  <th>Changed At</th>
+                </tr>
+              </ng-template>
+              <ng-template #body let-change>
+                <tr>
+                  <td>v{{ change.oldVersion }}</td>
+                  <td>v{{ change.newVersion }}</td>
+                  <td>{{ change.changedBy ?? "System" }}</td>
+                  <td>{{ change.changeReason ?? "-" }}</td>
+                  <td>{{ change.createdAt | date: "medium" }}</td>
+                </tr>
+              </ng-template>
+            </ui-data-table>
+          } @else {
+            <ui-empty-state
+              title="No tariff history"
+              message="Version changes and supersede events will appear here."
+            />
+          }
+        </ui-tab-panel>
+      </ui-tab-panels>
+    </ui-tabs>
+  </ui-stack>
+} @else {
+  <ui-empty-state
+    title="Tariff not found"
+    message="This tariff may have been removed or is unavailable."
+  />
+}
+
+<ui-confirm-delete-dialog
+  entityLabel="Tariff Rate"
+  [entityName]="toDeleteRate()?.chargeCode?.name!"
+  [(visible)]="deleteRateConfirmVisible"
+  [deleting]="isDeletingLine()"
+  (confirm)="onConfirmDeleteRate()"
+/>

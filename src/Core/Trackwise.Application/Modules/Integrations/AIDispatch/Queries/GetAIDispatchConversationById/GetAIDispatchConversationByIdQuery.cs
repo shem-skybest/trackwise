@@ -1,0 +1,12 @@
+using Trackwise.Application.Abstractions;
+using Trackwise.Application.Attributes;
+using Trackwise.Domain.Primitives.Enums;
+using Trackwise.Shared.Models;
+
+namespace Trackwise.Application.Modules.Integrations.AIDispatch.Queries;
+
+[RequiresFeature(TenantFeature.AgenticDispatch)]
+public class GetAIDispatchConversationByIdQuery : IQuery<Result<AgentConversationDto>>, IHaveId
+{
+    public Guid Id { get; set; }
+}

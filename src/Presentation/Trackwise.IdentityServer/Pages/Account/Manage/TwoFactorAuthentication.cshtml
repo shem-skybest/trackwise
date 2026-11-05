@@ -1,0 +1,71 @@
+﻿@page
+@using Trackwise.IdentityServer.Pages.Account.Manage
+@model Trackwise.IdentityServer.Pages.Account.Manage.TwoFactorAuthenticationModel
+@{
+    ViewData["Title"] = "Two-factor authentication";
+    ViewData["ActivePage"] = ManageNavPages.TwoFactorAuthentication;
+}
+
+<partial name="_StatusMessage" for="StatusMessage" />
+
+@if (Model.Is2faEnabled)
+{
+    if (Model.RecoveryCodesLeft <= 3)
+    {
+        <div hlm-alert variant="@(Model.RecoveryCodesLeft <= 1 ? "destructive" : "default")">
+            <div hlm-alert-title>
+                @(Model.RecoveryCodesLeft switch
+                {
+                    0 => "You have no recovery codes left.",
+                    1 => "You have 1 recovery code left.",
+                    _ => $"You have {Model.RecoveryCodesLeft} recovery codes left."
+                })
+            </div>
+            <div hlm-alert-description>
+                @if (Model.RecoveryCodesLeft == 0)
+                {
+                    <text>You must <a asp-page="./GenerateRecoveryCodes">generate a new set of recovery codes</a> before you can log in with one.</text>
+                }
+                else
+                {
+                    <text>You should <a asp-page="./GenerateRecoveryCodes">generate a new set of recovery codes</a>.</text>
+                }
+            </div>
+        </div>
+    }
+
+    <div hlm-card>
+        <div hlm-card-header>
+            <div hlm-card-title>Two-factor authentication is on</div>
+            <div hlm-card-description>Logging in asks for a code from your authenticator app.</div>
+        </div>
+        <div hlm-card-content class="flex flex-wrap gap-2">
+            @if (Model.IsMachineRemembered)
+            {
+                <form method="post">
+                    <button hlm-btn variant="outline" type="submit">Forget this browser</button>
+                </form>
+            }
+            <a hlm-btn variant="outline" asp-page="./GenerateRecoveryCodes">Reset recovery codes</a>
+            <a hlm-btn variant="destructive" asp-page="./Disable2fa">Disable 2FA</a>
+        </div>
+    </div>
+}
+
+<div hlm-card>
+    <div hlm-card-header>
+        <div hlm-card-title>Authenticator app</div>
+        <div hlm-card-description>Use an app such as Google Authenticator or Microsoft Authenticator to generate login codes.</div>
+    </div>
+    <div hlm-card-content class="flex flex-wrap gap-2">
+        @if (!Model.HasAuthenticator)
+        {
+            <a hlm-btn id="enable-authenticator" asp-page="./EnableAuthenticator">Add authenticator app</a>
+        }
+        else
+        {
+            <a hlm-btn variant="outline" id="enable-authenticator" asp-page="./EnableAuthenticator">Set up authenticator app</a>
+            <a hlm-btn variant="outline" id="reset-authenticator" asp-page="./ResetAuthenticator">Reset authenticator app</a>
+        }
+    </div>
+</div>

@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>default</LangVersion>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <!--<CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>-->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Shared\Trackwise.Shared.Identity\Trackwise.Shared.Identity.csproj"/>
+    <ProjectReference Include="..\..\Shared\Trackwise.Shared.Models\Trackwise.Shared.Models.csproj"/>
+    <ProjectReference Include="..\Trackwise.Domain\Trackwise.Domain.csproj"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Riok.Mapperly" Version="4.3.1" />
+  </ItemGroup>
+
+</Project>

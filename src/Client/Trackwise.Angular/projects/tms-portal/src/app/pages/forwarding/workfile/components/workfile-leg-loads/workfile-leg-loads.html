@@ -1,0 +1,46 @@
+<ui-card>
+  <ui-stack gap="3" class="p-4">
+    <ui-stack gap="1">
+      <ui-typography variant="overline" color="secondary">Truck leg</ui-typography>
+      <ui-typography>
+        {{ roleLabel() }} for
+        <a
+          [routerLink]="['/forwarding/workfiles', parentId()]"
+          class="text-primary font-mono hover:underline"
+        >
+          {{ parentReference() ?? "its workfile" }}
+        </a>
+      </ui-typography>
+      <ui-typography variant="caption" color="muted">
+        Billed on that workfile, not on its own.
+      </ui-typography>
+    </ui-stack>
+
+    @if (loads().length) {
+      <ui-data-table [value]="loads()" [scrollable]="true" size="small">
+        <ng-template #header>
+          <tr>
+            <th>Load</th>
+            <th>Container</th>
+            <th>Truck</th>
+            <th>Status</th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-load>
+          <tr>
+            <td class="whitespace-nowrap">
+              <a [routerLink]="['/loads', load.id]" class="text-primary hover:underline">
+                #{{ load.number }}
+              </a>
+            </td>
+            <td class="font-mono">{{ load.container ?? "Loose cargo" }}</td>
+            <td>{{ load.truckNumber ?? "Not assigned" }}</td>
+            <td>
+              <ui-badge [value]="statusLabel(load.status)" severity="secondary" rounded />
+            </td>
+          </tr>
+        </ng-template>
+      </ui-data-table>
+    }
+  </ui-stack>
+</ui-card>

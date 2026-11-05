@@ -1,0 +1,8 @@
+﻿@model string
+
+@if (!string.IsNullOrEmpty(Model))
+{
+    <div hlm-alert variant="@(Model.StartsWith("Error") ? "destructive" : "default")">
+        <div hlm-alert-description>@Model</div>
+    </div>
+}

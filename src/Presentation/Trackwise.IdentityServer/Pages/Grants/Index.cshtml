@@ -1,0 +1,65 @@
+@page
+@model Trackwise.IdentityServer.Pages.Grants.Index
+@{
+    Layout = "_AppLayout";
+    ViewData["Title"] = "Application permissions";
+}
+
+<div class="mb-8 flex flex-col gap-1">
+    <h1 class="mb-0 text-2xl font-bold">Application permissions</h1>
+    <p class="text-muted-foreground text-sm">Applications you have given permission to, and what they can access.</p>
+</div>
+
+<div class="flex flex-col gap-6">
+    @if (!Model.View.Grants.Any())
+    {
+        <div hlm-alert>
+            <div hlm-alert-description>You have not given access to any applications.</div>
+        </div>
+    }
+
+    @foreach (var grant in Model.View.Grants)
+    {
+        <div hlm-card>
+            <div hlm-card-header class="grid-cols-[1fr_auto]">
+                <div class="flex items-center gap-3">
+                    @if (grant.ClientLogoUrl != null)
+                    {
+                        <img src="@grant.ClientLogoUrl" alt="" class="size-10" />
+                    }
+                    <div hlm-card-title>@grant.ClientName</div>
+                </div>
+                <form asp-page="/Grants/Index">
+                    <input type="hidden" name="clientId" value="@grant.ClientId">
+                    <button hlm-btn variant="destructive" size="sm">Revoke access</button>
+                </form>
+            </div>
+            <div hlm-card-content>
+                <dl class="grid grid-cols-[8rem_1fr] gap-x-4 gap-y-2 text-sm">
+                    @if (grant.Description != null)
+                    {
+                        <dt class="text-muted-foreground">Description</dt>
+                        <dd>@grant.Description</dd>
+                    }
+                    <dt class="text-muted-foreground">Created</dt>
+                    <dd>@grant.Created.ToString("yyyy-MM-dd")</dd>
+                    @if (grant.Expires.HasValue)
+                    {
+                        <dt class="text-muted-foreground">Expires</dt>
+                        <dd>@grant.Expires.Value.ToString("yyyy-MM-dd")</dd>
+                    }
+                    @if (grant.IdentityGrantNames.Any())
+                    {
+                        <dt class="text-muted-foreground">Identity grants</dt>
+                        <dd>@string.Join(", ", grant.IdentityGrantNames)</dd>
+                    }
+                    @if (grant.ApiGrantNames.Any())
+                    {
+                        <dt class="text-muted-foreground">API grants</dt>
+                        <dd>@string.Join(", ", grant.ApiGrantNames)</dd>
+                    }
+                </dl>
+            </div>
+        </div>
+    }
+</div>

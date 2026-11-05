@@ -1,0 +1,177 @@
+<div class="animate-in fade-in space-y-4">
+  <ui-page-header title="Route Costing" backLink="/rate-agreements" />
+
+  <ui-grid container spacing="4">
+    <ui-grid [size]="{ xs: 12, lg: 7 }">
+      <ui-stack gap="4">
+        <ui-card>
+          <ui-typography variant="h5" tag="h2" class="block">Route</ui-typography>
+          <ui-typography variant="caption" color="muted" class="mb-3 block">
+            The round trip, leg by leg, as on Cold Chain's costing board.
+          </ui-typography>
+          <ui-grid container spacing="3">
+            <ui-grid [size]="{ xs: 12, sm: 6 }">
+              <ui-form-field label="Truck" for="truckSize">
+                <ui-select-field
+                  id="truckSize"
+                  [formField]="form.truckSize"
+                  [options]="sizeOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  (valueChange)="resetAssumptions()"
+                />
+              </ui-form-field>
+            </ui-grid>
+            <ui-grid [size]="{ xs: 12, sm: 6 }">
+              <ui-form-field
+                label="Senior driver"
+                for="seniorDriver"
+                hint="A year or more of service; a junior driver's allowance is smaller"
+              >
+                <ui-toggle-field
+                  inputId="seniorDriver"
+                  [formField]="form.seniorDriver"
+                  (valueChange)="resetAssumptions()"
+                />
+              </ui-form-field>
+            </ui-grid>
+            <ui-grid [size]="{ xs: 12, sm: 4 }">
+              <ui-form-field label="Garage to warehouse" for="leg1">
+                <ui-number-field
+                  id="leg1"
+                  [formField]="form.garageToWarehouseKm"
+                  suffixLabel="km"
+                />
+              </ui-form-field>
+            </ui-grid>
+            <ui-grid [size]="{ xs: 12, sm: 4 }">
+              <ui-form-field label="Warehouse to drop" for="leg2">
+                <ui-number-field id="leg2" [formField]="form.warehouseToDropKm" suffixLabel="km" />
+              </ui-form-field>
+            </ui-grid>
+            <ui-grid [size]="{ xs: 12, sm: 4 }">
+              <ui-form-field label="Drop to garage" for="leg3">
+                <ui-number-field id="leg3" [formField]="form.dropToGarageKm" suffixLabel="km" />
+              </ui-form-field>
+            </ui-grid>
+            <ui-grid [size]="{ xs: 12, sm: 6 }">
+              <ui-form-field
+                label="Diesel price"
+                for="diesel"
+                hint="Blank = the current price on file"
+              >
+                <ui-number-field
+                  id="diesel"
+                  [formField]="form.dieselPricePerLitre"
+                  prefixLabel="₱"
+                  suffixLabel="/L"
+                  [minFractionDigits]="2"
+                />
+              </ui-form-field>
+            </ui-grid>
+          </ui-grid>
+        </ui-card>
+
+        <ui-card>
+          <ui-typography variant="h5" tag="h2" class="block">Assumptions</ui-typography>
+          <ui-typography variant="caption" color="muted" class="mb-3 block">
+            Defaults per truck size from the costing board and the October 8 ops meeting. Change any
+            of them for this calculation.
+          </ui-typography>
+          <ui-grid container spacing="3">
+            @for (field of assumptionFields; track field.key) {
+              <ui-grid [size]="{ xs: 6, md: 4 }">
+                <ui-form-field [label]="field.label" [for]="'a-' + field.key">
+                  <ui-number-field
+                    [id]="'a-' + field.key"
+                    [formField]="form.assumptions[field.key]"
+                    [prefixLabel]="field.prefix ?? ''"
+                    [suffixLabel]="field.suffix ?? ''"
+                    placeholder="default"
+                  />
+                </ui-form-field>
+              </ui-grid>
+            }
+          </ui-grid>
+        </ui-card>
+
+        <div>
+          <ui-button
+            icon="calculator"
+            label="Work it out"
+            [loading]="isBusy()"
+            (click)="compute()"
+          />
+        </div>
+      </ui-stack>
+    </ui-grid>
+
+    <ui-grid [size]="{ xs: 12, lg: 5 }">
+      <ui-card>
+        <ui-typography variant="h5" tag="h2" class="mb-3 block">Rate</ui-typography>
+        @if (result(); as r) {
+          <table class="w-full text-sm">
+            <tbody>
+              <tr class="border-border border-b">
+                <td class="py-2">Fuel</td>
+                <td class="text-muted-foreground py-2">
+                  {{ r.totalKm | number: "1.0-1" }} km ÷ {{ r.kmPerLitre }} km/L =
+                  {{ r.litres | number: "1.0-2" }} L × ₱{{
+                    r.dieselPricePerLitre | number: "1.2-2"
+                  }}
+                  @if (r.dieselPriceFrom) {
+                    (price from {{ r.dieselPriceFrom }})
+                  }
+                </td>
+                <td class="py-2 text-right">₱{{ r.fuel | number: "1.2-2" }}</td>
+              </tr>
+              <tr class="border-border border-b">
+                <td class="py-2">Crew</td>
+                <td class="text-muted-foreground py-2">day rates, allowances, other</td>
+                <td class="py-2 text-right">₱{{ r.crew | number: "1.2-2" }}</td>
+              </tr>
+              <tr class="border-border border-b font-medium">
+                <td class="py-2" colspan="2">Expenses</td>
+                <td class="py-2 text-right">₱{{ r.expenses | number: "1.2-2" }}</td>
+              </tr>
+              <tr class="border-border border-b">
+                <td class="py-2">Admin</td>
+                <td class="text-muted-foreground py-2">{{ r.adminPercent }}% of expenses</td>
+                <td class="py-2 text-right">₱{{ r.admin | number: "1.2-2" }}</td>
+              </tr>
+              <tr class="border-border border-b">
+                <td class="py-2">Markup</td>
+                <td class="text-muted-foreground py-2">
+                  {{ r.markupPercent }}% of expenses and admin
+                </td>
+                <td class="py-2 text-right">₱{{ r.markup | number: "1.2-2" }}</td>
+              </tr>
+              <tr class="border-border border-b">
+                <td class="py-2">Buffer</td>
+                <td class="text-muted-foreground py-2">chargeable</td>
+                <td class="py-2 text-right">₱{{ r.buffer | number: "1.2-2" }}</td>
+              </tr>
+              <tr>
+                <td class="pt-3 text-base font-semibold" colspan="2">
+                  Selling rate
+                  <span class="text-muted-foreground block text-xs font-normal">
+                    ₱{{ r.beforeRounding | number: "1.2-2" }}, rounded up to the next ₱{{
+                      r.roundUpTo | number: "1.0-0"
+                    }}
+                  </span>
+                </td>
+                <td class="pt-3 text-right text-base font-semibold">
+                  ₱{{ r.sellingRate | number: "1.2-2" }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        } @else {
+          <ui-typography variant="body-sm" color="muted">
+            Enter the route's km and work it out.
+          </ui-typography>
+        }
+      </ui-card>
+    </ui-grid>
+  </ui-grid>
+</div>

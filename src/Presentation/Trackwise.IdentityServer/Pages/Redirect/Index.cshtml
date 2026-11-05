@@ -1,0 +1,14 @@
+@page
+@model Trackwise.IdentityServer.Pages.Redirect.IndexModel
+@{
+    ViewData["Title"] = "Redirecting";
+}
+
+<div class="flex flex-col items-center gap-1 text-center">
+    <h1 class="mb-0 text-2xl font-bold">Returning you to the application</h1>
+    <p class="text-muted-foreground text-sm text-balance">Once it opens, you can close this tab.</p>
+</div>
+
+@* signin-redirect.js reads data-url off this tag. *@
+<meta http-equiv="refresh" content="0;url=@Model.RedirectUri" data-url="@Model.RedirectUri">
+<script src="~/js/signin-redirect.js"></script>

@@ -1,0 +1,590 @@
+<div class="animate-in fade-in space-y-4">
+  <ui-page-header title="Workfile" backLink="/forwarding/workfiles">
+    @if (canSubmit()) {
+      <ui-button
+        type="button"
+        icon="send"
+        label="Submit for Approval"
+        [disabled]="isBusy()"
+        (click)="submitForApproval()"
+      />
+    }
+    @if (canForward()) {
+      <ui-button
+        type="button"
+        icon="circle-check"
+        label="Forward to Accounting"
+        [disabled]="isBusy()"
+        (click)="forwardToAccounting()"
+      />
+    }
+    @if (canReturnToOps()) {
+      <ui-button
+        type="button"
+        appearance="outlined"
+        icon="undo"
+        label="Return to Ops"
+        [disabled]="isBusy()"
+        (click)="openReturnDialog()"
+      />
+    }
+    @if (canClose()) {
+      <ui-button
+        type="button"
+        icon="lock"
+        label="Close Workfile"
+        [disabled]="isBusy()"
+        (click)="openCloseDialog()"
+      />
+    }
+    @if (canClearClosure()) {
+      <ui-button
+        type="button"
+        appearance="outlined"
+        icon="key"
+        label="Clear Closure"
+        [disabled]="isBusy()"
+        (click)="openClearClosureDialog()"
+      />
+    }
+    @if (canRequestClosure()) {
+      <ui-button
+        type="button"
+        appearance="text"
+        icon="lock"
+        label="Request Closure"
+        [disabled]="isBusy()"
+        (click)="requestClosure()"
+      />
+    }
+    @if (canCancel()) {
+      <ui-button
+        type="button"
+        appearance="text"
+        intent="danger"
+        icon="circle-x"
+        label="Cancel Workfile"
+        [disabled]="isBusy()"
+        (click)="openCancelDialog()"
+      />
+    }
+  </ui-page-header>
+
+  <ui-data-container [loading]="isLoading()" skeletonVariant="table" [skeletonRows]="6">
+    @if (workfile(); as file) {
+      <ui-stack gap="4">
+        <ui-surface variant="elevated" [border]="true">
+          <ui-stack direction="row" gap="3" align="center" class="flex-wrap">
+            <ui-typography variant="h3" class="font-mono">{{ file.referenceNumber }}</ui-typography>
+            <ui-badge [value]="statusLabel()" [severity]="statusIntent(file.status)" rounded />
+            <ui-badge [value]="typeLabel() ?? file.type" severity="secondary" rounded />
+            @if (file.isReferenceLocked) {
+              <ui-badge
+                value="Locked by Accounting"
+                severity="warn"
+                rounded
+                icon="triangle-alert"
+              />
+            }
+            @if (file.isForwardedToAccounting) {
+              <ui-badge value="Forwarded to Accounting" severity="success" rounded />
+            }
+          </ui-stack>
+        </ui-surface>
+
+        <ui-grid container spacing="3">
+          <ui-grid [size]="{ xs: 12, lg: 6 }">
+            <ui-card>
+              <ui-stack gap="3" class="p-4">
+                <ui-stack direction="row" align="center" justify="between">
+                  <ui-typography variant="overline" color="secondary">Shipment</ui-typography>
+                  @if (file.isEditable && canManage()) {
+                    <ui-button
+                      type="button"
+                      appearance="text"
+                      size="sm"
+                      icon="pencil"
+                      label="Edit"
+                      (click)="shipmentDialogVisible.set(true)"
+                    />
+                  }
+                </ui-stack>
+
+                <ui-grid container spacing="3">
+                  <ui-grid [size]="{ xs: 6 }">
+                    <ui-typography variant="caption" color="muted">Customer</ui-typography>
+                    <ui-typography>{{ file.customerName || "—" }}</ui-typography>
+                  </ui-grid>
+                  <ui-grid [size]="{ xs: 6 }">
+                    <ui-typography variant="caption" color="muted">Booking</ui-typography>
+                    @if (file.bookingId) {
+                      <a
+                        [routerLink]="['/forwarding/bookings-executions', file.bookingId]"
+                        class="text-primary hover:underline"
+                      >
+                        BK-{{ file.bookingNumber }}
+                      </a>
+                    } @else {
+                      <ui-typography>—</ui-typography>
+                    }
+                  </ui-grid>
+                  <ui-grid [size]="{ xs: 6 }">
+                    <ui-typography variant="caption" color="muted">BL No.</ui-typography>
+                    <ui-typography class="font-mono">
+                      {{ file.billOfLadingNumber || "—" }}
+                    </ui-typography>
+                  </ui-grid>
+                  <ui-grid [size]="{ xs: 6 }">
+                    <ui-typography variant="caption" color="muted">Bill Indicator</ui-typography>
+                    <ui-typography>{{ billIndicatorLabel() ?? "—" }}</ui-typography>
+                  </ui-grid>
+                  <ui-grid [size]="{ xs: 6 }">
+                    <ui-typography variant="caption" color="muted">Origin</ui-typography>
+                    <ui-typography>{{ file.origin || "—" }}</ui-typography>
+                  </ui-grid>
+                  <ui-grid [size]="{ xs: 6 }">
+                    <ui-typography variant="caption" color="muted">Destination</ui-typography>
+                    <ui-typography>{{ file.destination || "—" }}</ui-typography>
+                  </ui-grid>
+                  <ui-grid [size]="{ xs: 6 }">
+                    <ui-typography variant="caption" color="muted">Vessel / Voyage</ui-typography>
+                    <ui-typography>
+                      {{ file.vesselName || "—" }}
+                      @if (file.voyageNumber) {
+                        / {{ file.voyageNumber }}
+                      }
+                    </ui-typography>
+                  </ui-grid>
+                  <ui-grid [size]="{ xs: 6 }">
+                    <ui-typography variant="caption" color="muted">Commodity</ui-typography>
+                    <ui-typography>{{ file.commodity || "—" }}</ui-typography>
+                  </ui-grid>
+                  <ui-grid [size]="{ xs: 6 }">
+                    <ui-typography variant="caption" color="muted">ETD</ui-typography>
+                    <ui-typography>
+                      {{ file.etd ? (file.etd | dateFormat) : "—" }}
+                    </ui-typography>
+                  </ui-grid>
+                  <ui-grid [size]="{ xs: 6 }">
+                    <ui-typography variant="caption" color="muted">ETA</ui-typography>
+                    <ui-typography>
+                      {{ file.eta ? (file.eta | dateFormat) : "—" }}
+                    </ui-typography>
+                  </ui-grid>
+                  @if (file.variant) {
+                    <ui-grid [size]="{ xs: 6 }">
+                      <ui-typography variant="caption" color="muted">Variant</ui-typography>
+                      <ui-typography>{{ variantLabel() }}</ui-typography>
+                    </ui-grid>
+                  }
+                </ui-grid>
+              </ui-stack>
+            </ui-card>
+          </ui-grid>
+
+          <ui-grid [size]="{ xs: 12, lg: 6 }">
+            <ui-card>
+              <ui-stack gap="3" class="p-4">
+                <ui-typography variant="overline" color="secondary">Parties</ui-typography>
+
+                <ui-grid container spacing="3">
+                  <ui-grid [size]="{ xs: 6 }">
+                    <ui-typography variant="caption" color="muted">Shipping Line</ui-typography>
+                    <ui-typography>{{ file.shippingLineName || "—" }}</ui-typography>
+                  </ui-grid>
+                  <ui-grid [size]="{ xs: 6 }">
+                    <ui-typography variant="caption" color="muted">Co-Loader</ui-typography>
+                    <ui-typography>{{ file.coLoaderName || "—" }}</ui-typography>
+                  </ui-grid>
+                  <ui-grid [size]="{ xs: 6 }">
+                    <ui-typography variant="caption" color="muted">Forwarder</ui-typography>
+                    <ui-typography>{{ file.forwarderName || "—" }}</ui-typography>
+                  </ui-grid>
+                  <ui-grid [size]="{ xs: 6 }">
+                    <ui-typography variant="caption" color="muted">Trucker</ui-typography>
+                    <ui-typography>{{ file.truckerName || "—" }}</ui-typography>
+                  </ui-grid>
+                  <ui-grid [size]="{ xs: 6 }">
+                    <ui-typography variant="caption" color="muted">Broker</ui-typography>
+                    <ui-typography>{{ file.brokerName || "—" }}</ui-typography>
+                  </ui-grid>
+                </ui-grid>
+
+                <ui-typography variant="overline" color="secondary" class="mt-2">
+                  Commercial
+                </ui-typography>
+
+                <ui-grid container spacing="3">
+                  <ui-grid [size]="{ xs: 6 }">
+                    <ui-typography variant="caption" color="muted">Credit Term</ui-typography>
+                    <ui-typography>
+                      @if (file.creditTermDays !== null && file.creditTermDays !== undefined) {
+                        {{ file.creditTermDays }} days
+                      } @else {
+                        —
+                      }
+                    </ui-typography>
+                  </ui-grid>
+                  <ui-grid [size]="{ xs: 6 }">
+                    <ui-typography variant="caption" color="muted">Credit Type</ui-typography>
+                    <ui-typography>{{ creditTypeLabel() ?? "—" }}</ui-typography>
+                  </ui-grid>
+                  <ui-grid [size]="{ xs: 6 }">
+                    <ui-typography variant="caption" color="muted">Exchange Rate</ui-typography>
+                    <ui-typography>{{ file.exchangeRate ?? "—" }}</ui-typography>
+                  </ui-grid>
+                  <ui-grid [size]="{ xs: 6 }">
+                    <ui-typography variant="caption" color="muted">Final Rate</ui-typography>
+                    <ui-typography>{{ file.finalExchangeRate ?? "—" }}</ui-typography>
+                  </ui-grid>
+                  <ui-grid [size]="{ xs: 6 }">
+                    <ui-typography variant="caption" color="muted">Report Category</ui-typography>
+                    <ui-typography>{{ reportCategoryLabel() ?? "—" }}</ui-typography>
+                  </ui-grid>
+                  <ui-grid [size]="{ xs: 6 }">
+                    <ui-typography variant="caption" color="muted">Advance Billing</ui-typography>
+                    <ui-typography>{{ file.isAdvanceBilling ? "Yes" : "No" }}</ui-typography>
+                  </ui-grid>
+                </ui-grid>
+              </ui-stack>
+            </ui-card>
+          </ui-grid>
+        </ui-grid>
+
+        @if (file.parentWorkfileId) {
+          <app-workfile-leg-loads
+            [parentId]="file.parentWorkfileId"
+            [parentReference]="file.parentReferenceNumber"
+            [role]="file.legRole"
+            [loads]="file.legLoads ?? []"
+          />
+        } @else {
+          <app-workfile-containers
+            [workfileId]="file.id!"
+            [containers]="file.containers ?? []"
+            [editable]="file.isEditable === true"
+            [showMoveStatus]="file.type === 'regular'"
+            (changed)="reload()"
+          />
+        }
+
+        @if (file.supportsTruckLegs) {
+          <app-workfile-legs
+            [workfileId]="file.id!"
+            [customerId]="file.customerId!"
+            [direction]="file.direction"
+            [legs]="file.legs ?? []"
+            [containers]="file.containers ?? []"
+            [editable]="file.isEditable === true"
+            (changed)="reload()"
+          />
+        }
+
+        <app-workfile-shipment-dialog
+          [workfile]="file"
+          [(open)]="shipmentDialogVisible"
+          (saved)="reload()"
+        />
+
+        @if (file.type === "regular") {
+          <app-workfile-timeline [entries]="file.timeline ?? []" [vesselName]="file.vesselName" />
+        }
+
+        @if (file.supportsGenset) {
+          <ui-card>
+            <ui-stack gap="3" class="p-4">
+              <ui-stack direction="row" align="center" justify="between">
+                <ui-typography variant="overline" color="secondary">Genset Add-on</ui-typography>
+                <ui-stack direction="row" gap="2">
+                  @if (canManageGenset()) {
+                    <ui-button
+                      type="button"
+                      appearance="text"
+                      size="sm"
+                      icon="pencil"
+                      [label]="file.gensetBillingType ? 'Edit' : 'Add Genset'"
+                      (click)="openGensetDialog()"
+                    />
+                  }
+                  @if (canRecordGensetHours()) {
+                    <ui-button
+                      type="button"
+                      appearance="text"
+                      size="sm"
+                      icon="clock"
+                      label="Record Hours"
+                      (click)="openRecordHoursDialog()"
+                    />
+                  }
+                  @if (canManageGenset() && file.gensetBillingType) {
+                    <ui-button
+                      type="button"
+                      appearance="text"
+                      size="sm"
+                      intent="danger"
+                      icon="trash"
+                      label="Remove"
+                      (click)="removeGensetDialogVisible.set(true)"
+                    />
+                  }
+                </ui-stack>
+              </ui-stack>
+
+              @if (file.gensetBillingType) {
+                <ui-grid container spacing="3">
+                  <ui-grid [size]="{ xs: 6 }">
+                    <ui-typography variant="caption" color="muted">Unit</ui-typography>
+                    <ui-typography>{{ file.gensetName || "Not yet assigned" }}</ui-typography>
+                  </ui-grid>
+                  <ui-grid [size]="{ xs: 6 }">
+                    <ui-typography variant="caption" color="muted">Billing</ui-typography>
+                    <ui-typography>{{ gensetBillingTypeLabel() }}</ui-typography>
+                  </ui-grid>
+                  @if (file.gensetBillingType === "itemized") {
+                    <ui-grid [size]="{ xs: 6 }">
+                      <ui-typography variant="caption" color="muted">Hourly Rate</ui-typography>
+                      <ui-typography>{{ file.gensetHourlyRate ?? "—" }}</ui-typography>
+                    </ui-grid>
+                    <ui-grid [size]="{ xs: 6 }">
+                      <ui-typography variant="caption" color="muted">Hours Used</ui-typography>
+                      <ui-typography>{{ file.gensetHoursUsed ?? "—" }}</ui-typography>
+                    </ui-grid>
+                  } @else {
+                    <ui-grid [size]="{ xs: 6 }">
+                      <ui-typography variant="caption" color="muted">Flat Amount</ui-typography>
+                      <ui-typography>{{ file.gensetFlatAmount ?? "—" }}</ui-typography>
+                    </ui-grid>
+                  }
+                  <ui-grid [size]="{ xs: 6 }">
+                    <ui-typography variant="caption" color="muted">Total Charge</ui-typography>
+                    <ui-typography>{{ file.gensetTotalCharge ?? "—" }}</ui-typography>
+                  </ui-grid>
+                  @if (file.gensetNotes) {
+                    <ui-grid [size]="{ xs: 12 }">
+                      <ui-typography variant="caption" color="muted">Notes</ui-typography>
+                      <ui-typography>{{ file.gensetNotes }}</ui-typography>
+                    </ui-grid>
+                  }
+                </ui-grid>
+              } @else {
+                <ui-typography color="muted">No genset add-on on this file.</ui-typography>
+              }
+            </ui-stack>
+          </ui-card>
+        }
+
+        @if (file.status === "cancelled") {
+          <ui-surface variant="elevated" [border]="true">
+            <ui-typography variant="caption" color="muted">Cancellation reason</ui-typography>
+            <ui-typography>{{ file.cancellationReason }}</ui-typography>
+          </ui-surface>
+        }
+      </ui-stack>
+    }
+  </ui-data-container>
+</div>
+
+<ui-dialog header="Cancel Workfile" [(open)]="cancelDialogVisible" [modal]="true" width="32rem">
+  <ui-form-field label="Reason" for="cancelReason" [required]="true">
+    <ui-textarea-field id="cancelReason" [(value)]="cancelReason" [rows]="3" />
+  </ui-form-field>
+
+  <ng-template #footer>
+    <ui-button
+      type="button"
+      appearance="text"
+      label="Close"
+      [disabled]="isBusy()"
+      (click)="cancelDialogVisible.set(false)"
+    />
+    <ui-button
+      type="button"
+      intent="danger"
+      label="Cancel Workfile"
+      [disabled]="!cancelReason().trim() || isBusy()"
+      (click)="confirmCancel()"
+    />
+  </ng-template>
+</ui-dialog>
+
+<ui-dialog header="Return to Ops" [(open)]="returnDialogVisible" [modal]="true" width="32rem">
+  <ui-form-field
+    label="Reason"
+    for="returnReason"
+    [required]="true"
+    hint="Ops sees this as the reason the file came back."
+  >
+    <ui-textarea-field id="returnReason" [(value)]="returnReason" [rows]="3" />
+  </ui-form-field>
+
+  <ng-template #footer>
+    <ui-button
+      type="button"
+      appearance="text"
+      label="Close"
+      [disabled]="isBusy()"
+      (click)="returnDialogVisible.set(false)"
+    />
+    <ui-button
+      type="button"
+      label="Return to Ops"
+      [disabled]="!returnReason().trim() || isBusy()"
+      (click)="confirmReturn()"
+    />
+  </ng-template>
+</ui-dialog>
+
+<ui-dialog header="Close Workfile" [(open)]="closeDialogVisible" [modal]="true" width="32rem">
+  <ui-form-field label="Accounting Remarks" for="closeRemarks" hint="Optional.">
+    <ui-textarea-field id="closeRemarks" [(value)]="closeRemarks" [rows]="3" />
+  </ui-form-field>
+
+  <ng-template #footer>
+    <ui-button
+      type="button"
+      appearance="text"
+      label="Close"
+      [disabled]="isBusy()"
+      (click)="closeDialogVisible.set(false)"
+    />
+    <ui-button
+      type="button"
+      label="Close Workfile"
+      [disabled]="isBusy()"
+      (click)="confirmClose()"
+    />
+  </ng-template>
+</ui-dialog>
+
+<ui-dialog header="Clear Closure" [(open)]="clearClosureDialogVisible" [modal]="true" width="32rem">
+  <ui-form-field label="Accounting Remarks" for="clearClosureRemarks" hint="Optional.">
+    <ui-textarea-field id="clearClosureRemarks" [(value)]="clearClosureRemarks" [rows]="3" />
+  </ui-form-field>
+
+  <ng-template #footer>
+    <ui-button
+      type="button"
+      appearance="text"
+      label="Close"
+      [disabled]="isBusy()"
+      (click)="clearClosureDialogVisible.set(false)"
+    />
+    <ui-button
+      type="button"
+      label="Clear Closure"
+      [disabled]="isBusy()"
+      (click)="confirmClearClosure()"
+    />
+  </ng-template>
+</ui-dialog>
+
+<ui-dialog header="Genset Add-on" [(open)]="gensetAddOnDialogVisible" [modal]="true" width="32rem">
+  <ui-stack gap="3">
+    <ui-form-field label="Genset Unit" for="gensetUnit" hint="Assignment may lag the booking.">
+      <ui-select-field
+        id="gensetUnit"
+        [(value)]="gensetSelectedId"
+        [options]="gensetSelectOptions()"
+        optionLabel="label"
+        optionValue="value"
+      />
+    </ui-form-field>
+
+    <ui-form-field label="Billing Type" for="gensetBillingType" [required]="true">
+      <ui-select-field
+        id="gensetBillingType"
+        [(value)]="gensetBillingType"
+        [options]="gensetBillingTypeOptions"
+        optionLabel="label"
+        optionValue="value"
+      />
+    </ui-form-field>
+
+    @if (gensetBillingType() === "itemized") {
+      <ui-form-field label="Hourly Rate" for="gensetHourlyRate" [required]="true">
+        <ui-number-field id="gensetHourlyRate" [(value)]="gensetHourlyRate" mode="currency" />
+      </ui-form-field>
+    } @else {
+      <ui-form-field label="Flat Amount" for="gensetFlatAmount" [required]="true">
+        <ui-number-field id="gensetFlatAmount" [(value)]="gensetFlatAmount" mode="currency" />
+      </ui-form-field>
+    }
+
+    <ui-form-field label="Notes" for="gensetNotes" hint="Optional.">
+      <ui-textarea-field id="gensetNotes" [(value)]="gensetNotes" [rows]="2" />
+    </ui-form-field>
+  </ui-stack>
+
+  <ng-template #footer>
+    <ui-button
+      type="button"
+      appearance="text"
+      label="Close"
+      [disabled]="isBusy()"
+      (click)="gensetAddOnDialogVisible.set(false)"
+    />
+    <ui-button
+      type="button"
+      label="Save"
+      [disabled]="
+        isBusy() || (gensetBillingType() === 'itemized' ? !gensetHourlyRate() : !gensetFlatAmount())
+      "
+      (click)="confirmGensetAddOn()"
+    />
+  </ng-template>
+</ui-dialog>
+
+<ui-dialog
+  header="Record Genset Hours"
+  [(open)]="recordHoursDialogVisible"
+  [modal]="true"
+  width="24rem"
+>
+  <ui-form-field label="Hours Used" for="recordHoursValue" [required]="true">
+    <ui-number-field id="recordHoursValue" [(value)]="recordHoursValue" />
+  </ui-form-field>
+
+  <ng-template #footer>
+    <ui-button
+      type="button"
+      appearance="text"
+      label="Close"
+      [disabled]="isBusy()"
+      (click)="recordHoursDialogVisible.set(false)"
+    />
+    <ui-button
+      type="button"
+      label="Save"
+      [disabled]="recordHoursValue() === null || isBusy()"
+      (click)="confirmRecordHours()"
+    />
+  </ng-template>
+</ui-dialog>
+
+<ui-dialog
+  header="Remove Genset Add-on"
+  [(open)]="removeGensetDialogVisible"
+  [modal]="true"
+  width="28rem"
+>
+  <ui-typography>
+    This clears the genset unit, billing amounts, hours used, and notes from this file.
+  </ui-typography>
+
+  <ng-template #footer>
+    <ui-button
+      type="button"
+      appearance="text"
+      label="Close"
+      [disabled]="isBusy()"
+      (click)="removeGensetDialogVisible.set(false)"
+    />
+    <ui-button
+      type="button"
+      intent="danger"
+      label="Remove"
+      [disabled]="isBusy()"
+      (click)="confirmRemoveGensetAddOn()"
+    />
+  </ng-template>
+</ui-dialog>

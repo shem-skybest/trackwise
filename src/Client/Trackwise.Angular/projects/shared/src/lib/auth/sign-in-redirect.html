@@ -1,0 +1,11 @@
+<div class="bg-background flex min-h-svh items-center justify-center p-6">
+  @if (failed()) {
+    <ui-error-state
+      title="We couldn't sign you in"
+      message="Try again. If it keeps happening, contact your administrator."
+      (retry)="signIn()"
+    />
+  } @else {
+    <ui-spinner size="32px" ariaLabel="Redirecting to sign in" />
+  }
+</div>

@@ -1,0 +1,48 @@
+@file:OptIn(kotlin.time.ExperimentalTime::class)
+
+package com.trackwise.driver.viewmodel
+
+import com.trackwise.driver.api.LoadApi
+import com.trackwise.driver.api.bodyOrThrow
+import com.trackwise.driver.api.models.LoadDto
+import com.trackwise.driver.service.PreferencesManager
+import com.trackwise.driver.viewmodel.base.BaseViewModel
+import com.trackwise.driver.viewmodel.base.UiState
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.days
+
+class PastLoadsViewModel(
+    private val loadApi: LoadApi,
+    private val preferencesManager: PreferencesManager
+) : BaseViewModel() {
+
+    private val _uiState = MutableStateFlow<UiState<List<LoadDto>>>(UiState.Loading)
+    val uiState: StateFlow<UiState<List<LoadDto>>> = _uiState.asStateFlow()
+
+    init {
+        loadPastLoads()
+    }
+
+    private fun loadPastLoads() {
+        launchWithState(_uiState) {
+            val now = Clock.System.now()
+            val ninetyDaysAgo = now.minus(90.days)
+            val userId = preferencesManager.getUserId()
+                ?: throw IllegalStateException("Please log in again.")
+            val response = loadApi.getLoads(
+                onlyActiveLoads = false,
+                userId = userId,
+                startDate = ninetyDaysAgo,
+                endDate = now
+            ).bodyOrThrow()
+            response.items ?: emptyList()
+        }
+    }
+
+    fun refresh() {
+        loadPastLoads()
+    }
+}

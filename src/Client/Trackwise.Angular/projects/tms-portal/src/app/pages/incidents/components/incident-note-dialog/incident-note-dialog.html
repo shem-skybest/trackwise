@@ -1,0 +1,12 @@
+<ui-dialog [header]="header()" [(open)]="open" [modal]="true" width="34rem" (opened)="onOpened()">
+  <form [formRoot]="form">
+    <ui-form-field [label]="label()" for="incidentNote" [required]="isRequired()" [hint]="hint()">
+      <ui-textarea-field id="incidentNote" [formField]="form.text" [rows]="4" />
+    </ui-form-field>
+
+    <div class="mt-4 flex justify-end gap-2">
+      <ui-button appearance="text" label="Cancel" (click)="open.set(false)" />
+      <ui-button type="submit" [label]="confirmLabel()" [loading]="form().submitting()" />
+    </div>
+  </form>
+</ui-dialog>

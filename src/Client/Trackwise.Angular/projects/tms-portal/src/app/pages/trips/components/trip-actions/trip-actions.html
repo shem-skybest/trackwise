@@ -1,0 +1,35 @@
+<div class="flex flex-wrap gap-2">
+  @if (canDispatch()) {
+    <ui-button
+      intent="success"
+      icon="send"
+      label="Dispatch Trip"
+      [loading]="isProcessing()"
+      (click)="onDispatch()"
+    />
+  }
+
+  @if (canCancel()) {
+    <ui-button
+      intent="danger"
+      appearance="outlined"
+      icon="x"
+      label="Cancel Trip"
+      [loading]="isProcessing()"
+      (click)="onCancelClick()"
+    />
+  }
+
+  @if (showReport()) {
+    <ui-button
+      appearance="outlined"
+      icon="clipboard"
+      label="Crew report"
+      [routerLink]="reportLink()"
+    />
+  }
+
+  @if (showEdit()) {
+    <ui-button icon="square-pen" label="Edit" [routerLink]="editLink()" />
+  }
+</div>

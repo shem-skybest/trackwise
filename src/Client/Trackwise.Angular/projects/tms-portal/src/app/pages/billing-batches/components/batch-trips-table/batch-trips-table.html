@@ -1,0 +1,60 @@
+<ui-data-table
+  [value]="trips()"
+  dataKey="tripId"
+  [paginator]="trips().length > 50"
+  [rows]="50"
+  size="small"
+>
+  <ng-template #header>
+    <tr>
+      <th>Date</th>
+      <th>Trip</th>
+      <th>Booking</th>
+      <th>Plate</th>
+      <th class="text-right">Drops</th>
+      <th>Outcome</th>
+      <th>Rate</th>
+      <th class="text-right">Amount</th>
+      @if (editable()) {
+        <th></th>
+      }
+    </tr>
+  </ng-template>
+  <ng-template #body let-trip>
+    <tr>
+      <td class="whitespace-nowrap">{{ isoToDate(trip.billingDate) | date: "MMM d" }}</td>
+      <td>
+        <a
+          [routerLink]="['/trips', trip.tripId]"
+          class="text-foreground font-medium hover:underline"
+        >
+          {{ trip.tripNumber }}
+        </a>
+      </td>
+      <td class="text-sm">{{ trip.bookingReferences ?? "-" }}</td>
+      <td>{{ trip.truckNumber ?? "-" }}</td>
+      <td class="text-right">{{ trip.drops }}</td>
+      <td class="text-sm">{{ outcome(trip) }}</td>
+      <td class="text-muted-foreground text-sm">{{ trip.rateLineLabel ?? "-" }}</td>
+      <td class="text-right whitespace-nowrap">
+        @if (trip.problem) {
+          <ui-badge [value]="trip.problem" severity="warn" size="sm" />
+        } @else {
+          {{ trip.amount | currencyFormat }}
+        }
+      </td>
+      @if (editable()) {
+        <td class="text-right">
+          <ui-button
+            appearance="text"
+            intent="danger"
+            icon="x"
+            size="sm"
+            ariaLabel="Take the trip off this batch"
+            (click)="remove.emit(trip)"
+          />
+        </td>
+      }
+    </tr>
+  </ng-template>
+</ui-data-table>

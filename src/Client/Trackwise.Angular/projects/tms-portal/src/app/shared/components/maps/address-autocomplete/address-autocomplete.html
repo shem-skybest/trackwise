@@ -1,0 +1,49 @@
+<div class="relative" (focusin)="handleInputFocus()">
+  <ui-text-field
+    [id]="field()"
+    class="block w-full"
+    [placeholder]="placeholder()"
+    [value]="addressString() ?? ''"
+    (valueChange)="handleAddressInputChange($event)"
+    (focusout)="handleInputFocusOut()"
+  />
+
+  @if (matchingBranches().length || searchResults().length || phSearchResults().length) {
+    <div class="popup">
+      @if (matchingBranches().length) {
+        <div class="popup-group-label">Skybest branches</div>
+        @for (branch of matchingBranches(); track branch.label) {
+          <div class="popup-item" (click)="handleClickBranch(branch)" role="presentation">
+            {{ branch.label }}
+          </div>
+        }
+      }
+      @if (phSearchResults().length) {
+        <div class="popup-group-label">Philippine locations</div>
+        @for (result of phSearchResults(); track result.code) {
+          <div class="popup-item" (click)="handleClickPhAddress(result)" role="presentation">
+            <span class="popup-item-type">{{ result.geographicLevel | titlecase }}</span>
+            {{ result.name }}
+            @if (result["sub Region"]) {
+              <span class="popup-item-context">, {{ result["sub Region"] }}</span>
+            }
+          </div>
+        }
+      }
+      @if (searchResults().length) {
+        <div class="popup-group-label">Addresses</div>
+        @for (result of searchResults(); track result.id) {
+          <div class="popup-item" (click)="handleClickAddress(result)" role="presentation">
+            {{ result.properties.full_address }}
+          </div>
+        }
+      }
+    </div>
+  } @else if (noMatches()) {
+    <div class="popup">
+      <div class="popup-empty">
+        No matching address. Try a full street address, e.g. 123 Main St, City, State.
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,53 @@
+<ui-dialog
+  [(open)]="open"
+  [modal]="true"
+  header="Save as a delivery location"
+  width="520px"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <form [formRoot]="form">
+    <ui-stack gap="3">
+      <p class="text-muted-foreground m-0 text-sm">
+        Saved for {{ customerName() || "this customer" }}, with the address and map pin picked on
+        this load. Next time it's one pick.
+      </p>
+
+      <ui-form-field label="Outlet name" for="siteName" [required]="true">
+        <ui-text-field id="siteName" [formField]="form.name" placeholder="e.g. Bonifacio ES" />
+      </ui-form-field>
+
+      <ui-form-field label="Usual cut-off" for="siteCutoff" hint="Optional - pre-fills deliver-by">
+        <ui-date-field inputId="siteCutoff" [formField]="form.cutoff" [timeOnly]="true" />
+      </ui-form-field>
+
+      @if (duplicateMessage(); as message) {
+        <ui-alert intent="warning">{{ message }}</ui-alert>
+
+        <ui-form-field label="This is a different place" for="confirmedDistinct">
+          <ui-checkbox-field inputId="confirmedDistinct" [formField]="form.confirmedDistinct" />
+        </ui-form-field>
+
+        @if (model().confirmedDistinct) {
+          <ui-form-field label="Why" for="distinctReason" [required]="true">
+            <ui-text-field
+              id="distinctReason"
+              [formField]="form.distinctReason"
+              placeholder="e.g. Same mall, another client's outlet"
+            />
+          </ui-form-field>
+        }
+      }
+
+      <ui-stack direction="row" gap="2" justify="end">
+        <ui-button
+          intent="secondary"
+          appearance="outlined"
+          label="Cancel"
+          (click)="open.set(false)"
+        />
+        <ui-button type="submit" label="Save" icon="check" [loading]="form().submitting()" />
+      </ui-stack>
+    </ui-stack>
+  </form>
+</ui-dialog>

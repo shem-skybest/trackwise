@@ -1,0 +1,192 @@
+<ui-page-header title="Crew Plan">
+  <ui-button
+    appearance="outlined"
+    icon="copy"
+    label="Copy previous day"
+    (click)="copyPreviousDay()"
+  />
+  <ui-button appearance="outlined" icon="refresh-cw" label="Refresh" (click)="refresh()" />
+</ui-page-header>
+
+<ui-grid container spacing="4" class="mb-4">
+  <ui-grid [size]="{ xs: 6, md: 3 }">
+    <ui-card>
+      <ui-stat-item label="Available" [value]="'' + availableCount()" intent="success" />
+    </ui-card>
+  </ui-grid>
+  <ui-grid [size]="{ xs: 6, md: 3 }">
+    <ui-card>
+      <ui-stat-item label="Understaffed" [value]="'' + understaffedCount()" intent="warning" />
+    </ui-card>
+  </ui-grid>
+  <ui-grid [size]="{ xs: 6, md: 3 }">
+    <ui-card>
+      <ui-stat-item label="Off the road" [value]="'' + offRoadCount()" intent="danger" />
+    </ui-card>
+  </ui-grid>
+  <ui-grid [size]="{ xs: 6, md: 3 }">
+    <ui-card>
+      <ui-stat-item label="Not planned" [value]="'' + unplannedCount()" />
+    </ui-card>
+  </ui-grid>
+</ui-grid>
+
+<ui-card>
+  <ui-stack direction="row" gap="3" class="mb-2 flex-wrap">
+    <ui-form-field label="Day" for="planDate">
+      <ui-stack direction="row" gap="2" align="center">
+        <ui-button
+          intent="secondary"
+          appearance="outlined"
+          icon="chevron-left"
+          ariaLabel="Previous day"
+          (click)="shiftDay(-1)"
+        />
+        <ui-date-field
+          id="planDate"
+          class="w-44"
+          [(value)]="date"
+          dateFormat="yy-mm-dd"
+          appendTo="body"
+        />
+        <ui-button
+          intent="secondary"
+          appearance="outlined"
+          icon="chevron-right"
+          ariaLabel="Next day"
+          (click)="shiftDay(1)"
+        />
+        <ui-button intent="secondary" appearance="text" label="Today" (click)="goToToday()" />
+      </ui-stack>
+    </ui-form-field>
+  </ui-stack>
+
+  <ui-tabs [value]="tab()" (valueChange)="selectTab($event)">
+    <ui-tab-list>
+      <ui-tab value="trucks">
+        <ui-icon name="truck" class="mr-2" />
+        Trucks
+      </ui-tab>
+      <ui-tab value="crew">
+        <ui-icon name="users" class="mr-2" />
+        Crew
+      </ui-tab>
+      <ui-tab value="bookings">
+        <ui-icon name="clipboard" class="mr-2" />
+        Bookings without a trip
+        @if (unassignedCount()) {
+          <ui-count-badge class="ml-2" [value]="unassignedCount()" severity="warn" />
+        }
+      </ui-tab>
+    </ui-tab-list>
+
+    <ui-tab-panels>
+      <ui-tab-panel value="trucks">
+        <ui-form-field label="Trucks" for="truckType" class="mb-2 w-56">
+          <ui-select-field
+            id="truckType"
+            [(value)]="truckType"
+            [options]="typeOptions"
+            optionLabel="label"
+            optionValue="value"
+          />
+        </ui-form-field>
+
+        <ui-data-table [value]="rows()" [loading]="isLoading()">
+          <ng-template #header>
+            <tr>
+              <th>Truck</th>
+              <th>Status</th>
+              <th>Driver</th>
+              <th>Helpers</th>
+              <th>Notes</th>
+              <th class="w-24"></th>
+            </tr>
+          </ng-template>
+
+          <ng-template #body let-item>
+            <tr class="cursor-pointer" (click)="openEdit(item.row)">
+              <td>
+                <div class="font-medium">{{ item.row.truckNumber }}</div>
+                @if (item.tonnage) {
+                  <div class="text-muted-foreground text-xs">{{ item.tonnage }}</div>
+                }
+              </td>
+              <td>
+                @if (item.status) {
+                  <ui-badge [value]="item.status.label" [severity]="item.status.intent" />
+                } @else {
+                  <span class="text-muted-foreground text-sm">Not planned</span>
+                }
+              </td>
+              <td>
+                @if (item.row.assignmentId) {
+                  {{ item.row.driverName ?? "-" }}
+                } @else if (item.row.mainDriverName) {
+                  <span class="text-muted-foreground text-sm" title="The truck's usual driver">
+                    {{ item.row.mainDriverName }} (usual)
+                  </span>
+                }
+              </td>
+              <td>{{ item.helpers || (item.row.assignmentId ? "-" : "") }}</td>
+              <td
+                class="text-muted-foreground max-w-xs truncate text-sm"
+                [title]="item.row.notes ?? ''"
+              >
+                {{ item.row.notes ?? "" }}
+              </td>
+              <td class="text-right whitespace-nowrap">
+                <ui-button
+                  intent="secondary"
+                  appearance="text"
+                  size="sm"
+                  ariaLabel="Plan this truck"
+                  icon="pencil"
+                  [rounded]="true"
+                  (click)="$event.stopPropagation(); openEdit(item.row)"
+                />
+                @if (item.row.assignmentId) {
+                  <ui-button
+                    intent="danger"
+                    appearance="text"
+                    size="sm"
+                    ariaLabel="Clear plan"
+                    icon="x"
+                    [rounded]="true"
+                    (click)="$event.stopPropagation(); confirmClear(item.row)"
+                  />
+                }
+              </td>
+            </tr>
+          </ng-template>
+
+          <ng-template #empty>
+            <tr>
+              <td colspan="6" class="text-muted-foreground py-12 text-center">
+                No trucks to plan.
+              </td>
+            </tr>
+          </ng-template>
+        </ui-data-table>
+      </ui-tab-panel>
+
+      <ui-tab-panel value="crew">
+        @if (isoDate(); as day) {
+          <app-crew-day-panel [date]="day" [reloadKey]="planVersion()" (changed)="refresh()" />
+        }
+      </ui-tab-panel>
+
+      <ui-tab-panel value="bookings">
+        @if (isoDate(); as day) {
+          <app-unassigned-bookings-panel
+            [date]="day"
+            [reloadKey]="refreshVersion()"
+            (countChange)="unassignedCount.set($event)"
+          />
+        }
+      </ui-tab-panel>
+    </ui-tab-panels>
+  </ui-tabs>
+</ui-card>
+
+<app-crew-assignment-dialog [(visible)]="dialogVisible" [row]="editing()" (saved)="onPlanSaved()" />

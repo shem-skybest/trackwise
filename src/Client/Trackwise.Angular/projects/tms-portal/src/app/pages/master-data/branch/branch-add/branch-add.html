@@ -1,0 +1,5 @@
+<div class="animate-in fade-in space-y-4">
+  <ui-page-header title="Add a New Branch" backLink="/master-data/branches" />
+
+  <app-branch-form [isLoading]="isLoading()" (save)="create($event)" />
+</div>

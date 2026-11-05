@@ -1,0 +1,107 @@
+<ui-dialog
+  [(open)]="open"
+  [header]="header()"
+  [width]="width()"
+  [maxWidth]="maxWidth()"
+  [closable]="closable()"
+  [modal]="modal()"
+  [draggable]="draggable()"
+  (opened)="opened.emit()"
+  (closed)="closed.emit()"
+>
+  <ng-template #content>
+    <ui-stack gap="4">
+      <!-- Location Cascade -->
+      <app-location-cascade (selectionChange)="onLocationSelection($event)"></app-location-cascade>
+
+      <!-- Street Address -->
+      <ui-form-field
+        label="Street Address"
+        for="street"
+        [required]="true"
+        hint="Used to fly the map to this address"
+      >
+        <ui-text-field
+          id="street"
+          [value]="streetAddress()"
+          (valueChange)="onStreetChange($event)"
+          placeholder="123 Main St"
+        />
+      </ui-form-field>
+
+      <!-- Subdivision -->
+      <ui-form-field label="Subdivision / Village" for="subdivision">
+        <ui-text-field
+          id="subdivision"
+          [value]="subdivision()"
+          (valueChange)="onSubdivisionChange($event)"
+          placeholder="Greenhills Subdivision"
+        />
+      </ui-form-field>
+
+      <!-- Zipcode -->
+      <ui-form-field label="Zipcode" for="zip" [required]="true">
+        <ui-text-field
+          id="zip"
+          [value]="zipcode()"
+          (valueChange)="onZipcodeChange($event)"
+          placeholder="1234"
+        />
+      </ui-form-field>
+
+      <!-- Forward geocoding loading indicator -->
+      @if (isGeocoding()) {
+        <ui-alert intent="info" class="mb-2">
+          <ui-spinner class="mr-2 inline-block" />
+          Searching for address…
+        </ui-alert>
+      }
+
+      <!-- Geocoding fallback: no match found -->
+      @if (geocodeNotFound() && !isGeocoding()) {
+        <ui-alert intent="warning" class="mb-2">
+          <strong>Address not found.</strong>
+          Try a different street number or name, or drop a pin manually on the map.
+        </ui-alert>
+      }
+
+      <!-- Map -->
+      <div class="relative h-96 w-full">
+        <app-address-picker-map
+          [center]="mapCenter()"
+          [marker]="marker()"
+          [draggable]="draggable()"
+          (mapClick)="onMapClick($event)"
+          (markerDrag)="onMarkerDrag($event)"
+        />
+      </div>
+
+      <ui-stack direction="row" gap="2" align="center">
+        <ui-typography variant="caption" color="muted" class="flex-1">
+          @if (geocodeNotFound() || !marker()) {
+            Click on the map to drop a pin at the exact location.
+          } @else {
+            Drag the pin to adjust the location.
+          }
+        </ui-typography>
+
+        @if (geocodeNotFound() && !marker()) {
+          <ui-button
+            label="Use this area"
+            intent="secondary"
+            variant="outline"
+            size="sm"
+            (click)="useCurrentMapCenter()"
+          />
+        }
+      </ui-stack>
+    </ui-stack>
+  </ng-template>
+
+  <ng-template #footer>
+    <ui-stack direction="row" gap="2" justify="end">
+      <ui-button label="Cancel" intent="secondary" (click)="onCancel()" />
+      <ui-button label="Confirm" intent="primary" [disabled]="!isValid()" (click)="onConfirm()" />
+    </ui-stack>
+  </ng-template>
+</ui-dialog>

@@ -1,0 +1,19 @@
+<ui-page-header title="Edit Service Record" [backLink]="'/maintenance/records/' + id()" />
+
+<div class="mx-auto max-w-5xl">
+  @if (isLoading()) {
+    <ui-stack align="center" justify="center" class="py-16 text-center">
+      <ui-spinner />
+    </ui-stack>
+  } @else if (record()) {
+    <ui-card>
+      <app-maintenance-record-form
+        mode="edit"
+        [id]="id()"
+        [initial]="initialFormValue()"
+        [cancelLink]="'/maintenance/records/' + id()"
+        (save)="onSave($event)"
+      />
+    </ui-card>
+  }
+</div>

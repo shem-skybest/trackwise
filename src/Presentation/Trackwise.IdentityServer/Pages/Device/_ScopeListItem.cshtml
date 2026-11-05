@@ -1,0 +1,33 @@
+@using Trackwise.IdentityServer.Pages.Device
+@model ScopeViewModel
+
+<li class="flex gap-3 py-3">
+    <input hlm-checkbox class="consent-scopecheck mt-0.5"
+           type="checkbox"
+           name="Input.ScopesConsented"
+           id="scopes_@Model.Value"
+           value="@Model.Value"
+           checked="@Model.Checked"
+           disabled="@Model.Required" />
+    @if (Model.Required)
+    {
+        <input type="hidden" name="Input.ScopesConsented" value="@Model.Value" />
+    }
+    <div class="flex flex-col gap-1">
+        <label for="scopes_@Model.Value" class="flex items-center gap-2 text-sm font-medium">
+            @Model.DisplayName
+            @if (Model.Emphasize)
+            {
+                <span hlm-badge variant="destructive">Sensitive</span>
+            }
+            @if (Model.Required)
+            {
+                <span class="text-muted-foreground text-xs font-normal">(required)</span>
+            }
+        </label>
+        @if (Model.Description != null)
+        {
+            <p class="text-muted-foreground text-sm">@Model.Description</p>
+        }
+    </div>
+</li>

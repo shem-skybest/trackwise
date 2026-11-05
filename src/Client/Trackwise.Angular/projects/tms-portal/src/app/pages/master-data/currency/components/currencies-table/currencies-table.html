@@ -1,0 +1,110 @@
+<ui-card>
+  <ui-data-container
+    [loading]="isLoading()"
+    [error]="error()"
+    [isEmpty]="isEmpty()"
+    skeletonVariant="table"
+    [skeletonRows]="10"
+    emptyTitle="No currencies yet"
+    emptyMessage="Add the currencies you quote and invoice in, so the code on every amount resolves to a record."
+    emptyActionLabel="Add Currency"
+    (retry)="onRetry()"
+    (emptyAction)="onAddCurrency()"
+  >
+    <ui-data-table
+      [value]="data()"
+      dataKey="id"
+      [scrollable]="true"
+      [lazy]="true"
+      [paginator]="true"
+      [showCurrentPageReport]="true"
+      [rows]="pageSize()"
+      [first]="first()"
+      [totalRecords]="totalRecords()"
+      [loading]="isLoading()"
+      [rowsPerPageOptions]="[10, 25, 50, 100]"
+      size="small"
+      (lazyLoad)="onLazyLoad($event)"
+    >
+      <ng-template #header>
+        <tr>
+          <th uiSortHeader="Code">Code</th>
+          <th uiSortHeader="Name">Name</th>
+          <th>Symbol</th>
+          <th uiSortHeader="NumericCode">Numeric</th>
+          <th uiSortHeader="MinorUnits">Decimals</th>
+          <th uiSortHeader="IsActive">Status</th>
+          <th uiSortHeader="UpdatedAt">Last changed</th>
+          <th></th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-currency>
+        <tr
+          class="hover:bg-hover transition-colors duration-150"
+          [class.cursor-pointer]="!currency.deletedAt"
+          [class.opacity-60]="currency.deletedAt"
+          (click)="navigateToCurrency(currency)"
+        >
+          <td>
+            <span class="font-mono text-sm font-semibold">{{ currency.code }}</span>
+          </td>
+
+          <td>
+            @if (currency.deletedAt) {
+              <span class="text-foreground max-w-64 truncate font-bold line-through">
+                {{ currency.name }}
+              </span>
+            } @else {
+              <a
+                [routerLink]="['/master-data/currencies', currency.id]"
+                class="text-foreground max-w-64 truncate font-bold hover:underline"
+                (click)="$event.stopPropagation()"
+              >
+                {{ currency.name }}
+              </a>
+            }
+          </td>
+
+          <td class="text-muted-foreground">{{ currency.symbol || "—" }}</td>
+
+          <td class="text-muted-foreground font-mono text-sm">
+            {{ currency.numericCode || "—" }}
+          </td>
+
+          <td class="text-muted-foreground font-mono text-sm">{{ currency.minorUnits }}</td>
+
+          <td>
+            @if (currency.deletedAt) {
+              <ui-badge value="Deleted" severity="danger" size="sm" rounded />
+            } @else if (currency.isActive) {
+              <ui-badge value="Active" severity="success" size="sm" rounded />
+            } @else {
+              <ui-badge value="Inactive" severity="secondary" size="sm" rounded />
+            }
+          </td>
+
+          <td class="text-muted-foreground text-sm">
+            {{ currency.updatedAt || currency.createdAt | date: "dd/MM/yyyy HH:mm" }}
+            @if (currency.updatedBy || currency.createdBy) {
+              <span class="block text-xs">{{ currency.updatedBy || currency.createdBy }}</span>
+            }
+          </td>
+
+          <td class="text-right">
+            @if (currency.deletedAt && canManage()) {
+              <ui-button
+                type="button"
+                appearance="text"
+                size="sm"
+                icon="history"
+                label="Restore"
+                (click)="onRestore(currency, $event)"
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </ui-data-table>
+  </ui-data-container>
+</ui-card>

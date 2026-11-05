@@ -1,0 +1,91 @@
+<ui-dialog
+  [header]="isEdit() ? 'Edit container' : 'Add containers'"
+  [(open)]="open"
+  [modal]="true"
+  width="36rem"
+  (opened)="onOpened()"
+>
+  <form [formRoot]="form">
+    <ui-grid container spacing="3">
+      <ui-grid [size]="{ xs: 12, md: isEdit() ? 12 : 8 }">
+        <ui-form-field label="Size" for="slotType" [required]="true">
+          <ui-select-field
+            id="slotType"
+            [formField]="form.containerTypeId"
+            [options]="typeOptions()"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Pick a size"
+            [filter]="true"
+          />
+        </ui-form-field>
+      </ui-grid>
+      @if (!isEdit()) {
+        <ui-grid [size]="{ xs: 12, md: 4 }">
+          <ui-form-field
+            label="How many"
+            for="slotQuantity"
+            [required]="true"
+            [hint]="hasNumber() ? 'One, since a number names one box' : ''"
+          >
+            <ui-number-field id="slotQuantity" [formField]="form.quantity" [fluid]="true" />
+          </ui-form-field>
+        </ui-grid>
+      }
+      <ui-grid [size]="{ xs: 12, md: 6 }">
+        <ui-form-field
+          label="Container no."
+          for="slotNumber"
+          hint="Leave blank until the box is known"
+        >
+          <ui-text-field id="slotNumber" [formField]="form.containerNumber" class="font-mono" />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12, md: 6 }">
+        <ui-form-field label="Seal no." for="slotSeal" hint="Optional">
+          <ui-text-field id="slotSeal" [formField]="form.sealNumber" />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12, md: 4 }">
+        <ui-form-field label="Gross weight (kg)" for="slotWeight" hint="Optional">
+          <ui-number-field id="slotWeight" [formField]="form.grossWeightKg" [fluid]="true" />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12, md: 4 }">
+        <ui-form-field label="Packages" for="slotPackages" hint="Optional">
+          <ui-number-field id="slotPackages" [formField]="form.packageCount" [fluid]="true" />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12, md: 4 }">
+        <ui-form-field label="CBM" for="slotCbm" hint="Optional">
+          <ui-number-field
+            id="slotCbm"
+            [formField]="form.cbm"
+            [maxFractionDigits]="3"
+            [fluid]="true"
+          />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12 }">
+        <ui-form-field label="Packaging" for="slotPackaging" hint="Optional, e.g. cartons, pallets">
+          <ui-text-field id="slotPackaging" [formField]="form.packagingType" />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12 }">
+        <ui-form-field label="Notes" for="slotNotes" hint="Optional">
+          <ui-textarea-field id="slotNotes" [formField]="form.notes" [rows]="2" />
+        </ui-form-field>
+      </ui-grid>
+    </ui-grid>
+
+    <div class="mt-4 flex justify-end gap-2">
+      <ui-button appearance="text" label="Cancel" (click)="open.set(false)" />
+      <ui-button
+        type="submit"
+        [icon]="isEdit() ? 'check' : 'plus'"
+        [label]="isEdit() ? 'Save' : 'Add'"
+        [loading]="form().submitting()"
+      />
+    </div>
+  </form>
+</ui-dialog>

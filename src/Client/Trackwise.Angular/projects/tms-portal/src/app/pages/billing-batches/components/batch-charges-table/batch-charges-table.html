@@ -1,0 +1,41 @@
+<ui-data-table [value]="charges()" dataKey="id" size="small">
+  <ng-template #header>
+    <tr>
+      <th>Charge</th>
+      <th>Description</th>
+      <th>Trip</th>
+      <th>VAT</th>
+      <th class="text-right">Amount</th>
+      @if (editable()) {
+        <th></th>
+      }
+    </tr>
+  </ng-template>
+  <ng-template #body let-charge>
+    <tr>
+      <td class="whitespace-nowrap">{{ kindLabel(charge.kind) }}</td>
+      <td>{{ charge.description }}</td>
+      <td>{{ charge.tripNumber ?? "-" }}</td>
+      <td>
+        <ui-badge
+          [value]="charge.isVatable ? 'VATable' : 'Non-VAT'"
+          [severity]="charge.isVatable ? 'secondary' : 'info'"
+          size="sm"
+        />
+      </td>
+      <td class="text-right">{{ charge.amount | currencyFormat }}</td>
+      @if (editable()) {
+        <td class="text-right">
+          <ui-button
+            appearance="text"
+            intent="danger"
+            icon="trash"
+            size="sm"
+            ariaLabel="Delete charge"
+            (click)="remove.emit(charge)"
+          />
+        </td>
+      }
+    </tr>
+  </ng-template>
+</ui-data-table>

@@ -1,0 +1,115 @@
+<div>
+  <ui-form-field label="Street Address" for="streetAddress" [required]="true">
+    <input
+      hlmInput
+      id="streetAddress"
+      [value]="parts().streetAddress"
+      [disabled]="disabled()"
+      (input)="onStreetAddressInput($event)"
+      (blur)="touch.emit()"
+    />
+  </ui-form-field>
+
+  <ui-form-field label="Subdivision" for="subdivision" hint="Optional">
+    <input
+      hlmInput
+      id="subdivision"
+      [value]="parts().subdivision ?? ''"
+      [disabled]="disabled()"
+      (input)="onSubdivisionInput($event)"
+      (blur)="touch.emit()"
+    />
+  </ui-form-field>
+
+  <ui-form-field label="Barangay" for="barangay" hint="Optional">
+    <input
+      hlmInput
+      id="barangay"
+      [value]="parts().barangay ?? ''"
+      [disabled]="disabled()"
+      (input)="onBarangayInput($event)"
+      (blur)="touch.emit()"
+    />
+  </ui-form-field>
+
+  <ui-form-field label="City or Municipality" for="cityOrMunicipality" [required]="true">
+    <input
+      hlmInput
+      id="cityOrMunicipality"
+      [value]="parts().cityOrMunicipality"
+      [disabled]="disabled()"
+      (input)="onCityInput($event)"
+      (blur)="touch.emit()"
+    />
+  </ui-form-field>
+
+  <ui-form-field [label]="stateLabel()" for="province" [required]="true">
+    @if (hasStateOptions()) {
+      <ui-select-field
+        id="province"
+        [value]="parts().province"
+        (selectionChange)="onProvinceSelect($any($event))"
+        [options]="$any(stateOptions())"
+        optionLabel="label"
+        optionValue="value"
+        [placeholder]="'Select a ' + stateLabel().toLowerCase()"
+        [filter]="true"
+        [disabled]="disabled()"
+        (touch)="touch.emit()"
+      />
+    } @else {
+      <input
+        hlmInput
+        id="province"
+        [value]="parts().province"
+        [disabled]="disabled()"
+        (input)="onProvinceInput($event)"
+        (blur)="touch.emit()"
+      />
+    }
+  </ui-form-field>
+
+  <ui-form-field
+    label="Region"
+    for="region"
+    [required]="!regionFromProvince()"
+    [hint]="regionFromProvince() ? 'Filled in from the province' : null"
+  >
+    <input
+      hlmInput
+      id="region"
+      [value]="parts().region"
+      [disabled]="disabled()"
+      [readOnly]="regionFromProvince()"
+      [tabIndex]="regionFromProvince() ? -1 : 0"
+      (input)="onRegionInput($event)"
+      (blur)="touch.emit()"
+    />
+  </ui-form-field>
+
+  <ui-form-field label="Zip Code" for="zipcode" [required]="zipcodeRequired()">
+    <input
+      hlmInput
+      id="zipcode"
+      [value]="parts().zipcode"
+      [disabled]="disabled()"
+      (input)="onZipCodeInput($event)"
+      (blur)="touch.emit()"
+    />
+  </ui-form-field>
+
+  <ui-form-field label="Country" for="country" [required]="true">
+    <ui-select-field
+      id="country"
+      [value]="parts().country"
+      (selectionChange)="onCountrySelect($any($event))"
+      [options]="countries()"
+      optionLabel="label"
+      optionValue="value"
+      placeholder="Select a country"
+      [filter]="true"
+      [disabled]="disabled()"
+      (touch)="touch.emit()"
+    />
+  </ui-form-field>
+</div>

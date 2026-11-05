@@ -1,0 +1,68 @@
+<ui-dialog
+  [(open)]="visible"
+  [modal]="true"
+  [header]="title()"
+  width="560px"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <form [formRoot]="form">
+    <ui-stack gap="3">
+      <ui-form-field label="Paper" for="type" [required]="true">
+        <ui-select-field
+          id="type"
+          [formField]="form.type"
+          [options]="typeOptions"
+          optionLabel="label"
+          optionValue="value"
+          appendTo="body"
+        />
+      </ui-form-field>
+
+      <ui-form-field
+        label="Number"
+        for="number"
+        hint="OR/CR number, LTFRB case number or policy number."
+      >
+        <ui-text-field id="number" [formField]="form.number" type="text" />
+      </ui-form-field>
+
+      <ui-form-field label="Issued by" for="issuer" hint="LTO district office, insurer...">
+        <ui-text-field id="issuer" [formField]="form.issuer" type="text" />
+      </ui-form-field>
+
+      <ui-stack direction="row" gap="3">
+        <ui-form-field label="Issued on" for="issuedOn" class="flex-1">
+          <ui-date-field
+            id="issuedOn"
+            [formField]="form.issuedOn"
+            dateFormat="yy-mm-dd"
+            appendTo="body"
+          />
+        </ui-form-field>
+
+        <ui-form-field label="Expires on" for="expiresOn" [required]="true" class="flex-1">
+          <ui-date-field
+            id="expiresOn"
+            [formField]="form.expiresOn"
+            dateFormat="yy-mm-dd"
+            appendTo="body"
+          />
+        </ui-form-field>
+      </ui-stack>
+
+      <ui-form-field label="Cost" for="cost" hint="What this paper cost, if you want to track it.">
+        <ui-currency-field id="cost" [formField]="form.cost" [currency]="currencySymbol" />
+      </ui-form-field>
+
+      <ui-form-field label="Notes" for="notes">
+        <ui-textarea-field id="notes" [formField]="form.notes" [rows]="2" />
+      </ui-form-field>
+
+      <ui-stack direction="row" justify="end" gap="2">
+        <ui-button intent="secondary" appearance="outlined" label="Cancel" (click)="close()" />
+        <ui-button type="submit" label="Save" icon="check" [loading]="form().submitting()" />
+      </ui-stack>
+    </ui-stack>
+  </form>
+</ui-dialog>

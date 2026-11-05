@@ -1,0 +1,17 @@
+using Trackwise.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace Trackwise.Infrastructure.Persistence.Configurations;
+
+internal sealed class SystemSettingsEntityConfiguration : IEntityTypeConfiguration<SystemSettings>
+{
+    public void Configure(EntityTypeBuilder<SystemSettings> builder)
+    {
+        builder.ToTable("system_settings");
+        builder.HasIndex(s => s.Key).IsUnique();
+        builder.Property(s => s.Key).HasMaxLength(256);
+        builder.Property(s => s.Value).HasMaxLength(4000);
+        builder.Property(s => s.Description).HasMaxLength(500);
+    }
+}

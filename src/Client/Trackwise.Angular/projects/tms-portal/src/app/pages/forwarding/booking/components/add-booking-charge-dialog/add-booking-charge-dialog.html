@@ -1,0 +1,84 @@
+<ui-dialog header="Add Charge" [(open)]="open" [modal]="true" width="34rem">
+  <div class="flex flex-col gap-4">
+    <p class="text-subtle-foreground text-sm">
+      Quoted charges are locked. Use this for anything extra, such as detention or additional
+      handling. The charge joins the next invoice.
+    </p>
+
+    <ui-form-field label="Category" for="chargeCategory" [required]="true">
+      <ui-select-field
+        id="chargeCategory"
+        [(value)]="category"
+        [options]="chargeCategoryOptions"
+        optionLabel="label"
+        optionValue="value"
+      />
+    </ui-form-field>
+
+    <ui-form-field label="Description" for="chargeDescription" [required]="true">
+      <ui-text-field
+        id="chargeDescription"
+        [(value)]="description"
+        class="block w-full"
+        placeholder="e.g. Container detention, 3 extra days"
+      />
+    </ui-form-field>
+
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <ui-form-field label="Quantity" for="chargeQty" [required]="true">
+        <ui-number-field id="chargeQty" [(value)]="quantity" />
+      </ui-form-field>
+
+      <ui-form-field label="Unit price ({{ currency() }})" for="chargeSelling" [required]="true">
+        <ui-number-field id="chargeSelling" [(value)]="unitSelling" />
+      </ui-form-field>
+
+      @if (showCosts()) {
+        <ui-form-field label="Unit cost ({{ currency() }})" for="chargeBuying" hint="Internal">
+          <ui-number-field id="chargeBuying" [(value)]="unitBuying" />
+        </ui-form-field>
+      }
+    </div>
+
+    <ui-form-field
+      label="Reason"
+      for="chargeReason"
+      [required]="true"
+      hint="Shown on the booking, so the customer and finance can see why it was added."
+    >
+      <ui-textarea-field
+        id="chargeReason"
+        [(value)]="reason"
+        [rows]="3"
+        class="block w-full"
+        placeholder="e.g. Customer delayed pickup beyond the agreed free time"
+      />
+    </ui-form-field>
+
+    <div class="rounded-md border p-3 text-sm">
+      <div class="flex justify-between">
+        <span class="text-subtle-foreground">
+          {{ isDiscount() ? "Discount (reduces the total)" : "Charge to customer" }}
+        </span>
+        <span class="font-semibold">{{ sellingTotal() | number: "1.2-2" }} {{ currency() }}</span>
+      </div>
+      @if (showCosts()) {
+        <div class="text-subtle-foreground flex justify-between">
+          <span>Cost</span>
+          <span>{{ buyingTotal() | number: "1.2-2" }} {{ currency() }}</span>
+        </div>
+      }
+    </div>
+  </div>
+
+  <ng-template #footer>
+    <ui-button appearance="text" label="Cancel" [disabled]="isBusy()" (click)="open.set(false)" />
+    <ui-button
+      intent="primary"
+      icon="plus"
+      label="Add Charge"
+      [disabled]="!isValid() || isBusy()"
+      (click)="submit()"
+    />
+  </ng-template>
+</ui-dialog>

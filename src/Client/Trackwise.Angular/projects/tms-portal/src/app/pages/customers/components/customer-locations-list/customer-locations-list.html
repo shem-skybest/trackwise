@@ -1,0 +1,78 @@
+<ui-stack gap="3">
+  <ui-stack direction="row" align="end" justify="between" gap="3">
+    <ui-form-field label="Search" for="locationSearch" class="mb-0 w-full max-w-sm">
+      <ui-text-field
+        id="locationSearch"
+        placeholder="Outlet name or code"
+        (input)="store.setSearch($any($event.target).value)"
+      />
+    </ui-form-field>
+    <ui-button
+      appearance="outlined"
+      icon="plus"
+      label="Add Delivery Location"
+      [routerLink]="['/master-data/locations/add']"
+      [queryParams]="{ customerId: customerId() }"
+    />
+  </ui-stack>
+
+  <ui-data-table
+    [value]="store.data()"
+    dataKey="id"
+    [lazy]="true"
+    [paginator]="true"
+    [showCurrentPageReport]="true"
+    [rows]="store.pageSize()"
+    [first]="store.first()"
+    [totalRecords]="store.totalRecords()"
+    [loading]="store.isLoading()"
+    [rowsPerPageOptions]="[25, 50, 100]"
+    size="small"
+    (lazyLoad)="store.onLazyLoad($event)"
+  >
+    <ng-template #header>
+      <tr>
+        <th uiSortHeader="Code">Code</th>
+        <th uiSortHeader="Name">Name</th>
+        <th>Address</th>
+        <th>Cut-off</th>
+        <th uiSortHeader="IsActive">Status</th>
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-location>
+      <tr>
+        <td>
+          <span class="font-mono text-sm">{{ location.code }}</span>
+        </td>
+        <td>
+          <a
+            [routerLink]="['/master-data/locations', location.id]"
+            class="text-foreground font-medium hover:underline"
+          >
+            {{ location.name }}
+          </a>
+        </td>
+        <td class="text-muted-foreground text-sm">{{ place(location) }}</td>
+        <td class="text-muted-foreground text-sm">
+          {{ formatTimeOfDay(location.defaultCutoffTime) }}
+        </td>
+        <td>
+          @if (location.isActive) {
+            <ui-badge value="Active" severity="success" size="sm" rounded />
+          } @else {
+            <ui-badge value="Inactive" severity="secondary" size="sm" rounded />
+          }
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template #empty>
+      <tr>
+        <td colspan="5" class="text-muted-foreground py-6 text-center">
+          No delivery locations saved for this customer yet.
+        </td>
+      </tr>
+    </ng-template>
+  </ui-data-table>
+</ui-stack>

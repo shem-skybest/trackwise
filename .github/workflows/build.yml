@@ -1,0 +1,172 @@
+name: Build
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+env:
+  PRESENTATION_PROJECTS_DIR: ./src/Presentation
+  CLIENT_PROJECTS_DIR: ./src/Client
+
+jobs:
+  build-backend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      #- name: Install dependencies
+      #  run: dotnet restore
+
+      #- name: Verify formatting
+      #  run: dotnet format --verify-no-changes --no-restore
+
+      - name: Build Web API
+        run: dotnet build ${{ env.PRESENTATION_PROJECTS_DIR }}/Trackwise.API/Trackwise.API.csproj
+
+      - name: Build Identity Server
+        run: dotnet build ${{ env.PRESENTATION_PROJECTS_DIR }}/Trackwise.IdentityServer/Trackwise.IdentityServer.csproj
+
+  test-backend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Run tests
+        run: dotnet test Trackwise.slnx --logger "console;verbosity=minimal"
+
+  # A fresh database proves nothing about an upgrade: a migration that breaks on rows already in
+  # a tenant (a NOT NULL column, a unique index) passes on empty tables. So seed the databases
+  # with the BASE commit's migrator first, then migrate them with this commit's code - the same
+  # path the prod dbmigrator takes on deploy.
+  migration-upgrade:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: "Test12345#"
+          POSTGRES_DB: master_trackwise
+        # 5433 is what the migrator's appsettings.json already points at.
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DOTNET_ENVIRONMENT: Development
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Check out the base commit
+        id: base
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          # The base must be in this commit's history: after a force-push onto unrelated history the
+          # old SHA can still exist on GitHub (e.g. kept alive by a PR ref) without being a real base.
+          if [ -z "$BASE_SHA" ] || ! git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null || ! git merge-base --is-ancestor "$BASE_SHA" HEAD; then
+            # A root commit has nothing to upgrade from; the last step still migrates and seeds
+            # this commit from empty.
+            if ! BASE_SHA=$(git rev-parse --verify --quiet HEAD^1); then
+              echo "No base commit - skipping the upgrade from it"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+          echo "Base commit: $BASE_SHA"
+          git worktree add --detach "$RUNNER_TEMP/base" "$BASE_SHA"
+
+      - name: Migrate and seed with the base commit
+        if: steps.base.outputs.skip != 'true'
+        working-directory: ${{ runner.temp }}/base
+        run: dotnet run --project src/Presentation/Trackwise.DbMigrator -- --exit
+
+      - name: Migrate the seeded databases with this commit
+        run: dotnet run --project src/Presentation/Trackwise.DbMigrator -- --exit
+
+  build-angular-apps:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      # The Angular CLI runs under Node, not Bun, and v22 requires
+      # ^22.22.3 || ^24.15.0 || >=26.0.0 - it refuses to start otherwise.
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.15.0
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        working-directory: ${{ env.CLIENT_PROJECTS_DIR }}/Trackwise.Angular
+        run: bun install --force
+
+      - name: Generate API client
+        working-directory: ${{ env.CLIENT_PROJECTS_DIR }}/Trackwise.Angular
+        run: bun run gen:api
+
+      - name: Build shared library
+        working-directory: ${{ env.CLIENT_PROJECTS_DIR }}/Trackwise.Angular
+        run: bun run build:shared
+
+      # Pins the Signal Forms behaviours the ui-* form controls rely on.
+      - name: Test shared library
+        working-directory: ${{ env.CLIENT_PROJECTS_DIR }}/Trackwise.Angular
+        run: bun run ng test shared --watch=false
+
+      # Every gate in tools/checks/, discovered - a new gate is a new file there, not a new step here.
+      # They catch what build/test/lint cannot: a bare spartan-* class (renders the component
+      # unstyled) and a hardcoded colour (does not follow the theme - how admin/customer dark mode broke).
+      - name: UI gates
+        working-directory: ${{ env.CLIENT_PROJECTS_DIR }}/Trackwise.Angular
+        run: bun run check
+
+      - name: Lint (0 errors, 0 warnings)
+        working-directory: ${{ env.CLIENT_PROJECTS_DIR }}/Trackwise.Angular
+        run: bun run lint --max-warnings 0
+
+      - name: Build TMS Portal
+        working-directory: ${{ env.CLIENT_PROJECTS_DIR }}/Trackwise.Angular
+        run: bun run build:tms
+
+      - name: Build Admin Portal
+        working-directory: ${{ env.CLIENT_PROJECTS_DIR }}/Trackwise.Angular
+        run: bun run build:admin
+
+      - name: Build Customer Portal
+        working-directory: ${{ env.CLIENT_PROJECTS_DIR }}/Trackwise.Angular
+        run: bun run build:customer
+
+      - name: Build Website
+        working-directory: ${{ env.CLIENT_PROJECTS_DIR }}/Trackwise.Angular
+        run: bun run build:website

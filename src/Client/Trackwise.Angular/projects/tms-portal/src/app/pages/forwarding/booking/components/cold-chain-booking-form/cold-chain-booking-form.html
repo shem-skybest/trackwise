@@ -1,0 +1,188 @@
+<!-- <form [formRoot]="form">
+  <ui-grid container spacing="4">
+    <ui-grid [size]="{ xs: 12, lg: 8 }">
+      <ui-stack gap="4">
+        <ui-card>
+          <ui-grid container spacing="3">
+            <ui-grid [size]="{ xs: 12, md: 6 }">
+              <ui-form-field label="Client" for="customer" [required]="true">
+                <app-search-customer [formField]="form.customer" />
+              </ui-form-field>
+            </ui-grid>
+            <ui-grid [size]="{ xs: 12, md: 6 }">
+              <ui-form-field label="Truck size" for="truckSize" [required]="true">
+                <ui-select-field
+                  id="truckSize"
+                  [formField]="form.truckSize"
+                  [options]="truckSizeOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  placeholder="2, 3, 4 or 10 tonner"
+                />
+              </ui-form-field>
+            </ui-grid>
+            @if (asksForNumber()) {
+              <ui-grid [size]="{ xs: 12, md: 6 }">
+                <ui-form-field
+                  label="nSFS booking number"
+                  for="referenceNumber"
+                  hint="As nSFS or Monday shows it, e.g. 1331. Leave blank if nSFS hasn't numbered it yet."
+                >
+                  <ui-text-field
+                    id="referenceNumber"
+                    [formField]="form.referenceNumber"
+                    placeholder="BKN-RFV1331-26-M"
+                  />
+                </ui-form-field>
+              </ui-grid>
+              <ui-grid [size]="{ xs: 12, md: 6 }"></ui-grid>
+            }
+            <ui-grid [size]="{ xs: 6, md: 3 }">
+              <ui-form-field label="Delivery day" for="serviceDate" [required]="true">
+                <ui-date-field
+                  inputId="serviceDate"
+                  [formField]="form.serviceDate"
+                  [showIcon]="true"
+                />
+              </ui-form-field>
+            </ui-grid>
+            <ui-grid [size]="{ xs: 6, md: 3 }">
+              <ui-form-field label="Call time" for="callTime" hint="Truck due at the warehouse">
+                <ui-date-field inputId="callTime" [formField]="form.callTime" [timeOnly]="true" />
+              </ui-form-field>
+            </ui-grid>
+            <ui-grid [size]="{ xs: 12, md: 6 }">
+              <ui-form-field
+                label="Pickup warehouse"
+                for="pickupSite"
+                [hint]="
+                  customerId() ? 'Needed before the trip can be made' : 'Pick the client first'
+                "
+              >
+                <app-search-location
+                  [formField]="form.pickupSite"
+                  [customerId]="customerId()"
+                  placeholder="The client's warehouse or cold store"
+                />
+              </ui-form-field>
+            </ui-grid>
+            <ui-grid [size]="{ xs: 12, md: 6 }">
+              <ui-form-field label="Commodity" for="commodity">
+                <ui-text-field
+                  id="commodity"
+                  [formField]="form.commodity"
+                  placeholder="Fresh milk"
+                />
+              </ui-form-field>
+            </ui-grid>
+            <ui-grid [size]="{ xs: 6, md: 3 }">
+              <ui-form-field label="Temp. from (°C)" for="tempMin">
+                <ui-number-field
+                  id="tempMin"
+                  [formField]="form.temperatureMinC"
+                  [maxFractionDigits]="1"
+                />
+              </ui-form-field>
+            </ui-grid>
+            <ui-grid [size]="{ xs: 6, md: 3 }">
+              <ui-form-field label="Temp. to (°C)" for="tempMax">
+                <ui-number-field
+                  id="tempMax"
+                  [formField]="form.temperatureMaxC"
+                  [maxFractionDigits]="1"
+                />
+              </ui-form-field>
+            </ui-grid>
+            <ui-grid [size]="{ xs: 12 }">
+              <ui-form-field label="Notes" for="notes" class="mb-0">
+                <ui-textarea-field id="notes" [formField]="form.notes" [rows]="2" />
+              </ui-form-field>
+            </ui-grid>
+          </ui-grid>
+        </ui-card>
+
+        <ui-card>
+          <ui-stack gap="3">
+            <ui-stack direction="row" align="end" justify="between" gap="3" wrap>
+              <ui-stack gap="0">
+                <ui-typography variant="h5" tag="h2">Drops</ui-typography>
+                <ui-typography variant="caption" color="muted">
+                  {{ model().drops.length }} drop(s) · {{ totalBoxes() }} boxes ·
+                  {{ totalBags() }} bags
+                </ui-typography>
+              </ui-stack>
+              <ui-button
+                icon="plus"
+                appearance="outlined"
+                label="Add drop"
+                type="button"
+                [disabled]="!customerId()"
+                (click)="addDrop()"
+              />
+            </ui-stack>
+
+            @for (drop of model().drops; track $index; let i = $index) {
+              <ui-grid container spacing="2" class="border-b pb-2 last:border-b-0">
+                <ui-grid [size]="{ xs: 12, md: 5 }">
+                  <ui-form-field [label]="'Drop ' + (i + 1)" [for]="'drop' + i" class="mb-0">
+                    <app-search-location
+                      [formField]="form.drops[i].site"
+                      [customerId]="customerId()"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+                <ui-grid [size]="{ xs: 4, md: 2 }">
+                  <ui-form-field label="Boxes" [for]="'boxes' + i" class="mb-0">
+                    <ui-number-field [id]="'boxes' + i" [formField]="form.drops[i].plannedBoxes" />
+                  </ui-form-field>
+                </ui-grid>
+                <ui-grid [size]="{ xs: 4, md: 2 }">
+                  <ui-form-field label="Bags" [for]="'bags' + i" class="mb-0">
+                    <ui-number-field [id]="'bags' + i" [formField]="form.drops[i].plannedBags" />
+                  </ui-form-field>
+                </ui-grid>
+                <ui-grid [size]="{ xs: 4, md: 3 }">
+                  <ui-stack direction="row" align="end" gap="1">
+                    <ui-form-field label="Note" [for]="'note' + i" class="mb-0 flex-1">
+                      <ui-text-field [id]="'note' + i" [formField]="form.drops[i].notes" />
+                    </ui-form-field>
+                    <ui-button
+                      icon="trash"
+                      appearance="text"
+                      intent="danger"
+                      type="button"
+                      ariaLabel="Remove drop"
+                      [disabled]="model().drops.length === 1"
+                      (click)="removeDrop(i)"
+                    />
+                  </ui-stack>
+                </ui-grid>
+              </ui-grid>
+            }
+          </ui-stack>
+        </ui-card>
+      </ui-stack>
+    </ui-grid>
+
+    <ui-grid [size]="{ xs: 12, lg: 4 }">
+      <ui-stack gap="4">
+        <app-booking-estimate-card [estimate]="estimate()" [isLoading]="isEstimating()" />
+
+        <ui-stack direction="row" gap="2" justify="end">
+          <ui-button
+            appearance="text"
+            icon="arrow-left"
+            label="Cancel"
+            [routerLink]="cancelLink()"
+          />
+          <ui-button
+            type="submit"
+            icon="save"
+            [label]="isEdit() ? 'Save changes' : 'Book'"
+            [loading]="isSaving()"
+          />
+        </ui-stack>
+      </ui-stack>
+    </ui-grid>
+  </ui-grid>
+</form> -->

@@ -1,0 +1,102 @@
+<ui-card>
+  <ui-typography variant="overline" color="secondary" class="mb-3 block">
+    Photos and papers
+  </ui-typography>
+
+  <div
+    class="border-border flex flex-wrap items-center gap-3 rounded-md border border-dashed p-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    [class.bg-muted]="dragging()"
+    [attr.tabindex]="canEdit() ? 0 : null"
+    role="group"
+    aria-label="Photos and papers - paste, drop or browse"
+    (paste)="canEdit() && onPaste($event)"
+    (dragover)="canEdit() && onDragOver($event)"
+    (dragleave)="dragging.set(false)"
+    (drop)="canEdit() && onDrop($event)"
+  >
+    @for (photo of photos(); track photo.id; let i = $index) {
+      <div class="group relative">
+        <button
+          type="button"
+          class="border-border bg-muted block h-20 w-20 overflow-hidden rounded-md border"
+          [attr.aria-label]="'Open ' + (photo.fileName ?? 'photo')"
+          [title]="(photo.uploadedBy ?? '') + ' · ' + (photo.uploadedAt | date: 'MMM d, HH:mm')"
+          (click)="openPhoto(i)"
+        >
+          @if (urls()[photo.id!]; as url) {
+            <img [src]="url" [alt]="photo.fileName ?? 'Photo'" class="h-full w-full object-cover" />
+          } @else {
+            <span class="flex h-full items-center justify-center">
+              <ui-icon name="image" class="text-muted-foreground" />
+            </span>
+          }
+        </button>
+        @if (canEdit()) {
+          <ui-button
+            class="absolute -top-2 -right-2"
+            appearance="solid"
+            intent="danger"
+            size="sm"
+            icon="x"
+            [rounded]="true"
+            ariaLabel="Remove photo"
+            (click)="remove(photo)"
+          />
+        }
+      </div>
+    }
+
+    @for (paper of papers(); track paper.id) {
+      <div
+        class="border-border flex items-center gap-2 rounded-md border px-3 py-2 text-sm"
+        [title]="(paper.uploadedBy ?? '') + ' · ' + (paper.uploadedAt | date: 'MMM d, HH:mm')"
+      >
+        <ui-icon name="file-text" class="text-muted-foreground" />
+        <button type="button" class="text-left hover:underline" (click)="openPaper(paper)">
+          <span class="block font-medium">{{ paper.fileName }}</span>
+          <span class="text-muted-foreground block text-xs">{{ typeLabel(paper) }}</span>
+        </button>
+        @if (canEdit()) {
+          <ui-button
+            appearance="text"
+            intent="danger"
+            size="sm"
+            icon="x"
+            ariaLabel="Remove file"
+            (click)="remove(paper)"
+          />
+        }
+      </div>
+    }
+
+    @if (uploading()) {
+      <ui-spinner />
+    }
+
+    @if (canEdit()) {
+      <ui-stack gap="1">
+        <ui-button
+          appearance="outlined"
+          size="sm"
+          icon="upload"
+          label="Add photos or PDFs"
+          [disabled]="uploading()"
+          (click)="fileInput.click()"
+        />
+        <span class="text-muted-foreground text-xs">or click here and paste (Ctrl+V), or drop</span>
+      </ui-stack>
+      <input
+        #fileInput
+        type="file"
+        class="hidden"
+        multiple
+        [accept]="accept"
+        (change)="onBrowse($event)"
+      />
+    } @else if (photos().length === 0 && papers().length === 0) {
+      <span class="text-muted-foreground text-sm">None attached.</span>
+    }
+  </div>
+</ui-card>
+
+<ui-lightbox [images]="images()" [(open)]="lightboxOpen" [(activeIndex)]="lightboxIndex" />

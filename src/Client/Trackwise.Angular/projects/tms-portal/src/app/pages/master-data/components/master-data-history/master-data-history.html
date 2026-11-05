@@ -1,0 +1,55 @@
+<ui-card>
+  <ui-stack gap="3" class="p-4">
+    <ui-stack direction="row" gap="2" align="start">
+      <ui-icon name="history" color="secondary" class="mt-1" />
+      <ui-stack gap="0">
+        <ui-typography variant="overline" color="secondary">Change History</ui-typography>
+        <ui-typography variant="caption" color="muted">
+          Every change to this record, field by field, with who made it.
+        </ui-typography>
+      </ui-stack>
+    </ui-stack>
+
+    @if (isLoading()) {
+      <ui-spinner />
+    } @else if (entries().length === 0) {
+      <ui-typography variant="caption" color="muted">No changes recorded yet.</ui-typography>
+    } @else {
+      <ui-stack gap="2">
+        @for (entry of entries(); track entry.id) {
+          <div class="border-border flex flex-col gap-1 border-b pb-2 last:border-b-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <ui-badge
+                [value]="entry.changeType ?? ''"
+                [severity]="severity(entry.changeType)"
+                size="sm"
+                rounded
+              />
+
+              @if (entry.field) {
+                <span class="text-foreground font-mono text-xs font-semibold">
+                  {{ entry.field }}
+                </span>
+              }
+
+              <span class="text-muted-foreground ml-auto text-xs">
+                {{ entry.changedAt | date: "dd/MM/yyyy HH:mm" }}
+                @if (entry.changedBy) {
+                  · {{ entry.changedBy }}
+                }
+              </span>
+            </div>
+
+            @if (entry.field) {
+              <div class="text-muted-foreground flex flex-wrap items-center gap-2 text-sm">
+                <span class="line-through">{{ display(entry.oldValue) }}</span>
+                <ui-icon name="arrow-right" size="sm" />
+                <span class="text-foreground">{{ display(entry.newValue) }}</span>
+              </div>
+            }
+          </div>
+        }
+      </ui-stack>
+    }
+  </ui-stack>
+</ui-card>

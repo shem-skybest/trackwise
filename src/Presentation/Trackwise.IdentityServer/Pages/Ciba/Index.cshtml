@@ -1,0 +1,20 @@
+@page
+@model Trackwise.IdentityServer.Pages.Ciba.IndexModel
+@{
+    ViewData["Title"] = "Login request";
+}
+
+<div class="flex flex-col gap-6 text-center">
+    <div class="flex flex-col items-center gap-1">
+        @if (Model.LoginRequest.Client.LogoUri != null)
+        {
+            <img src="@Model.LoginRequest.Client.LogoUri" alt="" class="mb-2 size-12" />
+        }
+        <h1 class="mb-0 text-2xl font-bold">@Model.LoginRequest.Client.ClientName is requesting your permission</h1>
+        <p class="text-muted-foreground text-sm text-balance">
+            Check that this matches what the application shows:
+            <strong class="text-primary">@Model.LoginRequest.BindingMessage</strong>
+        </p>
+    </div>
+    <a hlm-btn asp-page="/Ciba/Consent" asp-route-id="@Model.LoginRequest.InternalId">Yes, continue</a>
+</div>

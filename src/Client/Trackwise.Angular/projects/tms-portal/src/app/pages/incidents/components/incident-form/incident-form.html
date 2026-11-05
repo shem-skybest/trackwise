@@ -1,0 +1,318 @@
+<ui-stack gap="6">
+  <section>
+    <ui-typography variant="overline" color="secondary" class="mb-2 block">
+      What happened
+    </ui-typography>
+    <ui-grid container spacing="3">
+      <ui-grid [size]="{ xs: 12, md: 4 }">
+        <ui-form-field label="Kind" for="incidentKind" [required]="true">
+          <ui-select-field
+            id="incidentKind"
+            [formField]="field().kind"
+            [options]="kindOptions"
+            optionLabel="label"
+            optionValue="value"
+          />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12, md: 4 }">
+        <ui-form-field label="Severity" for="incidentSeverity" [required]="true">
+          <ui-select-field
+            id="incidentSeverity"
+            [formField]="field().severity"
+            [options]="severityOptions"
+            optionLabel="label"
+            optionValue="value"
+          />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12, md: 4 }">
+        <ui-form-field label="When" for="incidentOccurredAt" [required]="true">
+          <ui-date-field
+            inputId="incidentOccurredAt"
+            [formField]="field().occurredAt"
+            [showTime]="true"
+            [showIcon]="true"
+            dateFormat="yy-mm-dd"
+            [fluid]="true"
+          />
+        </ui-form-field>
+      </ui-grid>
+      @if (isAccident()) {
+        <ui-grid [size]="{ xs: 12, md: 4 }">
+          <ui-form-field
+            label="Type of accident"
+            for="incidentAccidentType"
+            hint="Leave blank if not known yet"
+          >
+            <ui-select-field
+              id="incidentAccidentType"
+              [formField]="field().accidentType"
+              [options]="accidentTypeOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Not known yet"
+              [showClear]="true"
+            />
+          </ui-form-field>
+        </ui-grid>
+      }
+      <ui-grid [size]="{ xs: 12, md: isAccident() ? 8 : 12 }">
+        <ui-form-field
+          label="Where"
+          for="incidentPlace"
+          hint="e.g. Brgy. Bagumbong North, Caloocan"
+        >
+          <ui-text-field id="incidentPlace" [formField]="field().place" />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12 }">
+        <ui-form-field label="What happened" for="incidentSummary" [required]="true">
+          <ui-textarea-field
+            id="incidentSummary"
+            [formField]="field().summary"
+            [rows]="3"
+            placeholder="As the crew or client reported it"
+          />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12 }">
+        <ui-form-field
+          label="To stop it happening again"
+          for="incidentPrevention"
+          hint="The weekly report's improvement and future plans - optional"
+        >
+          <ui-textarea-field
+            id="incidentPrevention"
+            [formField]="field().prevention"
+            [rows]="2"
+            placeholder="e.g. Check P.O. validity before dispatch and again before the outlet"
+          />
+        </ui-form-field>
+      </ui-grid>
+    </ui-grid>
+  </section>
+
+  <section>
+    <ui-typography variant="overline" color="secondary" class="mb-2 block">
+      Who and what
+    </ui-typography>
+    @if (tripId()) {
+      <ui-stack direction="row" gap="2" align="center" class="mb-3 text-sm">
+        <span>On</span>
+        <a [routerLink]="['/trips', tripId(), 'report']" class="font-semibold hover:underline">
+          Trip #{{ tripNumber() }}
+        </a>
+        <ui-button
+          appearance="text"
+          size="sm"
+          icon="x"
+          label="Not on a trip"
+          (click)="clearTrip()"
+        />
+      </ui-stack>
+    }
+    <ui-grid container spacing="3">
+      <ui-grid [size]="{ xs: 12, md: 4 }">
+        <ui-form-field
+          label="Client"
+          for="incidentCustomer"
+          hint="Taken from the trip when left blank"
+        >
+          <app-search-customer id="incidentCustomer" [formField]="field().customer" />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12, md: 4 }">
+        <ui-form-field label="Truck" for="incidentTruck">
+          <app-search-truck id="incidentTruck" [formField]="field().truck" />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12, md: 4 }">
+        <ui-form-field label="Driver" for="incidentDriver">
+          <app-search-employee
+            id="incidentDriver"
+            [formField]="field().driver"
+            [roles]="drivingRoles"
+            placeholder="Type driver name"
+          />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12, md: 4 }">
+        <ui-form-field label="Helper" for="incidentHelper">
+          <app-search-helper id="incidentHelper" [formField]="field().helper" />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12, md: 4 }">
+        <ui-form-field label="Second helper" for="incidentSecondHelper">
+          <app-search-helper id="incidentSecondHelper" [formField]="field().secondHelper" />
+        </ui-form-field>
+      </ui-grid>
+    </ui-grid>
+  </section>
+
+  @if (isAccident()) {
+    <section>
+      <ui-typography variant="overline" color="secondary" class="mb-2 block">
+        Injuries and damage
+      </ui-typography>
+      <ui-grid container spacing="3">
+        <ui-grid [size]="{ xs: 12, md: 4 }">
+          <ui-stack direction="row" gap="2" align="center" class="pt-6">
+            <ui-checkbox-field [formField]="field().anyInjuries" inputId="incidentInjuries" />
+            <label for="incidentInjuries">Someone was hurt</label>
+          </ui-stack>
+        </ui-grid>
+        @if (field().anyInjuries().value()) {
+          <ui-grid [size]="{ xs: 12, md: 2 }">
+            <ui-form-field label="How many" for="incidentInjuryCount" [required]="true">
+              <ui-number-field
+                id="incidentInjuryCount"
+                [formField]="field().numberOfInjuries"
+                [fluid]="true"
+              />
+            </ui-form-field>
+          </ui-grid>
+          <ui-grid [size]="{ xs: 12, md: 6 }">
+            <ui-form-field label="Injuries" for="incidentInjuryDescription">
+              <ui-text-field
+                id="incidentInjuryDescription"
+                [formField]="field().injuryDescription"
+              />
+            </ui-form-field>
+          </ui-grid>
+        }
+        <ui-grid [size]="{ xs: 12, md: 4 }">
+          <ui-stack direction="row" gap="2" align="center" class="pt-6">
+            <ui-checkbox-field
+              [formField]="field().vehicleDamaged"
+              inputId="incidentVehicleDamaged"
+            />
+            <label for="incidentVehicleDamaged">Our truck was damaged</label>
+          </ui-stack>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 12, md: 4 }">
+          <ui-stack direction="row" gap="2" align="center" class="pt-6">
+            <ui-checkbox-field [formField]="field().vehicleDrivable" inputId="incidentDrivable" />
+            <label for="incidentDrivable">Still drivable</label>
+          </ui-stack>
+        </ui-grid>
+        @if (field().vehicleDamaged().value()) {
+          <ui-grid [size]="{ xs: 12 }">
+            <ui-form-field label="Damage" for="incidentDamage" hint="e.g. broken windshield">
+              <ui-text-field id="incidentDamage" [formField]="field().vehicleDamageDescription" />
+            </ui-form-field>
+          </ui-grid>
+        }
+      </ui-grid>
+    </section>
+  }
+
+  <section>
+    <ui-typography variant="overline" color="secondary" class="mb-2 block">Reports</ui-typography>
+    <ui-grid container spacing="3">
+      <ui-grid [size]="{ xs: 12, md: 4 }">
+        <ui-stack direction="row" gap="2" align="center" class="pt-6">
+          <ui-checkbox-field [formField]="field().policeReportFiled" inputId="incidentPolice" />
+          <label for="incidentPolice">Reported to the police</label>
+        </ui-stack>
+      </ui-grid>
+      @if (field().policeReportFiled().value()) {
+        <ui-grid [size]="{ xs: 12, md: 4 }">
+          <ui-form-field label="Police station" for="incidentPoliceStation">
+            <ui-text-field id="incidentPoliceStation" [formField]="field().policeStation" />
+          </ui-form-field>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 12, md: 4 }">
+          <ui-form-field
+            label="Police report no."
+            for="incidentPoliceNumber"
+            hint="Fill in when it comes"
+          >
+            <ui-text-field id="incidentPoliceNumber" [formField]="field().policeReportNumber" />
+          </ui-form-field>
+        </ui-grid>
+      }
+      <ui-grid [size]="{ xs: 12, md: 4 }">
+        <ui-form-field label="Barangay blotter no." for="incidentBlotter">
+          <ui-text-field id="incidentBlotter" [formField]="field().barangayBlotterNumber" />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12, md: 4 }">
+        <ui-form-field label="Insurance claim no." for="incidentClaim">
+          <ui-text-field id="incidentClaim" [formField]="field().insuranceClaimNumber" />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12, md: 4 }">
+        <ui-form-field label="Insurer told on" for="incidentInsurerDate">
+          <ui-date-field
+            inputId="incidentInsurerDate"
+            [formField]="field().insuranceNotifiedOn"
+            [showIcon]="true"
+          />
+        </ui-form-field>
+      </ui-grid>
+    </ui-grid>
+  </section>
+
+  <section>
+    <ui-typography variant="overline" color="secondary" class="mb-2 block">Money</ui-typography>
+    <ui-grid container spacing="3">
+      @if (isAccident()) {
+        <ui-grid [size]="{ xs: 12, md: 4 }">
+          <ui-form-field
+            label="Estimated damage"
+            for="incidentEstimate"
+            hint="Until the repair is linked"
+          >
+            <ui-number-field
+              id="incidentEstimate"
+              [formField]="field().estimatedDamageCost"
+              [minFractionDigits]="2"
+              [maxFractionDigits]="2"
+              [fluid]="true"
+            />
+          </ui-form-field>
+        </ui-grid>
+      }
+      <ui-grid [size]="{ xs: 12, md: 4 }">
+        <ui-form-field
+          label="Paid to others"
+          for="incidentThirdParty"
+          hint="e.g. a property owner, a client claim"
+        >
+          <ui-number-field
+            id="incidentThirdParty"
+            [formField]="field().thirdPartyCompensation"
+            [minFractionDigits]="2"
+            [maxFractionDigits]="2"
+            [fluid]="true"
+          />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12, md: 4 }">
+        <ui-form-field
+          label="Charged to crew"
+          for="incidentCrewCharge"
+          hint="Once the investigation decides"
+        >
+          <ui-number-field
+            id="incidentCrewCharge"
+            [formField]="field().crewChargeAmount"
+            [minFractionDigits]="2"
+            [maxFractionDigits]="2"
+            [fluid]="true"
+          />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12 }">
+        <ui-form-field
+          label="Who pays it and how"
+          for="incidentCrewChargeNote"
+          hint="e.g. Driver, salary deduction over 4 cut-offs"
+        >
+          <ui-text-field id="incidentCrewChargeNote" [formField]="field().crewChargeNote" />
+        </ui-form-field>
+      </ui-grid>
+    </ui-grid>
+  </section>
+</ui-stack>

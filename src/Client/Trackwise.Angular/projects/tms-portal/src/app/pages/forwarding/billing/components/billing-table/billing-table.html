@@ -1,0 +1,74 @@
+<ui-card>
+  <ui-data-container
+    [loading]="isLoading()"
+    [error]="error()"
+    [isEmpty]="isEmpty()"
+    (retry)="onRetry()"
+  >
+    <ui-data-table
+      [value]="data()"
+      [lazy]="true"
+      [totalRecords]="totalRecords()"
+      [rows]="pageSize()"
+      [first]="first()"
+      (lazyLoad)="onLazyLoad($event)"
+    >
+      <ng-template #header>
+        <tr>
+          <th uiSortHeader="Number">Invoice #</th>
+          <th uiSortHeader="CustomerName">Customer</th>
+          <th uiSortHeader="Status">Status</th>
+          <th uiSortHeader="Total">Total</th>
+          <th uiSortHeader="DueDate">Due Date</th>
+          <th uiSortHeader="CreatedDate">Created Date</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-invoice>
+        <tr
+          class="hover:bg-muted/50 cursor-pointer transition-colors"
+          (click)="navigateToInvoice(invoice)"
+        >
+          <!-- Invoice Number -->
+          <td class="text-primary font-medium">
+            {{ invoice.number ? "#" + invoice.number : (invoice.id ?? "—") }}
+          </td>
+
+          <!-- Customer -->
+          <td>
+            {{ invoice.customer?.name ?? invoice.customer?.companyName ?? "—" }}
+          </td>
+
+          <!-- Status Badge -->
+          <td>
+            <span
+              class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+              [class]="statusBadgeClass(invoice.status)"
+            >
+              {{ invoiceStatusLabel(invoice.status) }}
+            </span>
+          </td>
+
+          <!-- Money Total -->
+          <td class="font-medium">
+            @if ((invoice.total?.amount ?? null) !== null) {
+              {{ invoice.total.amount | currency: invoice.total.currency ?? "USD" }}
+            } @else {
+              —
+            }
+          </td>
+
+          <!-- Due Date -->
+          <td>
+            {{ invoice.dueDate ? (invoice.dueDate | dateFormat) : "—" }}
+          </td>
+
+          <!-- Created Date -->
+          <td>
+            {{ invoice.createdDate ? (invoice.createdDate | dateFormat) : "—" }}
+          </td>
+        </tr>
+      </ng-template>
+    </ui-data-table>
+  </ui-data-container>
+</ui-card>

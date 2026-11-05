@@ -1,0 +1,375 @@
+<ui-page-header
+  [title]="
+    incident()
+      ? incident()!.caseNumber + ' · ' + kindLabel(incident()!.kind)
+      : 'Incident'
+  "
+  backLink="/incidents"
+>
+  @if (incident() && canManage) {
+    @if (editable()) {
+      <ui-button
+        appearance="outlined"
+        icon="pencil"
+        label="Edit"
+        [disabled]="isBusy()"
+        [routerLink]="['/incidents', id, 'edit']"
+      />
+      @if (status() === "open") {
+        <ui-button
+          appearance="outlined"
+          icon="search"
+          label="Put under review"
+          [disabled]="isBusy()"
+          (click)="ask('review')"
+        />
+      }
+      <ui-button icon="check" label="Resolve" [disabled]="isBusy()" (click)="ask('resolve')" />
+      @if (deletable()) {
+        <ui-button
+          intent="danger"
+          appearance="outlined"
+          icon="trash"
+          label="Delete"
+          [disabled]="isBusy()"
+          (click)="remove()"
+        />
+      }
+    } @else if (status() === "resolved") {
+      <ui-button
+        appearance="outlined"
+        icon="undo"
+        label="Reopen"
+        [disabled]="isBusy()"
+        (click)="ask('reopen')"
+      />
+      <ui-button icon="lock" label="Close" [disabled]="isBusy()" (click)="close()" />
+    }
+  }
+</ui-page-header>
+
+@if (isLoading()) {
+  <ui-stack align="center" justify="center" class="py-16 text-center"><ui-spinner /></ui-stack>
+} @else if (incident(); as incident) {
+  <ui-stack gap="4">
+    <ui-card>
+      <ui-grid container spacing="4">
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item
+            label="When"
+            [value]="incident.occurredAt | date: 'EEE d MMM yyyy, HH:mm'"
+          />
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Severity">
+            <ui-badge
+              [value]="severityLabel(incident.severity)"
+              [severity]="severityIntent(incident.severity)"
+              size="sm"
+            />
+          </ui-info-item>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Where" [value]="incident.place ?? '-'" />
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Status">
+            <ui-badge
+              [value]="statusLabel(incident.status)"
+              [severity]="statusIntent(incident.status)"
+              size="sm"
+              rounded
+            />
+          </ui-info-item>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 12 }">
+          <ui-info-item label="What happened">
+            <p class="whitespace-pre-line">{{ incident.summary }}</p>
+          </ui-info-item>
+        </ui-grid>
+      </ui-grid>
+    </ui-card>
+
+    <ui-card>
+      <ui-typography variant="overline" color="secondary" class="mb-3 block">
+        Who and what
+      </ui-typography>
+      <ui-grid container spacing="4">
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Trip">
+            @if (incident.tripId) {
+              <a
+                [routerLink]="['/trips', incident.tripId, 'report']"
+                class="font-medium hover:underline"
+              >
+                Trip #{{ incident.tripNumber }}
+              </a>
+            } @else {
+              -
+            }
+          </ui-info-item>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Client" [value]="incident.customerName ?? '-'" />
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Truck" [value]="incident.truckNumber ?? '-'" />
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Crew" [value]="crew()" />
+        </ui-grid>
+      </ui-grid>
+    </ui-card>
+
+    @if (isAccident()) {
+      <ui-card>
+        <ui-typography variant="overline" color="secondary" class="mb-3 block">
+          The accident
+        </ui-typography>
+        <ui-grid container spacing="4">
+          <ui-grid [size]="{ xs: 6, md: 3 }">
+            <ui-info-item
+              label="Type"
+              [value]="accidentTypeLabel(incident.accidentType) || 'Not known yet'"
+            />
+          </ui-grid>
+          <ui-grid [size]="{ xs: 6, md: 3 }">
+            <ui-info-item label="Injuries">
+              @if (incident.anyInjuries) {
+                {{ incident.numberOfInjuries }} hurt
+                @if (incident.injuryDescription) {
+                  - {{ incident.injuryDescription }}
+                }
+              } @else {
+                None
+              }
+            </ui-info-item>
+          </ui-grid>
+          <ui-grid [size]="{ xs: 6, md: 3 }">
+            <ui-info-item label="Truck damage">
+              @if (incident.vehicleDamaged) {
+                {{ incident.vehicleDamageDescription ?? "Damaged" }}
+              } @else {
+                None
+              }
+            </ui-info-item>
+          </ui-grid>
+          <ui-grid [size]="{ xs: 6, md: 3 }">
+            <ui-info-item label="Drivable" [value]="incident.vehicleDrivable ? 'Yes' : 'No'" />
+          </ui-grid>
+        </ui-grid>
+      </ui-card>
+    }
+
+    <ui-card>
+      <ui-typography variant="overline" color="secondary" class="mb-3 block">Reports</ui-typography>
+      <ui-grid container spacing="4">
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Police">
+            @if (incident.policeReportFiled) {
+              {{ incident.policeStation ?? "Reported" }}
+              @if (incident.policeReportNumber) {
+                · {{ incident.policeReportNumber }}
+              } @else {
+                <span class="text-muted-foreground">· report no. to follow</span>
+              }
+            } @else {
+              Not reported
+            }
+          </ui-info-item>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Barangay blotter" [value]="incident.barangayBlotterNumber ?? '-'" />
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Insurance claim" [value]="incident.insuranceClaimNumber ?? '-'" />
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item
+            label="Insurer told"
+            [value]="
+              incident.insuranceNotifiedOn
+                ? (incident.insuranceNotifiedOn | date: 'd MMM yyyy')
+                : '-'
+            "
+          />
+        </ui-grid>
+      </ui-grid>
+    </ui-card>
+
+    <ui-card>
+      <ui-stack direction="row" gap="2" align="center" class="mb-3">
+        <ui-typography variant="overline" color="secondary">Money</ui-typography>
+        @if (canManage && incident.status !== "closed") {
+          <ui-button
+            class="ml-auto"
+            appearance="text"
+            size="sm"
+            icon="wrench"
+            label="Link repairs"
+            (click)="repairsDialogOpen.set(true)"
+          />
+        }
+      </ui-stack>
+      <ui-grid container spacing="4">
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Repairs" [value]="repairCost() | currencyFormat" />
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item
+            label="Paid to others"
+            [value]="incident.thirdPartyCompensation ?? 0 | currencyFormat"
+          />
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Total cost">
+            <span class="font-semibold">{{ incident.totalCost | currencyFormat }}</span>
+            @if (isAccident() && incident.estimatedDamageCost && !incident.repairs?.length) {
+              <span class="text-muted-foreground ml-1 text-xs">
+                (estimate {{ incident.estimatedDamageCost | currencyFormat }})
+              </span>
+            }
+          </ui-info-item>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Charged to crew">
+            {{ incident.crewChargeAmount ? (incident.crewChargeAmount | currencyFormat) : "-" }}
+            @if (incident.crewChargeNote) {
+              <div class="text-muted-foreground text-xs">{{ incident.crewChargeNote }}</div>
+            }
+          </ui-info-item>
+        </ui-grid>
+      </ui-grid>
+      @if (incident.repairs?.length) {
+        <ui-stack gap="1" class="mt-4 text-sm">
+          @for (repair of incident.repairs; track repair.id) {
+            <ui-stack direction="row" gap="2" align="center" class="border-default border-t pt-1">
+              <span class="whitespace-nowrap">{{ repair.serviceDate | date: "d MMM yyyy" }}</span>
+              @if (repair.requisitionNumber) {
+                <a
+                  [routerLink]="['/maintenance/requisitions', repair.requisitionNumber]"
+                  class="text-muted-foreground hover:underline"
+                >
+                  {{ repair.requisitionNumber }}
+                </a>
+              }
+              <span class="min-w-0 flex-1 truncate">
+                {{ repair.description ?? repair.vendorName }}
+              </span>
+              <span class="whitespace-nowrap">{{ repair.totalCost | currencyFormat }}</span>
+            </ui-stack>
+          }
+        </ui-stack>
+      }
+    </ui-card>
+
+    @if (incident.rescues?.length) {
+      <ui-card>
+        <ui-typography variant="overline" color="secondary" class="mb-3 block">
+          Rescue
+        </ui-typography>
+        @for (rescue of incident.rescues; track rescue.id) {
+          <ui-stack gap="1" class="text-sm">
+            <div>
+              <span class="font-semibold">{{ rescue.truckNumber }}</span>
+              took over {{ rescue.stopIds?.length }} drop{{
+                rescue.stopIds?.length === 1 ? "" : "s"
+              }}
+              of
+              <a [routerLink]="['/trips', rescue.tripId, 'report']" class="hover:underline">
+                Trip #{{ rescue.tripNumber }}
+              </a>
+              at {{ rescue.transferredAt | date: "HH:mm"
+              }}{{ rescue.place ? ", " + rescue.place : "" }}
+            </div>
+            <div class="text-muted-foreground">{{ rescueCrew(rescue) }}</div>
+          </ui-stack>
+        }
+      </ui-card>
+    }
+
+    <app-incident-attachments
+      [incident]="incident"
+      [canEdit]="canManage && status() !== 'closed'"
+      (changed)="onSaved($event)"
+    />
+
+    @if (
+      incident.reviewedAt ||
+      incident.correctiveAction ||
+      incident.prevention ||
+      incident.reopenReason ||
+      incident.closedAt
+    ) {
+      <ui-card>
+        <ui-typography variant="overline" color="secondary" class="mb-3 block">
+          Follow-up
+        </ui-typography>
+        <ui-stack gap="3" class="text-sm">
+          @if (incident.reviewedAt) {
+            <div>
+              <div class="text-muted-foreground">
+                Review started {{ incident.reviewedAt | date: "d MMM yyyy" }}
+                @if (incident.reviewedBy) {
+                  by {{ incident.reviewedBy }}
+                }
+              </div>
+              @if (incident.reviewNotes) {
+                <p class="whitespace-pre-line">{{ incident.reviewNotes }}</p>
+              }
+            </div>
+          }
+          @if (incident.reopenReason) {
+            <div>
+              <div class="text-muted-foreground">Reopened</div>
+              <p>{{ incident.reopenReason }}</p>
+            </div>
+          }
+          @if (incident.correctiveAction) {
+            <div>
+              <div class="text-muted-foreground">
+                Corrective action
+                @if (incident.resolvedAt) {
+                  - resolved {{ incident.resolvedAt | date: "d MMM yyyy" }}
+                  @if (incident.resolvedBy) {
+                    by {{ incident.resolvedBy }}
+                  }
+                }
+              </div>
+              <p class="whitespace-pre-line">{{ incident.correctiveAction }}</p>
+            </div>
+          }
+          @if (incident.prevention) {
+            <div>
+              <div class="text-muted-foreground">To stop it happening again</div>
+              <p class="whitespace-pre-line">{{ incident.prevention }}</p>
+            </div>
+          }
+          @if (incident.closedAt) {
+            <div class="text-muted-foreground">
+              Closed {{ incident.closedAt | date: "d MMM yyyy" }}
+              @if (incident.closedBy) {
+                by {{ incident.closedBy }}
+              }
+            </div>
+          }
+        </ui-stack>
+      </ui-card>
+    }
+  </ui-stack>
+
+  <app-incident-note-dialog
+    [header]="note().header"
+    [label]="note().label"
+    [hint]="note().hint"
+    [confirmLabel]="note().confirm"
+    [isRequired]="note().required"
+    [(open)]="noteDialogOpen"
+    (confirmed)="onNote($event)"
+  />
+  <app-incident-repairs-dialog
+    [incident]="incident"
+    [(open)]="repairsDialogOpen"
+    (saved)="onSaved($event)"
+  />
+}

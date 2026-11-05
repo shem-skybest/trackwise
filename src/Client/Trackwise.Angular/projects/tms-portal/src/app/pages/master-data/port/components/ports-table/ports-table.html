@@ -1,0 +1,114 @@
+<ui-card>
+  <ui-data-container
+    [loading]="isLoading()"
+    [error]="error()"
+    [isEmpty]="isEmpty()"
+    skeletonVariant="table"
+    [skeletonRows]="10"
+    emptyTitle="No ports yet"
+    emptyMessage="Add the ports, depots and terminals your work moves through."
+    emptyActionLabel="Add Port"
+    (retry)="onRetry()"
+    (emptyAction)="onAddPort()"
+  >
+    <ui-data-table
+      [value]="data()"
+      dataKey="id"
+      [scrollable]="true"
+      [lazy]="true"
+      [paginator]="true"
+      [showCurrentPageReport]="true"
+      [rows]="pageSize()"
+      [first]="first()"
+      [totalRecords]="totalRecords()"
+      [loading]="isLoading()"
+      [rowsPerPageOptions]="[10, 25, 50, 100]"
+      size="small"
+      (lazyLoad)="onLazyLoad($event)"
+    >
+      <ng-template #header>
+        <tr>
+          <th uiSortHeader="Code">Code</th>
+          <th uiSortHeader="Name">Name</th>
+          <th uiSortHeader="Type">Type</th>
+          <th uiSortHeader="CountryCode">Country</th>
+          <th>Branch</th>
+          <th uiSortHeader="IsActive">Status</th>
+          <th uiSortHeader="UpdatedAt">Last changed</th>
+          <th></th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-port>
+        <tr
+          class="hover:bg-hover transition-colors duration-150"
+          [class.cursor-pointer]="!port.deletedAt"
+          [class.opacity-60]="port.deletedAt"
+          (click)="navigateToPort(port)"
+        >
+          <td>
+            <span class="font-mono text-sm font-semibold">{{ port.code }}</span>
+          </td>
+
+          <td>
+            @if (port.deletedAt) {
+              <span class="text-foreground max-w-64 truncate font-bold line-through">
+                {{ port.name }}
+              </span>
+            } @else {
+              <a
+                [routerLink]="['/master-data/ports', port.id]"
+                class="text-foreground max-w-64 truncate font-bold hover:underline"
+                (click)="$event.stopPropagation()"
+              >
+                {{ port.name }}
+              </a>
+            }
+          </td>
+
+          <td class="text-muted-foreground">{{ typeLabel(port.type) }}</td>
+
+          <td class="text-muted-foreground">{{ port.countryCode || "—" }}</td>
+
+          <td class="text-muted-foreground">
+            @if (port.branchName) {
+              {{ port.branchName }}
+            } @else {
+              <span class="text-xs italic">Every branch</span>
+            }
+          </td>
+
+          <td>
+            @if (port.deletedAt) {
+              <ui-badge value="Deleted" severity="danger" size="sm" rounded />
+            } @else if (port.isActive) {
+              <ui-badge value="Active" severity="success" size="sm" rounded />
+            } @else {
+              <ui-badge value="Inactive" severity="secondary" size="sm" rounded />
+            }
+          </td>
+
+          <td class="text-muted-foreground text-sm">
+            {{ port.updatedAt || port.createdAt | date: "dd/MM/yyyy HH:mm" }}
+            @if (port.updatedBy || port.createdBy) {
+              <span class="block text-xs">{{ port.updatedBy || port.createdBy }}</span>
+            }
+          </td>
+
+          <td class="text-right">
+            @if (port.deletedAt && canManage()) {
+              <ui-button
+                type="button"
+                appearance="text"
+                size="sm"
+                icon="history"
+                label="Restore"
+                (click)="onRestore(port, $event)"
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </ui-data-table>
+  </ui-data-container>
+</ui-card>

@@ -1,0 +1,134 @@
+<ui-dialog
+  [header]="header()"
+  [(open)]="visible"
+  [modal]="true"
+  width="640px"
+  [closable]="true"
+  [draggable]="false"
+  (opened)="onOpened()"
+>
+  <form [formRoot]="form">
+    <ui-typography variant="body-sm" color="muted" class="mb-4">
+      Enter the times as reported, not when you're typing them.
+    </ui-typography>
+
+    <ui-grid container spacing="4">
+      <ui-grid [size]="{ xs: 12, md: 7 }">
+        <ui-form-field
+          [label]="isDeparture() ? 'Departed at' : 'Arrived at'"
+          for="stopEventAt"
+          [required]="true"
+        >
+          <ui-date-field
+            [formField]="form.at"
+            inputId="stopEventAt"
+            [showTime]="true"
+            [showIcon]="true"
+          />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12, md: 5 }">
+        <ui-form-field label="Temperature (°C)" for="stopEventTemp" hint="Reefer reading, if sent">
+          <ui-number-field id="stopEventTemp" [formField]="form.temperature" />
+        </ui-form-field>
+      </ui-grid>
+
+      @if (isDeparture()) {
+        <ui-grid [size]="{ xs: 12, md: 6 }">
+          <ui-form-field [label]="handlingLabel() + ' started'" for="handlingStart">
+            <ui-date-field
+              [formField]="form.handlingStartedAt"
+              inputId="handlingStart"
+              [showTime]="true"
+              [showIcon]="true"
+            />
+          </ui-form-field>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 12, md: 6 }">
+          <ui-form-field [label]="handlingLabel() + ' finished'" for="handlingFinish">
+            <ui-date-field
+              [formField]="form.handlingFinishedAt"
+              inputId="handlingFinish"
+              [showTime]="true"
+              [showIcon]="true"
+            />
+          </ui-form-field>
+        </ui-grid>
+      }
+
+      @if (isDeparture() && isDrop()) {
+        <ui-grid [size]="{ xs: 12 }">
+          <ui-form-field label="Outcome" for="outcome" [required]="true">
+            <ui-select-field
+              id="outcome"
+              [formField]="form.outcome"
+              [options]="outcomeOptions"
+              optionLabel="label"
+              optionValue="value"
+            />
+          </ui-form-field>
+        </ui-grid>
+
+        @if (isPartialOutcome()) {
+          <ui-grid [size]="{ xs: 6, md: 3 }">
+            <ui-form-field
+              label="Boxes returned"
+              for="returnedBoxes"
+              [hint]="(load()?.plannedBoxes ?? null) !== null ? 'of ' + load()?.plannedBoxes : ''"
+            >
+              <ui-number-field id="returnedBoxes" [formField]="form.returnedBoxes" />
+            </ui-form-field>
+          </ui-grid>
+          <ui-grid [size]="{ xs: 6, md: 3 }">
+            <ui-form-field
+              label="Bags returned"
+              for="returnedBags"
+              [hint]="(load()?.plannedBags ?? null) !== null ? 'of ' + load()?.plannedBags : ''"
+            >
+              <ui-number-field id="returnedBags" [formField]="form.returnedBags" />
+            </ui-form-field>
+          </ui-grid>
+          <ui-grid [size]="{ xs: 12, md: 6 }">
+            <ui-form-field label="Why it came back" for="returnReason">
+              <ui-select-field
+                id="returnReason"
+                [formField]="form.returnReason"
+                [options]="reasonOptions"
+                optionLabel="label"
+                optionValue="value"
+                [showClear]="true"
+              />
+            </ui-form-field>
+          </ui-grid>
+        }
+
+        <ui-grid [size]="{ xs: 12 }">
+          <ui-form-field label="What happened" for="outcomeNote">
+            <ui-textarea-field
+              id="outcomeNote"
+              [formField]="form.note"
+              [rows]="2"
+              placeholder="e.g. 1 box expired PO; store refused"
+            />
+          </ui-form-field>
+        </ui-grid>
+      }
+
+      @if (!isDrop() && visitSize() > 1) {
+        <ui-grid [size]="{ xs: 12 }">
+          <ui-stack direction="row" align="center" gap="2">
+            <ui-checkbox-field [formField]="form.includeSameVisit" inputId="includeSameVisit" />
+            <label for="includeSameVisit">
+              Apply to all {{ visitSize() }} pickups at this warehouse (one visit)
+            </label>
+          </ui-stack>
+        </ui-grid>
+      }
+    </ui-grid>
+
+    <ui-stack direction="row" justify="end" gap="2" class="mt-6">
+      <ui-button appearance="outlined" type="button" label="Cancel" (click)="visible.set(false)" />
+      <ui-button type="submit" label="Save" icon="check" [loading]="form().submitting()" />
+    </ui-stack>
+  </form>
+</ui-dialog>

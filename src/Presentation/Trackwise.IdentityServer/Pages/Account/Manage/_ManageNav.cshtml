@@ -1,0 +1,19 @@
+﻿@using Trackwise.IdentityServer.Pages.Account.Manage
+@using Trackwise.Domain.Entities
+@inject SignInManager<User> SignInManager
+@{
+    var hasExternalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any();
+    // ManageNavPages.*NavClass adds "active" to the current page's link.
+    const string item = "justify-start md:w-full [&.active]:bg-muted [&.active]:text-foreground";
+}
+<ul class="flex gap-1 overflow-x-auto md:flex-col">
+    <li><a hlm-btn variant="ghost" class="@item @ManageNavPages.IndexNavClass(ViewContext)" id="profile" asp-page="/Account/Manage/Profile/Index">Profile</a></li>
+    <li><a hlm-btn variant="ghost" class="@item @ManageNavPages.EmailNavClass(ViewContext)" id="email" asp-page="/Account/Manage/Email/Index">Email</a></li>
+    <li><a hlm-btn variant="ghost" class="@item @ManageNavPages.ChangePasswordNavClass(ViewContext)" id="change-password" asp-page="/Account/Manage/ChangePassword/Index">Password</a></li>
+    @if (hasExternalLogins)
+    {
+        <li id="external-logins"><a hlm-btn variant="ghost" id="external-login" class="@item @ManageNavPages.ExternalLoginsNavClass(ViewContext)" asp-page="/Account/Manage/ExternalLogins">External logins</a></li>
+    }
+    <li><a hlm-btn variant="ghost" class="@item @ManageNavPages.TwoFactorAuthenticationNavClass(ViewContext)" id="two-factor" asp-page="/Account/Manage/TwoFactorAuthentication">Two-factor authentication</a></li>
+    <li><a hlm-btn variant="ghost" class="@item @ManageNavPages.PrivacyNavClass(ViewContext)" id="privacy" asp-page="/Account/Manage/Privacy/Index">Privacy &amp; data</a></li>
+</ul>

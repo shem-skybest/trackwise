@@ -1,0 +1,14 @@
+using Trackwise.Application.Abstractions;
+using Trackwise.Shared.Models;
+
+namespace Trackwise.Application.Modules.Financial.Invoices.Commands;
+
+/// <summary>
+/// Sends an invoice to a customer via email with a payment link.
+/// </summary>
+public record SendInvoiceCommand : ICommand<Result>
+{
+    public required Guid InvoiceId { get; set; }
+    public required string RecipientEmail { get; set; }
+    public string? PersonalMessage { get; set; }
+}

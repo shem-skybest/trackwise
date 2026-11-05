@@ -1,0 +1,95 @@
+<ui-card>
+  <ui-data-container
+    [loading]="isLoading()"
+    [error]="error()"
+    [isEmpty]="isEmpty()"
+    skeletonVariant="table"
+    [skeletonRows]="10"
+    emptyTitle="No quotations yet"
+    emptyMessage="Create your first quotation to start pricing customer shipments."
+    emptyActionLabel="Add Quotation"
+    (retry)="onRetry()"
+    (emptyAction)="onAddQuotation()"
+  >
+    <ui-data-table
+      [value]="data()"
+      dataKey="id"
+      [scrollable]="true"
+      [lazy]="true"
+      [paginator]="true"
+      [showCurrentPageReport]="true"
+      [rows]="pageSize()"
+      [first]="first()"
+      [totalRecords]="totalRecords()"
+      [loading]="isLoading()"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      (lazyLoad)="onLazyLoad($event)"
+    >
+      <ng-template #header>
+        <tr>
+          <th uiSortHeader="ReferenceNumber">Reference</th>
+          <th uiSortHeader="CustomerName">Customer</th>
+          <th>Freight Mode</th>
+          <th>Lines</th>
+          <th uiSortHeader="Currency">Currency</th>
+          <th>Total Selling</th>
+          <th uiSortHeader="Status">Status</th>
+          <th uiSortHeader="CreatedAt">Created</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-quotation>
+        <tr
+          class="hover:bg-hover cursor-pointer transition-colors duration-150"
+          (click)="navigateToQuotation(quotation)"
+        >
+          <!-- ReferenceNumber -->
+          <td class="text-muted-foreground">
+            {{ quotation.referenceNumber }}
+          </td>
+          <!-- Customer -->
+          <td>
+            <a
+              [routerLink]="['/quotations', quotation.id]"
+              class="text-foreground max-w-64 truncate font-bold hover:underline"
+              (click)="$event.stopPropagation()"
+            >
+              {{ quotation.customerName }}
+            </a>
+          </td>
+          <!-- Freigth Mode -->
+          <td class="text-muted-foreground capitalize">{{ quotation.freightMode }}</td>
+          <!-- Lines -->
+          <td class="text-muted-foreground">{{ quotation.lineCount }}</td>
+
+          <!-- Currency -->
+          <td>
+            <span class="font-mono text-sm font-semibold">
+              {{ quotation.currency | uppercase }}
+            </span>
+          </td>
+
+          <!-- Total Selling -->
+          <td class="font-mono text-sm">
+            {{ quotation.totalSellingAmount | number: "1.2-2" }}
+          </td>
+
+          <!-- Status -->
+          <td>
+            <span
+              class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
+              [class]="statusBadgeClass(quotation.status)"
+            >
+              {{ formatStatus(quotation.status) }}
+            </span>
+          </td>
+
+          <!-- Created -->
+          <td class="text-muted-foreground">
+            {{ quotation.createdAt | dateFormat }}
+          </td>
+        </tr>
+      </ng-template>
+    </ui-data-table>
+  </ui-data-container>
+</ui-card>

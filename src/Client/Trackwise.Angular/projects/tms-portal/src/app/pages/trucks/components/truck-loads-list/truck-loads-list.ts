@@ -1,0 +1,26 @@
+import { Component, input } from "@angular/core";
+import { RouterLink } from "@angular/router";
+import type { LoadDto } from "@trackwise/shared/api";
+import { AddressPipe, CurrencyFormatPipe } from "@trackwise/shared/pipes";
+import { Icon, UiButton, UiDataTable, UiTooltip } from "@trackwise/shared/ui";
+import { LoadStatusTag, LoadTypeTag } from "@/shared/components";
+
+@Component({
+  selector: "app-truck-loads-list",
+  templateUrl: "./truck-loads-list.html",
+  imports: [
+    AddressPipe,
+    CurrencyFormatPipe,
+    Icon,
+    LoadStatusTag,
+    LoadTypeTag,
+    RouterLink,
+    UiButton,
+    UiDataTable,
+    UiTooltip,
+  ],
+})
+export class TruckLoadsList {
+  public readonly loads = input<LoadDto[]>([]);
+  public readonly isLoading = input(false);
+}

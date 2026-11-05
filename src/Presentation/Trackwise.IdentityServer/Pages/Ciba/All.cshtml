@@ -1,0 +1,46 @@
+@page
+@model Trackwise.IdentityServer.Pages.Ciba.AllModel
+@{
+    Layout = "_AppLayout";
+    ViewData["Title"] = "Pending login requests";
+}
+
+<div hlm-card>
+    <div hlm-card-header>
+        <div hlm-card-title>Pending backchannel login requests</div>
+    </div>
+    <div hlm-card-content>
+        @if (Model.Logins?.Any() == true)
+        {
+            <div hlm-table-container>
+                <table hlm-table>
+                    <thead hlm-thead>
+                        <tr hlm-tr>
+                            <th hlm-th>Id</th>
+                            <th hlm-th>Client Id</th>
+                            <th hlm-th>Binding message</th>
+                            <th hlm-th></th>
+                        </tr>
+                    </thead>
+                    <tbody hlm-tbody>
+                        @foreach (var login in Model.Logins)
+                        {
+                            <tr hlm-tr>
+                                <td hlm-td>@login.InternalId</td>
+                                <td hlm-td>@login.Client.ClientId</td>
+                                <td hlm-td>@login.BindingMessage</td>
+                                <td hlm-td class="text-end">
+                                    <a hlm-btn size="sm" asp-page="Consent" asp-route-id="@login.InternalId">Process</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p class="text-muted-foreground text-sm">No pending login requests.</p>
+        }
+    </div>
+</div>

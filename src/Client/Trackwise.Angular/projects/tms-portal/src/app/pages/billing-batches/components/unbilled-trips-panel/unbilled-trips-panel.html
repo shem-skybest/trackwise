@@ -1,0 +1,95 @@
+<ui-card>
+  <ui-stack gap="3">
+    <ui-stack direction="row" justify="between" align="center">
+      <ui-typography variant="h6">Ready to bill</ui-typography>
+      <ui-button
+        appearance="text"
+        icon="refresh-cw"
+        label="Refresh"
+        size="sm"
+        [disabled]="isLoading()"
+        (click)="reload()"
+      />
+    </ui-stack>
+
+    <ui-data-container
+      [loading]="isLoading()"
+      [error]="error()"
+      [isEmpty]="clients().length === 0"
+      skeletonVariant="table"
+      [skeletonRows]="3"
+      emptyTitle="Nothing left to bill"
+      emptyMessage="Every completed trip of a client billed by batch is on a batch."
+      (retry)="reload()"
+    >
+      <ul class="divide-border divide-y">
+        @for (client of clients(); track client.customerId) {
+          <li class="py-3">
+            <ui-stack direction="row" justify="between" align="center" gap="3" class="flex-wrap">
+              <div>
+                <div class="font-semibold">{{ client.customerName }}</div>
+                <div class="text-muted-foreground text-sm">
+                  {{ cycleLabel(client.billingCycle) }} · {{ client.tripCount }} trip(s) since
+                  {{ isoToDate(client.oldestDate) | date: "MMM d" }} ·
+                  {{ client.pricedTotal | currencyFormat }}
+                  @if (client.unpricedCount) {
+                    <ui-badge
+                      class="ml-1"
+                      [value]="client.unpricedCount + ' not priced'"
+                      severity="warn"
+                      size="sm"
+                    />
+                  }
+                </div>
+              </div>
+              @if (canManage() && client.billingCycle !== "per_trip") {
+                <ui-button
+                  appearance="outlined"
+                  icon="plus"
+                  size="sm"
+                  [label]="
+                    client.suggestedPeriodStart
+                      ? 'Bill ' +
+                        (isoToDate(client.suggestedPeriodStart) | date: 'MMM d') +
+                        ' - ' +
+                        (isoToDate(client.suggestedPeriodEnd) | date: 'MMM d')
+                      : 'Open batch'
+                  "
+                  (click)="billPeriod(client)"
+                />
+              }
+            </ui-stack>
+
+            @if (client.billingCycle === "per_trip") {
+              <ul class="mt-2 space-y-1 pl-3">
+                @for (trip of client.trips; track trip.tripId) {
+                  <li class="flex items-center justify-between gap-2 text-sm">
+                    <span>
+                      Trip {{ trip.tripNumber }} ·
+                      {{ isoToDate(trip.billingDate) | date: "MMM d" }} ·
+                      {{ trip.truckNumber ?? "-" }} ·
+                      {{
+                        (trip.amount ?? null) !== null
+                          ? (trip.amount | currencyFormat)
+                          : "not priced"
+                      }}
+                    </span>
+                    @if (canManage()) {
+                      <ui-button
+                        appearance="text"
+                        icon="plus"
+                        size="sm"
+                        label="Bill this trip"
+                        (click)="billTrip(client, trip)"
+                      />
+                    }
+                  </li>
+                }
+              </ul>
+            }
+          </li>
+        }
+      </ul>
+    </ui-data-container>
+  </ui-stack>
+</ui-card>

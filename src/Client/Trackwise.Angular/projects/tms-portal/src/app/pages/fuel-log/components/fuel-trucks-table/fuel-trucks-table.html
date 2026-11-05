@@ -1,0 +1,35 @@
+<ui-data-table [value]="trucks()" dataKey="truckId" size="small">
+  <ng-template #header>
+    <tr>
+      <th>Truck</th>
+      <th class="text-right">Fill-ups</th>
+      <th class="text-right">Liters</th>
+      <th class="text-right">Amount</th>
+      <th class="text-right">Km</th>
+      <th class="text-right">Km / L</th>
+    </tr>
+  </ng-template>
+  <ng-template #body let-truck>
+    <tr>
+      <td class="font-medium">{{ truck.truckNumber ?? "-" }}</td>
+      <td class="text-right">{{ truck.fillUps }}</td>
+      <td class="text-right">{{ truck.liters | number: "1.0-2" }}</td>
+      <td class="text-right">{{ truck.amount | currencyFormat }}</td>
+      <td class="text-right">{{ (truck.km | number) ?? "-" }}</td>
+      <td class="text-right font-medium">
+        {{ (truck.kmPerLiter | number: "1.2-2") ?? "-" }}
+      </td>
+    </tr>
+  </ng-template>
+  <ng-template #empty>
+    <tr>
+      <td colspan="6" class="text-muted-foreground py-6 text-center">
+        No fill-ups in this period.
+      </td>
+    </tr>
+  </ng-template>
+</ui-data-table>
+<p class="text-muted-foreground mt-2 text-xs">
+  Km per liter needs odometer readings: the distance between two readings over the fuel bought in
+  between.
+</p>

@@ -1,0 +1,37 @@
+using Trackwise.Application.Abstractions;
+using Trackwise.Domain.Entities.Messaging;
+using Trackwise.Domain.Persistence;
+using Trackwise.Shared.Models;
+
+namespace Trackwise.Application.Modules.Integrations.Messaging.Queries;
+
+internal sealed class GetUnreadCountHandler(ITenantUnitOfWork tenantUow)
+    : IAppRequestHandler<GetUnreadCountQuery, Result<int>>
+{
+    public async Task<Result<int>> Handle(GetUnreadCountQuery req, CancellationToken ct)
+    {
+        // Get all conversations the user is part of
+        var participations = await tenantUow.Repository<ConversationParticipant>()
+            .GetListAsync(p => p.EmployeeId == req.EmployeeId, ct);
+
+        var totalUnread = 0;
+
+        foreach (var participation in participations)
+        {
+            if (participation.LastReadAt.HasValue)
+            {
+                totalUnread += participation.Conversation.Messages
+                    .Count(m => m.SentAt > participation.LastReadAt.Value
+                               && m.SenderId != req.EmployeeId
+                               && !m.IsDeleted);
+            }
+            else
+            {
+                totalUnread += participation.Conversation.Messages
+                    .Count(m => m.SenderId != req.EmployeeId && !m.IsDeleted);
+            }
+        }
+
+        return Result<int>.Ok(totalUnread);
+    }
+}

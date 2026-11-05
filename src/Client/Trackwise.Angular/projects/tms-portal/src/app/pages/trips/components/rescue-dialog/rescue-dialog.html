@@ -1,0 +1,116 @@
+<ui-dialog
+  header="Rescue - another truck takes over"
+  [(open)]="open"
+  [modal]="true"
+  width="44rem"
+  (opened)="onOpened()"
+>
+  <form [formRoot]="form">
+    <ui-grid container spacing="3">
+      <ui-grid [size]="{ xs: 12, md: 6 }">
+        <ui-form-field label="Rescue truck" for="rescueTruck" [required]="true">
+          <app-search-truck id="rescueTruck" [formField]="form.truck" />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12, md: 6 }">
+        <ui-form-field label="Rescue driver" for="rescueDriver" [required]="true">
+          <app-search-employee
+            id="rescueDriver"
+            [formField]="form.driver"
+            [roles]="drivingRoles"
+            [availableOn]="crewDay()"
+            placeholder="Type driver name"
+          />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12, md: 6 }">
+        <ui-form-field
+          label="Helper"
+          for="rescueHelper"
+          hint="The trip's helpers usually move with the goods"
+        >
+          <app-search-helper
+            id="rescueHelper"
+            [formField]="form.helper"
+            [availableOn]="crewDay()"
+          />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12, md: 6 }">
+        <ui-form-field label="Second helper" for="rescueSecondHelper">
+          <app-search-helper
+            id="rescueSecondHelper"
+            [formField]="form.secondHelper"
+            [availableOn]="crewDay()"
+          />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12 }">
+        <ui-form-field label="Drops it took over" for="rescueDrops" [required]="true">
+          <ui-multiselect-field
+            id="rescueDrops"
+            [formField]="form.stopIds"
+            [options]="dropOptions()"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Pick drops"
+          />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 6, md: 3 }">
+        <ui-form-field label="Day" for="rescueDay" [required]="true">
+          <ui-date-field inputId="rescueDay" [formField]="form.day" dateFormat="yy-mm-dd" />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 6, md: 3 }">
+        <ui-form-field label="Goods moved at" for="rescueTime" [required]="true">
+          <ui-text-field id="rescueTime" [formField]="form.time" placeholder="hhmm" />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12, md: 6 }">
+        <ui-form-field label="Where" for="rescuePlace" hint="e.g. Brgy. Bagumbong North, Caloocan">
+          <ui-text-field id="rescuePlace" [formField]="form.place" />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12 }">
+        <ui-form-field label="Why" for="rescueReason" [required]="true">
+          <ui-textarea-field
+            id="rescueReason"
+            [formField]="form.reason"
+            [rows]="2"
+            placeholder="e.g. Broken windshield after drop 2, truck held at the police station"
+          />
+        </ui-form-field>
+      </ui-grid>
+      @if (incidentOptions().length) {
+        <ui-grid [size]="{ xs: 12 }">
+          <ui-form-field
+            label="Incident"
+            for="rescueIncident"
+            hint="The incident on this trip that caused it"
+          >
+            <ui-select-field
+              id="rescueIncident"
+              [formField]="form.incidentId"
+              [options]="incidentOptions()"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="None"
+              [showClear]="true"
+            />
+          </ui-form-field>
+        </ui-grid>
+      }
+    </ui-grid>
+
+    <ui-typography variant="caption" color="muted" class="mt-2 block">
+      The trip keeps its own truck and price - the client booked one truck-trip. Record the rescued
+      drops' times on the report as usual; they show who delivered them.
+    </ui-typography>
+
+    <div class="mt-4 flex justify-end gap-2">
+      <ui-button appearance="text" label="Cancel" (click)="open.set(false)" />
+      <ui-button type="submit" icon="truck" label="Record rescue" [loading]="form().submitting()" />
+    </div>
+  </form>
+</ui-dialog>

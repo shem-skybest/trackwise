@@ -1,0 +1,86 @@
+<ui-card>
+  <ui-stack gap="3">
+    <ui-stack direction="row" align="center" justify="between">
+      <ui-stack gap="0">
+        <ui-typography variant="overline" color="secondary">Diesel price</ui-typography>
+        @if (current(); as price) {
+          <ui-typography variant="h4" tag="p" weight="bold">
+            {{ price.pricePerLitre | currency: "PHP" : "symbol-narrow" }}/L
+          </ui-typography>
+          <ui-typography variant="caption" color="muted">
+            Since {{ toDate(price.effectiveFrom) | date: "mediumDate" }}
+          </ui-typography>
+        } @else {
+          <ui-typography variant="body-sm" color="muted">
+            Not set - gas-on-top surcharges can't be added until it is.
+          </ui-typography>
+        }
+      </ui-stack>
+      @if (canManage()) {
+        <ui-button
+          appearance="outlined"
+          size="sm"
+          icon="pencil"
+          label="Update"
+          (click)="openDialog()"
+        />
+      }
+    </ui-stack>
+
+    @if (prices().length > 1) {
+      <ui-stack gap="1">
+        @for (price of prices(); track price.id) {
+          <ui-stack direction="row" justify="between" class="text-sm">
+            <span class="text-muted-foreground">
+              {{ toDate(price.effectiveFrom) | date: "mediumDate" }}
+            </span>
+            <span>{{ price.pricePerLitre | currency: "PHP" : "symbol-narrow" }}</span>
+          </ui-stack>
+        }
+      </ui-stack>
+    }
+  </ui-stack>
+</ui-card>
+
+<ui-dialog
+  [(open)]="dialogOpen"
+  header="Update diesel price"
+  width="440px"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <form [formRoot]="form">
+    <ui-stack gap="3">
+      <ui-typography variant="body-sm" color="muted">
+        Picks the "gas on top" tier on every client's card: the highest tier at or below this price.
+      </ui-typography>
+
+      <ui-form-field label="Effective from" for="dieselFrom" [required]="true">
+        <ui-date-field inputId="dieselFrom" [formField]="form.effectiveFrom" [showIcon]="true" />
+      </ui-form-field>
+
+      <ui-form-field label="Price per litre" for="dieselPrice" [required]="true">
+        <ui-number-field
+          id="dieselPrice"
+          [formField]="form.pricePerLitre"
+          prefixLabel="₱"
+          [minFractionDigits]="2"
+        />
+      </ui-form-field>
+
+      <ui-form-field label="Source" for="dieselNotes" hint="Optional, e.g. DOE weekly advisory">
+        <ui-text-field id="dieselNotes" [formField]="form.notes" />
+      </ui-form-field>
+
+      <ui-stack direction="row" gap="2" justify="end">
+        <ui-button
+          intent="secondary"
+          appearance="outlined"
+          label="Cancel"
+          (click)="dialogOpen.set(false)"
+        />
+        <ui-button type="submit" label="Save" icon="check" [loading]="form().submitting()" />
+      </ui-stack>
+    </ui-stack>
+  </form>
+</ui-dialog>

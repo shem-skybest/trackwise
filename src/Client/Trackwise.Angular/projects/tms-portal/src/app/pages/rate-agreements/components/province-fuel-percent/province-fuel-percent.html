@@ -1,0 +1,32 @@
+<ui-stack gap="2">
+  <ui-typography variant="body-sm" color="muted">
+    Fuel % by province - sets every row in the province.
+  </ui-typography>
+  <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+    @for (row of provinces(); track row.province; let i = $index) {
+      <ui-stack direction="row" align="center" gap="2">
+        <label [for]="'provinceFuel-' + i" class="min-w-0 flex-1 truncate text-sm">
+          {{ row.province }}
+          <span class="text-muted-foreground">({{ row.rows }})</span>
+        </label>
+        <ui-number-field
+          class="w-24"
+          suffixLabel="%"
+          [inputId]="'provinceFuel-' + i"
+          [placeholder]="row.percent === null ? 'mixed' : ''"
+          [value]="draftFor(row)"
+          (valueChange)="setDraft(row.province, $event)"
+        />
+        <ui-button
+          appearance="outlined"
+          size="sm"
+          label="Set"
+          [disabled]="draftFor(row) === null"
+          (click)="applyRow(row)"
+        />
+      </ui-stack>
+    } @empty {
+      <ui-typography variant="caption" color="muted">Give the rows a province first.</ui-typography>
+    }
+  </div>
+</ui-stack>

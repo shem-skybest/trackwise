@@ -1,0 +1,31 @@
+@using Duende.IdentityServer.Extensions
+@{
+    Layout = "_Layout";
+    var name = Context.User?.GetDisplayName();
+}
+
+<header class="bg-card border-b">
+    <div class="mx-auto flex h-14 max-w-5xl items-center gap-4 px-4 md:px-6">
+        <a href="~/" class="text-foreground hover:text-foreground flex items-center gap-2 font-medium">
+            <img src="~/logo.png" alt="" class="size-8" />
+            TrackWise
+        </a>
+
+        @if (!string.IsNullOrWhiteSpace(name))
+        {
+            <div class="ml-auto flex items-center gap-2">
+                <span class="text-muted-foreground hidden text-sm sm:inline">@name</span>
+                <a hlm-btn variant="ghost" size="sm" asp-page="/Account/Manage/Profile/Index">Account</a>
+                <a hlm-btn variant="outline" size="sm" asp-page="/Account/Logout/Index">Log out</a>
+            </div>
+        }
+    </div>
+</header>
+
+<main class="mx-auto max-w-5xl px-4 py-8 md:px-6">
+    @RenderBody()
+</main>
+
+@section scripts {
+    @await RenderSectionAsync("scripts", required: false)
+}

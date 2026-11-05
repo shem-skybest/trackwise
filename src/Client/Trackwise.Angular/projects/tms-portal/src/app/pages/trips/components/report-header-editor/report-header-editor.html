@@ -1,0 +1,48 @@
+<form [formRoot]="form" class="border-default mt-3 border-t pt-3">
+  <ui-grid container spacing="3">
+    <ui-grid [size]="{ xs: 12, md: 3 }">
+      <ui-form-field label="Truck" for="headerTruck">
+        <app-search-truck id="headerTruck" [formField]="form.truck" />
+      </ui-form-field>
+    </ui-grid>
+    <ui-grid [size]="{ xs: 12, md: 3 }">
+      <ui-form-field label="Driver" for="headerDriver">
+        <app-search-employee
+          id="headerDriver"
+          [formField]="form.driver"
+          [roles]="drivingRoles"
+          [availableOn]="crewDay()"
+          placeholder="Type driver name"
+        />
+      </ui-form-field>
+    </ui-grid>
+    <ui-grid [size]="{ xs: 12, md: 3 }">
+      <ui-form-field label="Helper" for="headerHelper">
+        <app-search-helper id="headerHelper" [formField]="form.helper" [availableOn]="crewDay()" />
+      </ui-form-field>
+    </ui-grid>
+    <ui-grid [size]="{ xs: 12, md: 3 }">
+      <ui-form-field label="Second helper" for="headerSecondHelper">
+        <app-search-helper
+          id="headerSecondHelper"
+          [formField]="form.secondHelper"
+          [availableOn]="crewDay()"
+        />
+      </ui-form-field>
+    </ui-grid>
+  </ui-grid>
+  <ui-stack direction="row" gap="2" align="center">
+    <ui-button
+      type="submit"
+      size="sm"
+      icon="save"
+      label="Save truck and crew"
+      [loading]="form().submitting()"
+    />
+    <ui-button type="button" size="sm" appearance="text" label="Cancel" (click)="closed.emit()" />
+    <ui-typography variant="caption" color="muted">
+      Only crew available on {{ crewDay() }} are offered. A booked trip keeps its booked size's
+      price whichever truck runs it.
+    </ui-typography>
+  </ui-stack>
+</form>

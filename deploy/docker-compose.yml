@@ -1,0 +1,163 @@
+# Trackwise production stack (plain Docker Compose).
+#
+# Images are pulled from GHCR. GITHUB_REPOSITORY and IMAGE_TAG are appended to .env
+# by the deploy workflow; the defaults below keep manual `docker compose` runs working.
+# All app ports are bound to 127.0.0.1 - the host nginx (deploy/nginx/trackwise.conf)
+# is the only public entry point and terminates TLS. The host-side ports below must
+# match the proxy_pass targets in that nginx config; the canonical port table lives in
+# docs/deployment/docker-deployment.md.
+
+name: trackwise
+
+services:
+  postgres:
+    # Pinned major version; 18+ images store data under /var/lib/postgresql (not .../data),
+    # so the volume mounts there. Bumping the major requires pg_upgrade or a fresh volume.
+    image: postgres:18
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: "${PostgresUser:-postgres}"
+      POSTGRES_PASSWORD: "${PostgresPassword}"
+      POSTGRES_DB: master_trackwise
+    # Loopback-only: reachable from the host (psql, an SSH-tunneled migrator run) but not the
+    # public internet - nothing in nginx proxies this port.
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    # Data lives on the DigitalOcean block storage volume, not the droplet disk, so it outlives
+    # the droplet. create_host_path: false makes Postgres fail to start when the volume isn't
+    # mounted, instead of Docker creating an empty dir on the root disk and initdb'ing a blank DB.
+    volumes:
+      - type: bind
+        source: /mnt/trackwise_db_100_gb/postgres
+        target: /var/lib/postgresql
+        bind:
+          create_host_path: false
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PostgresUser:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - trackwise
+    restart: unless-stopped
+
+  identity-server:
+    image: "ghcr.io/${GITHUB_REPOSITORY:-shem-skybest/skybest-logistics-corporation}/identity:${IMAGE_TAG:-latest}"
+    # All config/secrets come from .env; entries below are literals not in .env
+    env_file:
+      - .env
+    environment:
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+      HTTP_PORTS: "${IDENTITY_SERVER_PORT:-7001}"
+    ports:
+      - "127.0.0.1:${IDENTITY_SERVER_PORT:-7001}:${IDENTITY_SERVER_PORT:-7001}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - trackwise
+    restart: unless-stopped
+
+  api:
+    image: "ghcr.io/${GITHUB_REPOSITORY:-shem-skybest/skybest-logistics-corporation}/api:${IMAGE_TAG:-latest}"
+    # All config/secrets come from .env; entries below are literals not in .env
+    env_file:
+      - .env
+    environment:
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+      HTTP_PORTS: "${API_PORT:-7000}"
+      # Jwt = token validation (internal authority); IdentityServer = user-facing URLs (.env).
+      Jwt__Authority: "http://identity-server:${IDENTITY_SERVER_PORT:-7001}"
+      Jwt__RequireHttpsMetadata: "false"
+    ports:
+      - "127.0.0.1:${API_PORT:-7000}:${API_PORT:-7000}"
+    depends_on:
+      identity-server:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    networks:
+      - trackwise
+    restart: unless-stopped
+
+  admin-portal:
+    image: "ghcr.io/${GITHUB_REPOSITORY:-shem-skybest/skybest-logistics-corporation}/admin-portal:${IMAGE_TAG:-latest}"
+    ports:
+      - "127.0.0.1:${ADMIN_PORTAL_PORT:-7002}:80"
+    depends_on:
+      api:
+        condition: service_started
+      identity-server:
+        condition: service_started
+    networks:
+      - trackwise
+    restart: unless-stopped
+
+  tms-portal:
+    image: "ghcr.io/${GITHUB_REPOSITORY:-shem-skybest/skybest-logistics-corporation}/tms-portal:${IMAGE_TAG:-latest}"
+    environment:
+      MAPBOX_TOKEN: "${Mapbox__AccessToken}"
+    ports:
+      - "127.0.0.1:${TMS_PORTAL_PORT:-7003}:80"
+    depends_on:
+      api:
+        condition: service_started
+      identity-server:
+        condition: service_started
+    networks:
+      - trackwise
+    restart: unless-stopped
+
+  customer-portal:
+    image: "ghcr.io/${GITHUB_REPOSITORY:-shem-skybest/skybest-logistics-corporation}/customer-portal:${IMAGE_TAG:-latest}"
+    ports:
+      - "127.0.0.1:${CUSTOMER_PORTAL_PORT:-7004}:80"
+    depends_on:
+      api:
+        condition: service_started
+      identity-server:
+        condition: service_started
+    networks:
+      - trackwise
+    restart: unless-stopped
+
+  website:
+    image: "ghcr.io/${GITHUB_REPOSITORY:-shem-skybest/skybest-logistics-corporation}/website:${IMAGE_TAG:-latest}"
+    environment:
+      # Untrusted X-Forwarded-* are stripped; without this SSR sees http:// behind nginx.
+      NG_TRUST_PROXY_HEADERS: "x-forwarded-proto,x-forwarded-port"
+    ports:
+      - "127.0.0.1:${WEBSITE_PORT:-7005}:7005"
+    depends_on:
+      api:
+        condition: service_started
+    networks:
+      - trackwise
+    restart: unless-stopped
+
+  # One-shot migrate + seed, never started by `up` (profile). Run it deliberately on the VPS:
+  #   docker compose --profile migrate pull dbmigrator && docker compose run --rm dbmigrator
+  # Production seeds only system data and the real records (staff, crew, fleet, clients) - no demo data.
+  dbmigrator:
+    image: "ghcr.io/${GITHUB_REPOSITORY:-shem-skybest/skybest-logistics-corporation}/dbmigrator:${IMAGE_TAG:-latest}"
+    profiles: ["migrate"]
+    command: ["--exit"]
+    env_file:
+      - .env
+    environment:
+      DOTNET_ENVIRONMENT: "Production"
+      # Tenants[] in the migrator's appsettings.json point at localhost; these override them.
+      Tenants__0__ConnectionString: "Host=postgres;Port=5432;Database=ph_trackwise;Username=${PostgresUser:-postgres};Password=${PostgresPassword}"
+      Tenants__1__ConnectionString: "Host=postgres;Port=5432;Database=eu_trackwise;Username=${PostgresUser:-postgres};Password=${PostgresPassword}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - trackwise
+    restart: "no"
+
+networks:
+  trackwise:
+    driver: bridge

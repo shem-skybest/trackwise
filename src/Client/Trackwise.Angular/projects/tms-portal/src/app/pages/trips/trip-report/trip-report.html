@@ -1,0 +1,120 @@
+<ui-page-header [title]="'Crew report' + (trip() ? ' - Trip #' + trip()!.number : '')">
+  <ui-button
+    appearance="outlined"
+    icon="eye"
+    label="Trip details"
+    [routerLink]="['/trips', tripId]"
+  />
+</ui-page-header>
+
+@if (isLoading() && !trip()) {
+  <ui-spinner />
+} @else if (trip(); as trip) {
+  <app-report-header
+    class="mb-4 block"
+    [trip]="trip"
+    [drops]="dropCount()"
+    [unsaved]="form().dirty()"
+    (changed)="load()"
+  />
+
+  <app-report-rescues
+    class="mb-4 block"
+    [trip]="trip"
+    [incidents]="incidents()"
+    [unsaved]="form().dirty()"
+    (changed)="load()"
+  />
+
+  <form [formRoot]="form">
+    <ui-stack gap="4">
+      <ui-grid container spacing="3">
+        <ui-grid [size]="{ xs: 12, md: 4 }">
+          <ui-form-field
+            label="Pre-load day"
+            for="startDay"
+            [required]="true"
+            hint="The first time below falls on this day; later times roll forward past midnight."
+          >
+            <ui-date-field id="startDay" [formField]="form.startDay" dateFormat="yy-mm-dd" />
+          </ui-form-field>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 12, md: 4 }">
+          <ui-form-field label="Garage departure" for="garageOut" [hint]="garageOutHint()">
+            <ui-text-field id="garageOut" [formField]="form.garageOut" placeholder="hhmm" />
+          </ui-form-field>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 12, md: 4 }">
+          <ui-typography variant="caption" color="muted" class="block pt-6">
+            Type times as the crew write them - 2329, 23:29 or 2329H. A time earlier than the one
+            before it is the next day; add + to push it a day more. Enter moves on, Ctrl+S saves.
+          </ui-typography>
+        </ui-grid>
+      </ui-grid>
+
+      @for (info of blocks(); track info.key; let i = $index) {
+        <app-report-stop-block
+          [info]="info"
+          [block]="form.blocks[i]"
+          [hints]="hints()"
+          [corrections]="blockCorrections().get(info.key) ?? []"
+          [removable]="removableDrops().has(info.load?.id ?? '')"
+          [rescuedBy]="rescuedBy().get(info.key) ?? null"
+          (correct)="openStopCorrection(info)"
+          (remove)="removeDrop(info)"
+        />
+      }
+
+      <ui-grid container spacing="3">
+        <ui-grid [size]="{ xs: 12, md: 4 }">
+          <ui-form-field label="Garage arrival" for="garageIn" [hint]="garageInHint()">
+            <ui-text-field id="garageIn" [formField]="form.garageIn" placeholder="hhmm" />
+          </ui-form-field>
+        </ui-grid>
+        @if (trip.garageDepartedAt || trip.garageArrivedAt) {
+          <ui-grid [size]="{ xs: 12, md: 8 }">
+            <ui-stack gap="2" class="pt-6 text-sm">
+              <ui-button
+                appearance="text"
+                size="sm"
+                icon="pencil"
+                label="Correct garage times"
+                (click)="garageCorrectionOpen.set(true)"
+              />
+              @for (group of garageCorrections(); track group.correctedAt) {
+                <div>
+                  <div class="text-muted-foreground">
+                    Corrected {{ group.correctedAt | date: "d MMM, HH:mm" }}
+                    @if (group.correctedBy) {
+                      by {{ group.correctedBy }}
+                    }
+                    - {{ group.reason }}
+                  </div>
+                  @for (change of group.changes; track change.id) {
+                    <div>{{ describeChange(change) }}</div>
+                  }
+                </div>
+              }
+            </ui-stack>
+          </ui-grid>
+        }
+      </ui-grid>
+
+      <ui-stack direction="row" gap="2" align="center">
+        <ui-button type="submit" icon="save" label="Save report" [loading]="form().submitting()" />
+        <ui-typography variant="caption" color="muted">
+          Saves everything new at once - if one time is wrong, nothing is saved and the stop is
+          named.
+        </ui-typography>
+      </ui-stack>
+    </ui-stack>
+  </form>
+
+  <app-stop-correction-dialog
+    [tripId]="tripId"
+    [info]="correcting()"
+    [(open)]="stopCorrectionOpen"
+    (done)="load()"
+  />
+  <app-garage-correction-dialog [trip]="trip" [(open)]="garageCorrectionOpen" (done)="load()" />
+}

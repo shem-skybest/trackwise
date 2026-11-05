@@ -1,0 +1,135 @@
+<div class="animate-in fade-in space-y-4">
+  <ui-page-header
+    title="Incidents"
+    subtitle="Accidents, breakdowns, damaged or missing goods and other cases, with what was done about them"
+  >
+    @if (canManage) {
+      <ui-button icon="plus" label="Report incident" routerLink="/incidents/add" />
+    }
+  </ui-page-header>
+
+  <ui-card>
+    <ui-grid container spacing="3">
+      <ui-grid [size]="{ xs: 12, md: 4 }">
+        <ui-form-field label="Search" for="incidentSearch" class="mb-0">
+          <ui-search-field
+            id="incidentSearch"
+            placeholder="Summary, place or case no."
+            (searchChange)="store.setSearch($event)"
+          />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12, md: 4 }">
+        <ui-form-field label="Kind" for="incidentKind" class="mb-0">
+          <ui-select-field
+            id="incidentKind"
+            [options]="kindOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="All kinds"
+            [showClear]="true"
+            [value]="kind()"
+            (valueChange)="onKindChange($event)"
+          />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12, md: 4 }">
+        <ui-form-field label="Status" for="incidentStatus" class="mb-0">
+          <ui-select-field
+            id="incidentStatus"
+            [options]="statusOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="All statuses"
+            [showClear]="true"
+            [value]="status()"
+            (valueChange)="onStatusChange($event)"
+          />
+        </ui-form-field>
+      </ui-grid>
+    </ui-grid>
+  </ui-card>
+
+  <ui-card>
+    <ui-data-container
+      [loading]="store.isLoading()"
+      [error]="store.error()"
+      [isEmpty]="store.isEmpty()"
+      skeletonVariant="table"
+      [skeletonRows]="8"
+      emptyTitle="No incidents"
+      emptyMessage="Report one from here or from a trip's crew report."
+      (retry)="store.retry()"
+    >
+      <ui-data-table
+        [value]="store.data()"
+        dataKey="id"
+        [lazy]="true"
+        [paginator]="true"
+        [showCurrentPageReport]="true"
+        [rows]="store.pageSize()"
+        [first]="store.first()"
+        [totalRecords]="store.totalRecords()"
+        [loading]="store.isLoading()"
+        [rowsPerPageOptions]="[25, 50, 100]"
+        size="small"
+        (lazyLoad)="store.onLazyLoad($event)"
+      >
+        <ng-template #header>
+          <tr>
+            <th uiSortHeader="Number">Case</th>
+            <th uiSortHeader="OccurredAt">When</th>
+            <th>What</th>
+            <th>Client</th>
+            <th>Truck / crew</th>
+            <th>Summary</th>
+            <th uiSortHeader="Status">Status</th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-incident>
+          <tr class="hover:bg-hover cursor-pointer" (click)="open(incident)">
+            <td class="whitespace-nowrap">
+              <a
+                [routerLink]="['/incidents', incident.id]"
+                class="text-foreground font-semibold hover:underline"
+                (click)="$event.stopPropagation()"
+              >
+                {{ incident.caseNumber }}
+              </a>
+            </td>
+            <td class="whitespace-nowrap">{{ incident.occurredAt | date: "d MMM yyyy, HH:mm" }}</td>
+            <td>
+              <ui-stack gap="1">
+                <span>{{ kindLabel(incident.kind) }}</span>
+                <ui-badge
+                  [value]="severityLabel(incident.severity)"
+                  [severity]="severityIntent(incident.severity)"
+                  size="sm"
+                />
+              </ui-stack>
+            </td>
+            <td>{{ incident.customerName ?? "-" }}</td>
+            <td class="text-sm">
+              <div class="font-medium">{{ incident.truckNumber ?? "-" }}</div>
+              <div class="text-muted-foreground">{{ crew(incident) }}</div>
+            </td>
+            <td class="max-w-md text-sm">
+              <div class="line-clamp-2">{{ incident.summary }}</div>
+              @if (incident.tripNumber) {
+                <div class="text-muted-foreground">Trip #{{ incident.tripNumber }}</div>
+              }
+            </td>
+            <td>
+              <ui-badge
+                [value]="statusLabel(incident.status)"
+                [severity]="statusIntent(incident.status)"
+                size="sm"
+                rounded
+              />
+            </td>
+          </tr>
+        </ng-template>
+      </ui-data-table>
+    </ui-data-container>
+  </ui-card>
+</div>

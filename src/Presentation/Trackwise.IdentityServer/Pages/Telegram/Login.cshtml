@@ -1,0 +1,31 @@
+@page
+@model Trackwise.IdentityServer.Pages.Telegram.Login
+@{
+    ViewData["Title"] = "Telegram";
+}
+
+<div class="flex flex-col gap-6 text-center">
+    @if (Model.Success)
+    {
+        <div class="flex flex-col items-center gap-2">
+            <h1 class="mb-0 text-2xl font-bold">Connected!</h1>
+            <p class="text-muted-foreground text-sm text-balance">
+                <strong class="text-foreground">@Model.UserName</strong> is now connected to
+                <strong class="text-foreground">@Model.TenantName</strong> via Telegram.
+            </p>
+            @if (!string.IsNullOrEmpty(Model.RoleDisplay))
+            {
+                <span hlm-badge>@Model.RoleDisplay</span>
+            }
+        </div>
+        <p class="text-muted-foreground text-sm">You can close this window and return to Telegram.</p>
+    }
+    else
+    {
+        <div class="flex flex-col items-center gap-1">
+            <h1 class="text-destructive mb-0 text-2xl font-bold">Connection failed</h1>
+            <p class="text-muted-foreground text-sm text-balance">@Model.ErrorMessage</p>
+        </div>
+        <p class="text-muted-foreground text-sm">Please return to Telegram and try again.</p>
+    }
+</div>

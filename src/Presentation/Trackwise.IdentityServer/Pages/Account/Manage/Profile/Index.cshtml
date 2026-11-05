@@ -1,0 +1,48 @@
+﻿@page
+@using Trackwise.IdentityServer.Pages.Account.Manage
+@model Trackwise.IdentityServer.Pages.Account.Manage.Profile.ProfileModel
+@{
+    ViewData["Title"] = "Profile";
+    ViewData["ActivePage"] = ManageNavPages.Index;
+}
+
+<partial name="_StatusMessage" model="Model.StatusMessage" />
+
+<form id="profile-form" method="post">
+    <div hlm-card>
+        <div hlm-card-header>
+            <div hlm-card-title>Profile</div>
+            <div hlm-card-description>Your name and phone number.</div>
+        </div>
+        <div hlm-card-content>
+            <div hlm-field-group class="max-w-md">
+                <partial name="_ValidationSummary" />
+
+                <div hlm-field>
+                    <label hlm-field-label asp-for="Username"></label>
+                    <input hlm-input asp-for="Username" disabled />
+                </div>
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div hlm-field>
+                        <label hlm-field-label asp-for="Input.FirstName"></label>
+                        <input hlm-input asp-for="Input.FirstName" autocomplete="given-name" />
+                        <span hlm-field-error asp-validation-for="Input.FirstName"></span>
+                    </div>
+                    <div hlm-field>
+                        <label hlm-field-label asp-for="Input.LastName"></label>
+                        <input hlm-input asp-for="Input.LastName" autocomplete="family-name" />
+                        <span hlm-field-error asp-validation-for="Input.LastName"></span>
+                    </div>
+                </div>
+                <div hlm-field>
+                    <label hlm-field-label asp-for="Input.PhoneNumber"></label>
+                    <input hlm-input asp-for="Input.PhoneNumber" autocomplete="tel" />
+                    <span hlm-field-error asp-validation-for="Input.PhoneNumber"></span>
+                </div>
+            </div>
+        </div>
+        <div hlm-card-footer class="border-t">
+            <button hlm-btn id="update-profile-button" type="submit">Save</button>
+        </div>
+    </div>
+</form>

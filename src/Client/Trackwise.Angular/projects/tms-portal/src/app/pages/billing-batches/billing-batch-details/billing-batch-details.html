@@ -1,0 +1,226 @@
+<ui-page-header
+  [title]="
+    batch() ? batch()!.referenceNumber + ' · ' + (batch()!.customerName ?? '') : 'Billing batch'
+  "
+  backLink="/billing-batches"
+>
+  @if (batch()) {
+    <ui-button
+      appearance="outlined"
+      icon="download"
+      label="Print summary"
+      [disabled]="isBusy()"
+      (click)="downloadPdf()"
+    />
+    @if (canManage) {
+      @switch (status()) {
+        @case ("draft") {
+          <ui-button
+            appearance="outlined"
+            icon="refresh-cw"
+            label="Refresh trips"
+            [disabled]="isBusy()"
+            (click)="refresh()"
+          />
+          <ui-button icon="lock" label="Lock" [disabled]="isBusy()" (click)="lock()" />
+        }
+        @case ("locked") {
+          <ui-button
+            appearance="outlined"
+            icon="undo"
+            label="Unlock"
+            [disabled]="isBusy()"
+            (click)="askNote('unlock')"
+          />
+          <ui-button
+            icon="send"
+            label="Forward to Accounting"
+            [disabled]="isBusy()"
+            (click)="forward()"
+          />
+        }
+        @case ("forwarded") {
+          <ui-button
+            appearance="outlined"
+            icon="undo"
+            label="Unlock"
+            [disabled]="isBusy()"
+            (click)="askNote('unlock')"
+          />
+          <ui-button
+            icon="receipt"
+            label="Mark billed"
+            [disabled]="isBusy()"
+            (click)="askNote('billed')"
+          />
+        }
+      }
+      @if (status() === "draft" || status() === "locked" || status() === "forwarded") {
+        <ui-button
+          intent="danger"
+          appearance="outlined"
+          icon="x"
+          label="Cancel"
+          [disabled]="isBusy()"
+          (click)="askNote('cancel')"
+        />
+      }
+    }
+  }
+</ui-page-header>
+
+@if (isLoading()) {
+  <ui-stack align="center" justify="center" class="py-16 text-center"><ui-spinner /></ui-stack>
+} @else if (batch(); as batch) {
+  <ui-stack gap="4">
+    <ui-card>
+      <ui-grid container spacing="4">
+        <ui-grid [size]="{ xs: 12, md: 3 }">
+          <ui-info-item label="Client" [value]="batch.customerName ?? '-'" />
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Cut-off">
+            {{ isoToDate(batch.periodStart) | date: "MMM d" }} -
+            {{ isoToDate(batch.periodEnd) | date: "mediumDate" }}
+          </ui-info-item>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Status">
+            <ui-badge
+              [value]="statusLabel(batch.status)"
+              [severity]="statusIntent(batch.status)"
+              size="sm"
+              rounded
+            />
+            @if (batch.billedOn) {
+              <span class="text-muted-foreground ml-2 text-xs">
+                {{ isoToDate(batch.billedOn) | date: "mediumDate" }}
+              </span>
+            } @else if (batch.forwardedOn) {
+              <span class="text-muted-foreground ml-2 text-xs">
+                since {{ isoToDate(batch.forwardedOn) | date: "mediumDate" }}
+              </span>
+            } @else if (batch.lockedBy) {
+              <span class="text-muted-foreground ml-2 text-xs">by {{ batch.lockedBy }}</span>
+            }
+          </ui-info-item>
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Invoice (SAS)" [value]="batch.invoiceNumber ?? 'Not billed yet'" />
+        </ui-grid>
+      </ui-grid>
+
+      <ui-grid container spacing="4" class="mt-4">
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Trips / drops" [value]="batch.tripCount + ' / ' + batch.dropCount" />
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Service (VATable)" [value]="batch.vatableTotal | currencyFormat" />
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Non-VAT (at cost)" [value]="batch.nonVatTotal | currencyFormat" />
+        </ui-grid>
+        <ui-grid [size]="{ xs: 6, md: 3 }">
+          <ui-info-item label="Selling total">
+            <span class="font-semibold">{{ batch.total | currencyFormat }}</span>
+          </ui-info-item>
+        </ui-grid>
+      </ui-grid>
+
+      @if (batch.notes) {
+        <p class="text-muted-foreground mt-4 text-sm">Remarks: {{ batch.notes }}</p>
+      }
+      @if (batch.cancelReason) {
+        <p class="text-destructive mt-2 text-sm">
+          Cancelled by {{ batch.cancelledBy }}: {{ batch.cancelReason }}
+        </p>
+      } @else if (batch.unlockReason) {
+        <p class="text-muted-foreground mt-2 text-xs">
+          Last unlocked by {{ batch.unlockedBy }}, {{ batch.unlockedAt | date: "medium" }}:
+          {{ batch.unlockReason }}
+        </p>
+      }
+    </ui-card>
+
+    @if (isDraft() && problems().length) {
+      <ui-alert intent="warning">
+        {{ problems().length }} trip(s) can't be billed yet - price them from the trip page, then
+        refresh. The batch can't be locked until every trip is priced.
+      </ui-alert>
+    }
+
+    <ui-card>
+      <ui-stack direction="row" justify="between" align="center" class="mb-3">
+        <ui-typography variant="h6">Trips</ui-typography>
+        <span class="text-muted-foreground text-sm">
+          Trip rates {{ tripRates() | currencyFormat }}
+        </span>
+      </ui-stack>
+      <app-batch-trips-table
+        [trips]="batch.trips ?? []"
+        [editable]="canManage && isDraft()"
+        (remove)="removeTrip($event)"
+      />
+    </ui-card>
+
+    <ui-card>
+      <ui-stack direction="row" justify="between" align="center" class="mb-3">
+        <ui-typography variant="h6">Other charges</ui-typography>
+        @if (canManage && isDraft()) {
+          <ui-stack direction="row" gap="2">
+            <ui-button
+              appearance="outlined"
+              icon="coins"
+              size="sm"
+              label="Tolls & parking from cash funds"
+              [disabled]="isBusy()"
+              (click)="addTolls()"
+            />
+            <ui-button
+              icon="plus"
+              size="sm"
+              label="Add charge"
+              [disabled]="isBusy()"
+              (click)="chargeDialogOpen.set(true)"
+            />
+          </ui-stack>
+        }
+      </ui-stack>
+      @if (batch.charges?.length) {
+        <app-batch-charges-table
+          [charges]="batch.charges ?? []"
+          [editable]="canManage && isDraft()"
+          (remove)="removeCharge($event)"
+        />
+      } @else {
+        <p class="text-muted-foreground text-sm">
+          No other charges. Add demurrage, backloads or a different location here, and pull the
+          crews' tolls and parking from the cash funds.
+        </p>
+      }
+    </ui-card>
+  </ui-stack>
+
+  @if (canManage) {
+    <app-billing-charge-dialog
+      [batch]="batch"
+      [(open)]="chargeDialogOpen"
+      (saved)="onChargeSaved($event)"
+    />
+  }
+} @else {
+  <p class="text-muted-foreground py-16 text-center">This billing batch could not be found.</p>
+}
+
+@if (note(); as note) {
+  <app-batch-note-dialog
+    [header]="note.header"
+    [label]="note.label"
+    [hint]="note.hint"
+    [confirmLabel]="note.confirm"
+    [multiline]="note.multiline"
+    [danger]="note.danger"
+    [(open)]="noteDialogOpen"
+    (confirmed)="onNote($event)"
+  />
+}

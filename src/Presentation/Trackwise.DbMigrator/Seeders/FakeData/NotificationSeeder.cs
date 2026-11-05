@@ -1,0 +1,46 @@
+using Trackwise.DbMigrator.Abstractions;
+using Trackwise.DbMigrator.Extensions;
+using Trackwise.DbMigrator.Models;
+using Trackwise.Domain.Entities;
+
+namespace Trackwise.DbMigrator.Seeders.FakeData;
+
+/// <summary>
+/// Seeds test notifications.
+/// </summary>
+internal class NotificationSeeder(ILogger<NotificationSeeder> logger) : SeederBase(logger)
+{
+    public override string Name => nameof(NotificationSeeder);
+    public override SeederType Type => SeederType.FakeData;
+    public override int Order => 160;
+
+    protected override async Task<bool> HasExistingDataAsync(SeederContext context, CancellationToken cancellationToken)
+    {
+        return await context.TenantUnitOfWork.Repository<Notification>().CountAsync(ct: cancellationToken) > 0;
+    }
+
+    public override async Task SeedAsync(SeederContext context, CancellationToken cancellationToken = default)
+    {
+        LogStarting();
+        var notificationRepository = context.TenantUnitOfWork.Repository<Notification>();
+        var notificationCount = context.Scale(10);
+
+        for (var i = 1; i <= notificationCount; i++)
+        {
+            var notification = new Notification
+            {
+                Title = $"Test notification {i}",
+                Message = $"Notification {i} description",
+                CreatedDate = DateTime.SpecifyKind(
+                    random.UtcDate(DateTime.UtcNow.AddMonths(-1), DateTime.UtcNow.AddDays(-1)),
+                    DateTimeKind.Utc)
+            };
+
+            await notificationRepository.AddAsync(notification, cancellationToken);
+            logger.LogInformation("Created notification {Title}", notification.Title);
+        }
+
+        await context.TenantUnitOfWork.SaveChangesAsync(cancellationToken);
+        LogCompleted(notificationCount);
+    }
+}

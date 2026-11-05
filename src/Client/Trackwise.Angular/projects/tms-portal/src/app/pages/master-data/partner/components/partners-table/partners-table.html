@@ -1,0 +1,137 @@
+<ui-card>
+  <ui-data-container
+    [loading]="isLoading()"
+    [error]="error()"
+    [isEmpty]="isEmpty()"
+    skeletonVariant="table"
+    [skeletonRows]="10"
+    emptyTitle="No business partners yet"
+    emptyMessage="Add the shipping lines, truckers and brokers you trade with. Each one goes live once a second person approves it."
+    emptyActionLabel="Add Partner"
+    (retry)="onRetry()"
+    (emptyAction)="onAddPartner()"
+  >
+    <ui-data-table
+      [value]="data()"
+      dataKey="id"
+      [scrollable]="true"
+      [lazy]="true"
+      [paginator]="true"
+      [showCurrentPageReport]="true"
+      [rows]="pageSize()"
+      [first]="first()"
+      [totalRecords]="totalRecords()"
+      [loading]="isLoading()"
+      [rowsPerPageOptions]="[10, 25, 50, 100]"
+      size="small"
+      (lazyLoad)="onLazyLoad($event)"
+    >
+      <ng-template #header>
+        <tr>
+          <th uiSortHeader="Code">Code</th>
+          <th uiSortHeader="Name">Name</th>
+          <th>Roles</th>
+          <th uiSortHeader="TaxId">TIN</th>
+          <th>Branch</th>
+          <th uiSortHeader="ApprovalState">Status</th>
+          <th uiSortHeader="UpdatedAt">Last changed</th>
+          <th></th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-partner>
+        <tr
+          class="hover:bg-hover transition-colors duration-150"
+          [class.cursor-pointer]="!partner.deletedAt"
+          [class.opacity-60]="partner.deletedAt"
+          (click)="navigateToPartner(partner)"
+        >
+          <td>
+            <span class="font-mono text-sm font-semibold">{{ partner.code }}</span>
+          </td>
+
+          <td>
+            @if (partner.deletedAt) {
+              <span class="text-foreground max-w-64 truncate font-bold line-through">
+                {{ partner.name }}
+              </span>
+            } @else {
+              <a
+                [routerLink]="['/master-data/partners', partner.id]"
+                class="text-foreground max-w-64 truncate font-bold hover:underline"
+                (click)="$event.stopPropagation()"
+              >
+                {{ partner.name }}
+              </a>
+            }
+          </td>
+
+          <td class="text-muted-foreground max-w-64 truncate text-sm">
+            {{ roleLabels(partner.roles) }}
+          </td>
+
+          <td class="text-muted-foreground font-mono text-sm">
+            @if (partner.taxId) {
+              {{ partner.taxId }}
+            } @else {
+              <span class="text-xs italic">None</span>
+            }
+          </td>
+
+          <td class="text-muted-foreground">
+            @if (partner.branchName) {
+              {{ partner.branchName }}
+            } @else {
+              <span class="text-xs italic">Every branch</span>
+            }
+          </td>
+
+          <td>
+            <ui-badge
+              [value]="stateLabel(partner)"
+              [severity]="stateSeverity(partner)"
+              size="sm"
+              rounded
+            />
+
+            @if (partner.state === "pending" && partner.submittedByName) {
+              <span class="text-muted-foreground block text-xs">
+                with an approver since
+                {{ partner.submittedAt | date: "dd/MM/yyyy" }}
+              </span>
+            }
+
+            @if (partner.state === "draft" && partner.lastReviewNote) {
+              <span
+                class="text-warning block max-w-48 truncate text-xs"
+                [title]="partner.lastReviewNote"
+              >
+                Sent back: {{ partner.lastReviewNote }}
+              </span>
+            }
+          </td>
+
+          <td class="text-muted-foreground text-sm">
+            {{ partner.updatedAt || partner.createdAt | date: "dd/MM/yyyy HH:mm" }}
+            @if (partner.updatedBy || partner.createdBy) {
+              <span class="block text-xs">{{ partner.updatedBy || partner.createdBy }}</span>
+            }
+          </td>
+
+          <td class="text-right">
+            @if (partner.deletedAt && canManage()) {
+              <ui-button
+                type="button"
+                appearance="text"
+                size="sm"
+                icon="history"
+                label="Restore"
+                (click)="onRestore(partner, $event)"
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </ui-data-table>
+  </ui-data-container>
+</ui-card>

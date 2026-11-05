@@ -1,0 +1,20 @@
+<div class="animate-in fade-in space-y-4">
+  <ui-page-header
+    title="Bookings & Executions"
+    subtitle="Forwarding jobs from accepted quotations, and Cold Chain truck-trips from rate agreements"
+    [addRoute]="canManage ? '/forwarding/bookings-executions/new' : null"
+    addTooltip="New Cold Chain booking"
+  />
+
+  <app-bookings-table
+    [data]="store.data()"
+    [isLoading]="store.isLoading()"
+    [error]="store.error()"
+    [isEmpty]="store.isEmpty()"
+    [totalRecords]="store.totalRecords()"
+    [pageSize]="store.pageSize()"
+    [first]="store.first()"
+    (lazyLoad)="store.onLazyLoad($event)"
+    (retry)="store.retry()"
+  />
+</div>

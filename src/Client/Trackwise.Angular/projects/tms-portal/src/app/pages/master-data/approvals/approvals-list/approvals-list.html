@@ -1,0 +1,115 @@
+<div class="animate-in fade-in space-y-4">
+  <ui-page-header title="Approvals" />
+
+  <ui-card>
+    <ui-stack gap="3" class="p-4">
+      <ui-form-field
+        label="Queue"
+        for="queue"
+        hint="Everything a second person still has to look at, across every list that needs one."
+      >
+        <ui-select-field
+          id="queue"
+          [options]="queueOptions"
+          optionLabel="label"
+          optionValue="value"
+          [value]="showingOpen()"
+          (valueChange)="onShowOpenChange($event)"
+        />
+      </ui-form-field>
+    </ui-stack>
+  </ui-card>
+
+  <ui-card>
+    <ui-data-container
+      [loading]="store.isLoading()"
+      [error]="store.error()"
+      [isEmpty]="store.isEmpty()"
+      skeletonVariant="table"
+      [skeletonRows]="8"
+      emptyTitle="Nothing is waiting"
+      emptyMessage="Records that need a second pair of eyes show up here the moment a steward submits one."
+      (retry)="store.retry()"
+    >
+      <ui-data-table
+        [value]="store.data()"
+        dataKey="id"
+        [scrollable]="true"
+        [lazy]="true"
+        [paginator]="true"
+        [showCurrentPageReport]="true"
+        [rows]="store.pageSize()"
+        [first]="store.first()"
+        [totalRecords]="store.totalRecords()"
+        [loading]="store.isLoading()"
+        [rowsPerPageOptions]="[10, 25, 50, 100]"
+        size="small"
+        (lazyLoad)="onLazyLoad($event)"
+      >
+        <ng-template #header>
+          <tr>
+            <th>List</th>
+            <th>Code</th>
+            <th>Name</th>
+            <th>Submitted by</th>
+            <th>Submitted</th>
+            <th>Note</th>
+            <th>Outcome</th>
+          </tr>
+        </ng-template>
+
+        <ng-template #body let-approval>
+          <tr
+            class="hover:bg-hover cursor-pointer transition-colors duration-150"
+            (click)="open(approval)"
+          >
+            <td class="text-muted-foreground">{{ entityLabel(approval) }}</td>
+
+            <td>
+              <span class="font-mono text-sm font-semibold">{{ approval.entityCode }}</span>
+            </td>
+
+            <td class="text-foreground max-w-64 truncate font-bold">{{ approval.entityName }}</td>
+
+            <td class="text-muted-foreground">
+              {{ approval.submittedByName || "—" }}
+              @if (approval.submittedByMe) {
+                <!-- Said here rather than discovered by clicking Approve and getting a 409. The
+                     server refuses it either way; this is the courtesy, not the control. -->
+                <span class="text-warning block text-xs">You submitted this</span>
+              }
+            </td>
+
+            <td class="text-muted-foreground text-sm">
+              {{ approval.submittedAt | date: "dd/MM/yyyy HH:mm" }}
+            </td>
+
+            <td class="text-muted-foreground max-w-64 truncate text-sm">
+              {{ approval.submissionNote || "—" }}
+            </td>
+
+            <td>
+              @switch (approval.decision) {
+                @case ("approved") {
+                  <ui-badge value="Approved" severity="success" size="sm" rounded />
+                }
+                @case ("rejected") {
+                  <ui-badge value="Sent back" severity="danger" size="sm" rounded />
+                }
+                @default {
+                  <ui-badge value="Waiting" severity="warn" size="sm" rounded />
+                }
+              }
+
+              @if (approval.reviewNote) {
+                <span class="text-muted-foreground block max-w-48 truncate text-xs">
+                  {{ approval.reviewNote }}
+                </span>
+              }
+            </td>
+          </tr>
+        </ng-template>
+      </ui-data-table>
+    </ui-data-container>
+  </ui-card>
+</div>

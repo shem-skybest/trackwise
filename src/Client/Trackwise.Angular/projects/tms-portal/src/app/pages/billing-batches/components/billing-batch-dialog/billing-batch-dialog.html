@@ -1,0 +1,60 @@
+<ui-dialog
+  header="New billing batch"
+  [(open)]="open"
+  [modal]="true"
+  width="34rem"
+  (opened)="onOpened()"
+>
+  <form [formRoot]="form">
+    <ui-grid container spacing="3">
+      <ui-grid [size]="{ xs: 12 }">
+        <ui-form-field
+          label="Client"
+          for="customer"
+          [required]="true"
+          [hint]="model().customer ? cycleLabel(model().customer!.billingCycle) : ''"
+        >
+          <app-search-customer
+            id="customer"
+            [formField]="form.customer"
+            (valueChange)="onCustomerPicked($event)"
+          />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 6 }">
+        <ui-form-field label="From" for="periodStart" [required]="true">
+          <ui-date-field inputId="periodStart" [formField]="form.periodStart" [showIcon]="true" />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 6 }">
+        <ui-form-field label="Cut-off" for="periodEnd" [required]="true">
+          <ui-date-field inputId="periodEnd" [formField]="form.periodEnd" [showIcon]="true" />
+        </ui-form-field>
+      </ui-grid>
+      @if (prefill()?.tripLabel; as tripLabel) {
+        <ui-grid [size]="{ xs: 12 }">
+          <p class="text-muted-foreground text-sm">Only {{ tripLabel }}.</p>
+        </ui-grid>
+      }
+      <ui-grid [size]="{ xs: 12 }">
+        <ui-form-field
+          label="Remarks"
+          for="batchNotes"
+          hint="Printed on the summary for Accounting"
+        >
+          <ui-textarea-field id="batchNotes" [formField]="form.notes" [rows]="2" />
+        </ui-form-field>
+      </ui-grid>
+    </ui-grid>
+
+    <p class="text-muted-foreground mt-3 text-xs">
+      Every completed trip of the client in the period that isn't on another batch is added. The
+      batch gets the next SLC-RFV reference.
+    </p>
+
+    <div class="mt-4 flex justify-end gap-2">
+      <ui-button appearance="text" label="Cancel" (click)="open.set(false)" />
+      <ui-button type="submit" icon="plus" label="Open batch" [loading]="form().submitting()" />
+    </div>
+  </form>
+</ui-dialog>

@@ -1,0 +1,104 @@
+<ui-card>
+  <ui-data-container
+    [loading]="isLoading()"
+    [error]="error()"
+    [isEmpty]="isEmpty()"
+    skeletonVariant="table"
+    [skeletonRows]="10"
+    emptyTitle="No bookings yet"
+    emptyMessage="Book a Cold Chain trip, or convert an approved quotation, to see it here."
+    (retry)="onRetry()"
+  >
+    <ui-data-table
+      [value]="data()"
+      dataKey="id"
+      [scrollable]="true"
+      [lazy]="true"
+      [paginator]="true"
+      [showCurrentPageReport]="true"
+      [rows]="pageSize()"
+      [first]="first()"
+      [totalRecords]="totalRecords()"
+      [loading]="isLoading()"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      (lazyLoad)="onLazyLoad($event)"
+    >
+      <ng-template #header>
+        <tr>
+          <th>BK Reference</th>
+          <th uiSortHeader="CustomerId">Customer</th>
+          <th>Requested Pickup Date</th>
+          <th>Requested Delivery Date</th>
+          <!-- <th>Truck</th> -->
+          <th>Amount</th>
+          <th uiSortHeader="Status">Status</th>
+          <th uiSortHeader="CreatedAt">Created</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-booking>
+        <tr
+          class="hover:bg-hover cursor-pointer transition-colors duration-150"
+          (click)="navigateToBooking(booking)"
+        >
+          <!-- Number -->
+          <td>
+            <a
+              [routerLink]="['/forwarding/bookings-executions', booking.id]"
+              class="text-foreground font-mono text-sm font-bold hover:underline"
+              (click)="$event.stopPropagation()"
+            >
+              {{ booking.bookingNumber }}
+            </a>
+          </td>
+
+          <!-- Customer -->
+          <td class="text-foreground max-w-64 truncate font-medium">{{ booking.customerName }}</td>
+
+          <!-- Delivery day -->
+          <td class="whitespace-nowrap">
+            <span class="text-muted-foreground text-xs">
+              {{ booking.requestedPickupStart | date: "MMM d, yyyy, h:mm a" }}
+            </span>
+          </td>
+          <td class="whitespace-nowrap">
+            <span class="text-muted-foreground text-xs">
+              {{ booking.requestedDeliveryEnd | date: "MMM d, yyyy, h:mm a" }}
+            </span>
+          </td>
+
+          <!-- Truck -->
+          <!-- <td class="whitespace-nowrap">
+            @if (booking.truckSize) {
+              {{ truckSizeLabel(booking.truckSize) }}
+              <span class="text-muted-foreground text-xs">· {{ booking.dropCount }} drop(s)</span>
+            } @else {
+              <span class="text-muted-foreground">-</span>
+            }
+          </td> -->
+
+          <!-- Amount: the agreement estimate for Cold Chain, the quotation total for forwarding -->
+          <td class="font-mono text-sm whitespace-nowrap">
+            <span class="text-muted-foreground">{{ booking.currency | uppercase }}</span>
+            {{ booking.totalSelling }}
+          </td>
+
+          <!-- Status -->
+          <td>
+            <span
+              class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
+              [class]="statusBadgeClass(booking.status)"
+            >
+              {{ statusLabel(booking.status) }}
+            </span>
+          </td>
+
+          <!-- Created -->
+          <td class="text-muted-foreground">
+            {{ booking.createdAt | dateFormat }}
+          </td>
+        </tr>
+      </ng-template>
+    </ui-data-table>
+  </ui-data-container>
+</ui-card>

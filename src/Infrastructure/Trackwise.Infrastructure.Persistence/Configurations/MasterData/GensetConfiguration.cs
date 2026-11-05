@@ -1,0 +1,64 @@
+using Trackwise.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace Trackwise.Infrastructure.Persistence.Configurations.MasterData;
+
+internal sealed class GensetConfiguration : IEntityTypeConfiguration<Genset>
+{
+    public void Configure(EntityTypeBuilder<Genset> builder)
+    {
+        builder.ToTable("gensets");
+
+        builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.Code)
+            .HasMaxLength(30)
+            .IsRequired();
+
+        builder.Property(x => x.Name)
+            .HasMaxLength(200)
+            .IsRequired();
+
+        // Filtered rather than plain unique: a soft-deleted record keeps its code, and an
+        // unfiltered index would let it hold that code hostage forever.
+        builder.HasIndex(x => x.Code)
+            .IsUnique()
+            .HasFilter("deleted_at IS NULL");
+
+        builder.Property(x => x.SerialNumber).HasMaxLength(60);
+
+        // Unique among live rows for the same reason as Code, but only where present: not every
+        // genset has a serial number on file, and PostgreSQL treats NULLs as distinct, so several
+        // gensets without one coexist happily under this index.
+        builder.HasIndex(x => x.SerialNumber)
+            .IsUnique()
+            .HasFilter("deleted_at IS NULL AND serial_number IS NOT NULL");
+
+        builder.Property(x => x.Make).HasMaxLength(100);
+        builder.Property(x => x.Model).HasMaxLength(100);
+        builder.Property(x => x.Notes).HasMaxLength(2000);
+
+        builder.Property(x => x.IsActive).IsRequired();
+        builder.HasIndex(x => x.IsActive);
+
+        builder.HasIndex(x => x.Status);
+
+        // Restrict, not cascade: retiring a branch must go through the dependency probe, which
+        // tells the steward what is scoped to it. A cascade would silently take the gensets with it.
+        builder.HasOne(x => x.Branch)
+            .WithMany()
+            .HasForeignKey(x => x.BranchId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(x => x.BranchId);
+
+        builder.HasOne<Genset>()
+            .WithMany()
+            .HasForeignKey(x => x.MergedIntoId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Serves the delta feed other systems pull with ?updated_since=.
+        builder.HasIndex(x => x.UpdatedAt);
+    }
+}

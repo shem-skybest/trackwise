@@ -1,0 +1,20 @@
+<ui-page-header title="Report incident" backLink="/incidents" />
+
+@if (isLoading()) {
+  <ui-spinner />
+} @else {
+  <ui-card>
+    <form [formRoot]="form">
+      <app-incident-form [field]="form" />
+      <div class="mt-6 flex justify-end gap-2">
+        <ui-button appearance="text" label="Cancel" (click)="cancel()" />
+        <ui-button
+          type="submit"
+          icon="save"
+          label="Record incident"
+          [loading]="form().submitting()"
+        />
+      </div>
+    </form>
+  </ui-card>
+}

@@ -1,0 +1,41 @@
+<ui-dialog
+  header="Garage times"
+  [(open)]="visible"
+  [modal]="true"
+  width="520px"
+  [closable]="true"
+  [draggable]="false"
+  (opened)="onOpened()"
+>
+  <form [formRoot]="form">
+    <ui-typography variant="body-sm" color="muted" class="mb-4">
+      When the truck left the garage for this trip, and when it got back - as reported.
+    </ui-typography>
+    <ui-grid container spacing="4">
+      <ui-grid [size]="{ xs: 12, md: 6 }">
+        <ui-form-field label="Left the garage" for="garageDeparted">
+          <ui-date-field
+            [formField]="form.departedAt"
+            inputId="garageDeparted"
+            [showTime]="true"
+            [showIcon]="true"
+          />
+        </ui-form-field>
+      </ui-grid>
+      <ui-grid [size]="{ xs: 12, md: 6 }">
+        <ui-form-field label="Back at the garage" for="garageArrived">
+          <ui-date-field
+            [formField]="form.arrivedAt"
+            inputId="garageArrived"
+            [showTime]="true"
+            [showIcon]="true"
+          />
+        </ui-form-field>
+      </ui-grid>
+    </ui-grid>
+    <ui-stack direction="row" justify="end" gap="2" class="mt-6">
+      <ui-button appearance="outlined" type="button" label="Cancel" (click)="visible.set(false)" />
+      <ui-button type="submit" label="Save" icon="check" [loading]="form().submitting()" />
+    </ui-stack>
+  </form>
+</ui-dialog>

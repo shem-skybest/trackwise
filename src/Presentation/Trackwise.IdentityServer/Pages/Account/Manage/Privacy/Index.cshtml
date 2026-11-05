@@ -1,0 +1,180 @@
+@page
+@using Trackwise.Domain.Primitives.Enums
+@using Trackwise.IdentityServer.Pages.Account.Manage
+@model Trackwise.IdentityServer.Pages.Account.Manage.Privacy.PrivacyModel
+@{
+    ViewData["Title"] = "Privacy & data";
+    ViewData["ActivePage"] = ManageNavPages.Privacy;
+}
+
+@section scripts
+{
+    <script src="~/js/dialog.js"></script>
+}
+
+<partial name="_StatusMessage" model="Model.StatusMessage" />
+
+<div hlm-card>
+    <div hlm-card-header>
+        <div hlm-card-title>Download my data</div>
+        <div hlm-card-description>
+            We'll prepare a ZIP with your profile, organisations you have access to, consent history,
+            and the activity records we hold for you. You'll get an email when it's ready. Limit: one
+            export per 24 hours.
+        </div>
+    </div>
+
+    @if (Model.Exports.Count > 0)
+    {
+        <div hlm-card-content>
+            <div hlm-table-container>
+                <table hlm-table>
+                    <thead hlm-thead>
+                        <tr hlm-tr>
+                            <th hlm-th>Requested</th>
+                            <th hlm-th>Status</th>
+                            <th hlm-th>Expires</th>
+                            <th hlm-th></th>
+                        </tr>
+                    </thead>
+                    <tbody hlm-tbody>
+                        @foreach (var export in Model.Exports)
+                        {
+                            <tr hlm-tr>
+                                <td hlm-td>@export.RequestedAt.ToLocalTime().ToString("g")</td>
+                                <td hlm-td>
+                                    <span hlm-badge variant="@Model.ExportStatusVariant(export.Status)">@export.Status.GetDescription()</span>
+                                </td>
+                                <td hlm-td>@(export.ExpiresAt?.ToLocalTime().ToString("g") ?? "-")</td>
+                                <td hlm-td class="text-end">
+                                    @if (export.Status == DataExportStatus.Ready)
+                                    {
+                                        <form method="post" asp-page-handler="Download" asp-route-id="@export.Id">
+                                            <button hlm-btn variant="link" size="sm" type="submit" class="px-0">Download</button>
+                                        </form>
+                                    }
+                                    else if (export.Status == DataExportStatus.Failed)
+                                    {
+                                        <span class="text-muted-foreground text-xs">@export.ErrorMessage</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <div hlm-card-footer>
+        <form method="post" asp-page-handler="RequestExport">
+            <button hlm-btn type="submit">Request export</button>
+        </form>
+    </div>
+</div>
+
+<div hlm-card>
+    <div hlm-card-header>
+        <div hlm-card-title>Delete my account</div>
+        <div hlm-card-description>
+            Account deletion is irreversible after a @(Model.GracePeriodDays)-day grace period. Operational and financial
+            records (loads, invoices, payments, audit logs) stay intact for legal and accounting
+            compliance - only your name, email, and phone are replaced with placeholders.
+        </div>
+    </div>
+
+    @if (Model.PendingDeletion is { } pending)
+    {
+        <div hlm-card-content>
+            <div hlm-alert>
+                <div hlm-alert-title>Scheduled for deletion on @pending.ScheduledFor.ToLocalTime().ToString("d")</div>
+                <div hlm-alert-description>
+                    @if (pending.IsCancellable)
+                    {
+                        <text>You can still cancel this until then.</text>
+                    }
+                    else
+                    {
+                        <text>The grace period has elapsed; deletion will run on the next scheduled job.</text>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @if (pending.IsCancellable)
+        {
+            <div hlm-card-footer>
+                <form method="post" asp-page-handler="CancelDeletion" asp-route-id="@pending.Id">
+                    <button hlm-btn variant="outline" type="submit">Cancel deletion</button>
+                </form>
+            </div>
+        }
+    }
+    else
+    {
+        <div hlm-card-footer>
+            <button hlm-btn variant="destructive" type="button" data-dialog-open="delete-account-dialog">Delete my account</button>
+        </div>
+    }
+</div>
+
+<div hlm-card>
+    <div hlm-card-header>
+        <div hlm-card-title>Consent history</div>
+        <div hlm-card-description>A record of every cookie and processing consent you've made.</div>
+    </div>
+    <div hlm-card-content>
+        @if (Model.Consents.Count == 0)
+        {
+            <p class="text-muted-foreground text-sm">No consent records yet.</p>
+        }
+        else
+        {
+            <div hlm-table-container>
+                <table hlm-table>
+                    <thead hlm-thead>
+                        <tr hlm-tr>
+                            <th hlm-th>When</th>
+                            <th hlm-th>Category</th>
+                            <th hlm-th>Decision</th>
+                        </tr>
+                    </thead>
+                    <tbody hlm-tbody>
+                        @foreach (var consent in Model.Consents)
+                        {
+                            <tr hlm-tr>
+                                <td hlm-td>@consent.Timestamp.ToLocalTime().ToString("g")</td>
+                                <td hlm-td>@consent.ConsentType.GetDescription()</td>
+                                <td hlm-td>
+                                    <span hlm-badge variant="@(consent.Granted ? "default" : "secondary")">@(consent.Granted ? "Granted" : "Denied")</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<dialog id="delete-account-dialog" aria-labelledby="delete-account-dialog-title"
+        class="spartan-dialog-content text-foreground m-auto w-full border-0 backdrop:bg-black/50 backdrop:backdrop-blur-xs">
+    <form method="post" asp-page-handler="RequestDeletion" class="grid gap-6">
+        <div class="spartan-dialog-header flex flex-col">
+            <h2 id="delete-account-dialog-title" class="spartan-dialog-title mb-0 text-base">Delete my account</h2>
+            <p class="spartan-dialog-description">
+                This schedules your personal data for permanent anonymization @(Model.GracePeriodDays) days from now.
+                Operational and financial records (loads, invoices, payments) stay with your organization for
+                accounting purposes.
+            </p>
+        </div>
+        <div hlm-field>
+            <label hlm-field-label asp-for="DeleteReason">Reason (optional)</label>
+            <textarea hlm-textarea asp-for="DeleteReason" rows="3"></textarea>
+        </div>
+        <div class="spartan-dialog-footer flex flex-col-reverse sm:flex-row sm:justify-end">
+            <button hlm-btn variant="outline" type="button" data-dialog-close>Cancel</button>
+            <button hlm-btn variant="destructive" type="submit">Schedule deletion</button>
+        </div>
+    </form>
+</dialog>

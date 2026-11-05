@@ -1,0 +1,149 @@
+<ui-card>
+  <ui-stack gap="3">
+    <ui-stack direction="row" align="center" justify="between">
+      <ui-stack direction="row" align="center" gap="2">
+        <ui-icon name="dollar-sign" color="primary" />
+        <ui-typography variant="h6" tag="h5">Rate</ui-typography>
+      </ui-stack>
+      @if (canPrice) {
+        <ui-button
+          appearance="outlined"
+          size="sm"
+          icon="calculator"
+          [label]="isPriced() ? 'Re-price' : 'Price from agreement'"
+          (click)="open()"
+        />
+      }
+    </ui-stack>
+
+    @if (trip(); as trip) {
+      @if (isPriced()) {
+        @if (trip.isPriceOutdated) {
+          <ui-alert intent="warning" title="Price out of date">
+            A drop's outcome was corrected after this trip was priced. Re-price it so the charge
+            matches what happened.
+          </ui-alert>
+        }
+        <ui-stack gap="1" class="text-sm">
+          <ui-stack direction="row" justify="between">
+            <span class="text-muted-foreground">{{ trip.rateLineLabel }}</span>
+            <span>{{ trip.rateBaseAmount | currency: "PHP" : "symbol-narrow" }}</span>
+          </ui-stack>
+          <ui-stack direction="row" justify="between">
+            <span class="text-muted-foreground">Fuel ({{ trip.rateFuelBasis }})</span>
+            <span>{{ trip.rateFuelAmount | currency: "PHP" : "symbol-narrow" }}</span>
+          </ui-stack>
+          @if (trip.rateExtraDrops) {
+            <ui-stack direction="row" justify="between">
+              <span class="text-muted-foreground">{{ trip.rateExtraDrops }} extra drop(s)</span>
+              <span>{{ trip.rateExtraDropAmount | currency: "PHP" : "symbol-narrow" }}</span>
+            </ui-stack>
+          }
+          <ui-stack
+            direction="row"
+            justify="between"
+            class="border-border mt-1 border-t pt-1 font-semibold"
+          >
+            <span>Truck-trip price</span>
+            <span>{{ trip.rateTotal | currency: "PHP" : "symbol-narrow" }}</span>
+          </ui-stack>
+          <ui-typography variant="caption" color="muted">
+            Rates of {{ isoToDate(trip.ratedOn) | date: "mediumDate" }} -
+            <a
+              [routerLink]="['/rate-agreements', trip.rateAgreementId]"
+              class="text-primary hover:underline"
+            >
+              agreement
+            </a>
+          </ui-typography>
+        </ui-stack>
+      } @else {
+        <ui-typography variant="body-sm" color="muted">
+          Not priced yet. Pricing reads the client's rate agreement for the trip date and puts the
+          truck-trip price on the drops.
+        </ui-typography>
+      }
+    }
+  </ui-stack>
+</ui-card>
+
+<ui-dialog
+  [(open)]="dialogOpen"
+  header="Price this trip"
+  width="480px"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <ui-stack gap="3">
+    <ui-form-field
+      label="Trip date"
+      for="ratedOn"
+      hint="Picks the agreement and diesel price in force"
+    >
+      <ui-date-field
+        inputId="ratedOn"
+        [value]="ratedOn()"
+        (valueChange)="ratedOn.set($event)"
+        [showIcon]="true"
+      />
+    </ui-form-field>
+
+    @if (isQuoting()) {
+      <ui-stack align="center" class="py-4"><ui-spinner /></ui-stack>
+    } @else if (quoteError(); as error) {
+      <ui-alert intent="danger">{{ error }}</ui-alert>
+    } @else if (quote(); as quote) {
+      <ui-stack gap="1" class="text-sm">
+        <ui-typography variant="caption" color="muted">{{ quote.agreementName }}</ui-typography>
+        <ui-stack direction="row" justify="between">
+          <span>
+            {{ quote.lineLabel }}
+            @if (quote.foulTripPercent !== null && quote.foulTripPercent !== undefined) {
+              <span class="text-muted-foreground">
+                - foul trip, {{ quote.foulTripPercent }}% of the rate
+              </span>
+            }
+          </span>
+          <span>{{ quote.baseAmount | currency: "PHP" : "symbol-narrow" }}</span>
+        </ui-stack>
+        <ui-stack direction="row" justify="between">
+          <span>Fuel ({{ quote.fuelBasis }})</span>
+          <span>{{ quote.fuelAmount | currency: "PHP" : "symbol-narrow" }}</span>
+        </ui-stack>
+        @if (quote.extraDrops) {
+          <ui-stack direction="row" justify="between">
+            <span>{{ quote.extraDrops }} extra drop(s)</span>
+            <span>{{ quote.extraDropAmount | currency: "PHP" : "symbol-narrow" }}</span>
+          </ui-stack>
+        }
+        <ui-stack
+          direction="row"
+          justify="between"
+          class="border-border mt-1 border-t pt-1 font-semibold"
+        >
+          <span>Truck-trip price</span>
+          <span>{{ quote.total | currency: "PHP" : "symbol-narrow" }}</span>
+        </ui-stack>
+      </ui-stack>
+      @for (warning of quote.warnings; track warning) {
+        <ui-alert intent="warning">{{ warning }}</ui-alert>
+      }
+    }
+
+    <ui-stack direction="row" gap="2" justify="end">
+      <ui-button
+        intent="secondary"
+        appearance="outlined"
+        label="Cancel"
+        (click)="dialogOpen.set(false)"
+      />
+      <ui-button
+        icon="check"
+        label="Apply to trip"
+        [disabled]="!quote() || isQuoting()"
+        [loading]="isApplying()"
+        (click)="apply()"
+      />
+    </ui-stack>
+  </ui-stack>
+</ui-dialog>

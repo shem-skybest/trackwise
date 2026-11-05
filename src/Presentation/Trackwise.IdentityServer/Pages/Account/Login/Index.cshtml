@@ -1,0 +1,86 @@
+@page
+@model Trackwise.IdentityServer.Pages.Account.Login.Index
+@{
+    ViewData["Title"] = "Log in";
+}
+
+<form asp-page="/Account/Login/Index" method="post">
+    <input type="hidden" asp-for="Input.ReturnUrl" />
+
+    <div hlm-field-group>
+        <div class="flex flex-col items-center gap-1 text-center">
+            <h1 class="mb-0 text-2xl font-bold">Login to your account</h1>
+            <p class="text-muted-foreground text-sm text-balance">Enter your email below to login to your account</p>
+        </div>
+
+        <partial name="_ValidationSummary" />
+
+        @if (Model.View.EnableLocalLogin)
+        {
+            <div hlm-field>
+                <label hlm-field-label asp-for="Input.Email">Email</label>
+                <input hlm-input type="email" asp-for="Input.Email" placeholder="m@example.com" autocomplete="email" autofocus />
+                <span hlm-field-error asp-validation-for="Input.Email"></span>
+            </div>
+
+            <div hlm-field>
+                <div class="flex items-center">
+                    <label hlm-field-label asp-for="Input.Password">Password</label>
+                    <a hlm-field-description asp-page="/Account/ForgotPassword/Index"
+                       class="ml-auto text-sm underline-offset-4 hover:underline">Forgot password?</a>
+                </div>
+                <input hlm-input type="password" asp-for="Input.Password" autocomplete="current-password" />
+                <span hlm-field-error asp-validation-for="Input.Password"></span>
+            </div>
+
+            @if (Model.View.AllowRememberLogin)
+            {
+                <div hlm-field orientation="horizontal">
+                    <input hlm-checkbox asp-for="Input.RememberLogin" />
+                    <label hlm-field-label asp-for="Input.RememberLogin" class="font-normal">Remember me</label>
+                </div>
+            }
+
+            <div hlm-field>
+                @* Login/Index treats any other Input.Button value as a cancelled sign-in. *@
+                <button hlm-btn type="submit" name="Input.Button" value="login">Login</button>
+            </div>
+        }
+
+        @if (Model.View.EnableLocalLogin && Model.View.VisibleExternalProviders.Any())
+        {
+            <hlm-field-separator>Or continue with</hlm-field-separator>
+        }
+
+        @if (Model.View.VisibleExternalProviders.Any() || Model.View.EnableLocalLogin)
+        {
+            <div hlm-field>
+                @foreach (var provider in Model.View.VisibleExternalProviders)
+                {
+                    <a hlm-btn variant="outline"
+                       asp-page="/ExternalLogin/Challenge"
+                       asp-route-scheme="@provider.AuthenticationScheme"
+                       asp-route-returnUrl="@Model.Input.ReturnUrl">
+                        @if (provider.AuthenticationScheme.Contains("Google", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <partial name="_GoogleIcon" />
+                        }
+                        Login with @provider.DisplayName
+                    </a>
+                }
+
+                <p hlm-field-description class="text-center">
+                    No account yet? Ask your administrator for an invitation.
+                </p>
+            </div>
+        }
+
+        @if (!Model.View.EnableLocalLogin && !Model.View.VisibleExternalProviders.Any())
+        {
+            <div hlm-alert variant="destructive">
+                <div hlm-alert-title>Invalid login request</div>
+                <div hlm-alert-description>There are no login schemes configured for this request.</div>
+            </div>
+        }
+    </div>
+</form>

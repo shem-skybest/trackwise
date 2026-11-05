@@ -1,0 +1,76 @@
+# Docker Development
+
+Run local infrastructure (PostgreSQL + the database migrator) in Docker, then run the .NET services and Angular apps on the host.
+
+## Prerequisites
+
+- Docker Desktop running
+- .NET 10 SDK
+- Bun (for the Angular apps)
+
+## Quick Start
+
+```bash
+git clone https://github.com/shem-skybest/skybest-logistics-corporation.git
+cd logistics-app
+
+# Start Postgres and run the migrator once (creates DBs + seeds dev data)
+docker compose -f deploy/docker-compose.dev.yml up -d
+```
+
+Then run the backend and a frontend on the host:
+
+```bash
+dotnet run --project src/Presentation/Trackwise.IdentityServer   # https://localhost:7001
+dotnet run --project src/Presentation/Trackwise.API              # https://localhost:7000
+
+cd src/Client/Trackwise.Angular
+bun install
+bun start:tms        # also: start:admin, start:customer, start:website
+```
+
+## What the dev compose runs
+
+From `deploy/docker-compose.dev.yml`:
+
+| Service  | URL / Port            | Notes                                                            |
+| -------- | --------------------- | ---------------------------------------------------------------- |
+| postgres | localhost:5433        | Postgres 18; data in the `trackwise-pg-data` volume              |
+| migrator | runs once, then exits | Migrates master + tenant DBs, seeds the `ph`/`eu`/`solo` tenants |
+
+The migrator builds from `src/Presentation/Trackwise.DbMigrator/Dockerfile` and creates the `master_trackwise`, `skybest_trackwise`, `bestchill_trackwise`, and `solo_trackwise` databases.
+
+Three demo tenants are seeded: `us` (Skybest Logistics Corporation) and `eu` (Bestchill Incorporated) are fleets with 10 employees and 100 loads each; `solo` (Rodriguez Trucking LLC) runs in owner-operator mode with one person, one truck and 12 loads. Tenant metadata comes from the migrator's own `appsettings.json`; the compose file only overrides the connection strings, via `Tenants__N__ConnectionString` - the index has to match the tenant's position in that array. Adding a fourth tenant there means adding `Tenants__3__ConnectionString` here.
+
+## Service URLs
+
+| Service         | URL                            |
+| --------------- | ------------------------------ |
+| API (Swagger)   | https://localhost:7000/swagger |
+| Identity Server | https://localhost:7001         |
+| Admin Portal    | http://localhost:7002          |
+| TMS Portal      | http://localhost:7003          |
+| Customer Portal | http://localhost:7004          |
+| Website         | http://localhost:7005          |
+
+## App configuration / secrets
+
+The .NET services read connection strings and secrets from their own `appsettings.Development.json` / user-secrets. The dev compose only provides the database; point the API and Identity Server at `Host=localhost;Port=5433` (matching the published Postgres port).
+
+## Re-running migrations
+
+```bash
+docker compose -f deploy/docker-compose.dev.yml up migrator
+```
+
+## Stopping / cleaning up
+
+```bash
+docker compose -f deploy/docker-compose.dev.yml down        # stop
+docker compose -f deploy/docker-compose.dev.yml down -v     # stop + drop the DB volume
+```
+
+## Next Steps
+
+- [Test Credentials](test-credentials.md) - login credentials for testing
+- [Local Development](local-development.md) - running everything on the host without Docker

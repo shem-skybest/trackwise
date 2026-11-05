@@ -1,0 +1,137 @@
+<ui-card>
+  <ui-data-container
+    [loading]="isLoading()"
+    [error]="error()"
+    [isEmpty]="isEmpty()"
+    skeletonVariant="table"
+    [skeletonRows]="10"
+    emptyTitle="No commodities yet"
+    emptyMessage="Add the goods your shipments carry, so a commodity stops being a phrase someone types."
+    emptyActionLabel="Add Commodity"
+    (retry)="onRetry()"
+    (emptyAction)="onAddCommodity()"
+  >
+    <ui-data-table
+      [value]="data()"
+      dataKey="id"
+      [scrollable]="true"
+      [lazy]="true"
+      [paginator]="true"
+      [showCurrentPageReport]="true"
+      [rows]="pageSize()"
+      [first]="first()"
+      [totalRecords]="totalRecords()"
+      [loading]="isLoading()"
+      [rowsPerPageOptions]="[10, 25, 50, 100]"
+      size="small"
+      (lazyLoad)="onLazyLoad($event)"
+    >
+      <ng-template #header>
+        <tr>
+          <th uiSortHeader="Code">Code</th>
+          <th uiSortHeader="Name">Name</th>
+          <th uiSortHeader="HsCode">HS code</th>
+          <th>Handling</th>
+          <th>Branch</th>
+          <th uiSortHeader="IsActive">Status</th>
+          <th uiSortHeader="UpdatedAt">Last changed</th>
+          <th></th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-commodity>
+        <tr
+          class="hover:bg-hover transition-colors duration-150"
+          [class.cursor-pointer]="!commodity.deletedAt"
+          [class.opacity-60]="commodity.deletedAt"
+          (click)="navigateToCommodity(commodity)"
+        >
+          <td>
+            <span class="font-mono text-sm font-semibold">{{ commodity.code }}</span>
+          </td>
+
+          <td>
+            @if (commodity.deletedAt) {
+              <span class="text-foreground max-w-64 truncate font-bold line-through">
+                {{ commodity.name }}
+              </span>
+            } @else {
+              <a
+                [routerLink]="['/master-data/commodities', commodity.id]"
+                class="text-foreground max-w-64 truncate font-bold hover:underline"
+                (click)="$event.stopPropagation()"
+              >
+                {{ commodity.name }}
+              </a>
+            }
+          </td>
+
+          <td class="text-muted-foreground font-mono text-sm">
+            @if (commodity.hsCode) {
+              {{ commodity.hsCode }}
+            } @else {
+              <span class="text-xs italic">Unclassified</span>
+            }
+          </td>
+
+          <td>
+            <div class="flex flex-wrap gap-1">
+              @if (commodity.isHazardous) {
+                <ui-badge
+                  [value]="commodity.unNumber ? 'UN ' + commodity.unNumber : 'Hazardous'"
+                  severity="warn"
+                  size="sm"
+                  rounded
+                />
+              }
+              @if (commodity.requiresTemperatureControl) {
+                <ui-badge value="Reefer" severity="info" size="sm" rounded />
+              }
+              @if (!commodity.isHazardous && !commodity.requiresTemperatureControl) {
+                <span class="text-muted-foreground text-xs">General</span>
+              }
+            </div>
+          </td>
+
+          <td class="text-muted-foreground">
+            @if (commodity.branchName) {
+              {{ commodity.branchName }}
+            } @else {
+              <span class="text-xs italic">Every branch</span>
+            }
+          </td>
+
+          <td>
+            @if (commodity.deletedAt) {
+              <ui-badge value="Deleted" severity="danger" size="sm" rounded />
+            } @else if (commodity.isActive) {
+              <ui-badge value="Active" severity="success" size="sm" rounded />
+            } @else {
+              <ui-badge value="Inactive" severity="secondary" size="sm" rounded />
+            }
+          </td>
+
+          <td class="text-muted-foreground text-sm">
+            {{ commodity.updatedAt || commodity.createdAt | date: "dd/MM/yyyy HH:mm" }}
+            @if (commodity.updatedBy || commodity.createdBy) {
+              <span class="block text-xs">{{ commodity.updatedBy || commodity.createdBy }}</span>
+            }
+          </td>
+
+          <td class="text-right">
+            @if (commodity.deletedAt && canManage()) {
+              <ui-button
+                type="button"
+                appearance="text"
+                size="sm"
+                icon="history"
+                label="Restore"
+                (click)="onRestore(commodity, $event)"
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </ui-data-table>
+  </ui-data-container>
+</ui-card>

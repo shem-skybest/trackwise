@@ -1,0 +1,30 @@
+using Trackwise.Application.Abstractions;
+using Trackwise.Shared.Models;
+
+namespace Trackwise.Application.Modules.IdentityAccess.CustomerUsers.Commands;
+
+/// <summary>
+/// Command to create a new customer portal user.
+/// </summary>
+public class CreateCustomerUserCommand : ICommand<Result<CustomerUserDto>>
+{
+    /// <summary>
+    /// The user ID (from master database) to link.
+    /// </summary>
+    public required Guid UserId { get; set; }
+
+    /// <summary>
+    /// The customer ID this user should be associated with.
+    /// </summary>
+    public required Guid CustomerId { get; set; }
+
+    /// <summary>
+    /// Email address for the portal user.
+    /// </summary>
+    public required string Email { get; set; }
+
+    /// <summary>
+    /// Optional display name.
+    /// </summary>
+    public string? DisplayName { get; set; }
+}

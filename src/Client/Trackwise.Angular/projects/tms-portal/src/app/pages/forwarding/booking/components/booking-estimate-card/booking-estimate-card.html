@@ -1,0 +1,50 @@
+<ui-card>
+  <ui-stack gap="3">
+    <ui-stack direction="row" align="center" justify="between" gap="2">
+      <ui-typography variant="h5" tag="h2">{{ title() }}</ui-typography>
+      @if (isLoading()) {
+        <ui-spinner size="1.25rem" />
+      }
+    </ui-stack>
+
+    @if (estimate(); as e) {
+      @if (e.agreementName) {
+        <ui-typography variant="caption" color="muted">{{ e.agreementName }}</ui-typography>
+      }
+
+      @if (e.error) {
+        <ui-alert intent="warning">{{ e.error }}</ui-alert>
+      } @else {
+        <dl class="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-sm">
+          <dt class="text-muted-foreground">Rate{{ e.lineLabel ? " · " + e.lineLabel : "" }}</dt>
+          <dd class="text-right tabular-nums">
+            {{ e.baseAmount | currency: currency() : "symbol-narrow" }}
+          </dd>
+
+          <dt class="text-muted-foreground">Fuel{{ e.fuelBasis ? " · " + e.fuelBasis : "" }}</dt>
+          <dd class="text-right tabular-nums">
+            {{ e.fuelAmount | currency: currency() : "symbol-narrow" }}
+          </dd>
+
+          <dt class="text-muted-foreground">
+            Extra drops{{ e.extraDrops ? " · " + e.extraDrops : "" }}
+          </dt>
+          <dd class="text-right tabular-nums">
+            {{ e.extraDropAmount | currency: currency() : "symbol-narrow" }}
+          </dd>
+
+          <dt class="border-t pt-1 font-medium">Total per trip</dt>
+          <dd class="border-t pt-1 text-right font-semibold tabular-nums">
+            {{ e.total | currency: currency() : "symbol-narrow" }}
+          </dd>
+        </dl>
+
+        @for (warning of e.warnings; track warning) {
+          <ui-alert intent="warning">{{ warning }}</ui-alert>
+        }
+      }
+    } @else {
+      <ui-typography variant="body-sm" color="muted">{{ emptyText() }}</ui-typography>
+    }
+  </ui-stack>
+</ui-card>

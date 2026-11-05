@@ -1,0 +1,54 @@
+<ui-surface variant="elevated" [border]="true">
+  <ui-grid container spacing="3">
+    <ui-grid [size]="{ xs: 6, md: 3 }">
+      <ui-typography variant="caption" color="muted">Pre-load / RDD</ui-typography>
+      <div>
+        {{ summary().preLoad ? (summary().preLoad | date: "MM-dd-yy") : "-" }} /
+        {{ summary().rdd ? (summary().rdd | date: "MM-dd-yy") : "-" }}
+      </div>
+    </ui-grid>
+    <ui-grid [size]="{ xs: 6, md: 3 }">
+      <ui-typography variant="caption" color="muted">Plate / crew</ui-typography>
+      <div>
+        {{ trip().truckNumber ?? "-" }}
+        @if (editable() && !editing()) {
+          <ui-button appearance="text" size="sm" icon="pencil" label="Change" (click)="edit()" />
+        }
+      </div>
+      <div class="text-sm">
+        {{ trip().driverName ?? "No driver" }}
+        @if (summary().helpers) {
+          · {{ summary().helpers }}
+        }
+      </div>
+    </ui-grid>
+    <ui-grid [size]="{ xs: 6, md: 3 }">
+      <ui-typography variant="caption" color="muted">Client / commodity</ui-typography>
+      <div>{{ summary().clients || "-" }}</div>
+      <div class="text-sm">{{ summary().commodity }}</div>
+    </ui-grid>
+    <ui-grid [size]="{ xs: 6, md: 3 }">
+      <ui-typography variant="caption" color="muted">Drops / total</ui-typography>
+      <div>
+        {{ drops() }} drop{{ drops() === 1 ? "" : "s" }} · {{ trip().totalPlannedBoxes }} boxes
+        @if (trip().totalPlannedBags) {
+          + {{ trip().totalPlannedBags }} bags
+        }
+      </div>
+      <div class="text-muted-foreground text-sm">Status: {{ trip().status }}</div>
+    </ui-grid>
+  </ui-grid>
+
+  @if (editing()) {
+    <app-report-header-editor
+      [trip]="trip()"
+      [crewDay]="crewDay()"
+      (saved)="onSaved()"
+      (closed)="editing.set(false)"
+    />
+  } @else if (!editable() && (trip().status === "dispatched" || trip().status === "in_transit")) {
+    <ui-typography variant="caption" color="muted" class="mt-2 block">
+      The truck and crew are fixed once an arrival is recorded.
+    </ui-typography>
+  }
+</ui-surface>

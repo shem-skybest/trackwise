@@ -1,0 +1,21 @@
+<div class="relative h-full w-full" [appMapResize]="mapInstance()">
+  <mgl-map
+    [style]="mapStyle()"
+    [center]="mapCenter()"
+    [zoom]="14"
+    [style.width]="'100%'"
+    [style.height]="height()"
+    role="application"
+    aria-label="Address picker map"
+    (mapLoad)="onMapLoad($event.target)"
+    (mapClick)="onMapClick($event)"
+  >
+    @if (marker(); as pin) {
+      <mgl-marker [lngLat]="markerLngLat()!" [draggable]="draggable()">
+        <div class="text-center">
+          <ui-icon name="map-pin" size="inherit" class="text-xl" />
+        </div>
+      </mgl-marker>
+    }
+  </mgl-map>
+</div>

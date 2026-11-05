@@ -1,0 +1,85 @@
+<ui-card>
+  <ui-data-container
+    [loading]="isLoading()"
+    [error]="error()"
+    [isEmpty]="isEmpty()"
+    skeletonVariant="table"
+    [skeletonRows]="10"
+    emptyTitle="No workfiles yet"
+    emptyMessage="Promote a confirmed booking to open its workfile."
+    (retry)="onRetry()"
+  >
+    <ui-data-table
+      [value]="data()"
+      dataKey="id"
+      [scrollable]="true"
+      [lazy]="true"
+      [paginator]="true"
+      [showCurrentPageReport]="true"
+      [rows]="pageSize()"
+      [first]="first()"
+      [totalRecords]="totalRecords()"
+      [loading]="isLoading()"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      (lazyLoad)="onLazyLoad($event)"
+    >
+      <ng-template #header>
+        <tr>
+          <th uiSortHeader="ReferenceNumber">Reference</th>
+          <th uiSortHeader="Type">Type</th>
+          <th uiSortHeader="BillOfLadingNumber">BL No.</th>
+          <th>Customer</th>
+          <th>Route</th>
+          <th uiSortHeader="Eta">ETA</th>
+          <th uiSortHeader="Status">Status</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-workfile>
+        <tr
+          class="hover:bg-hover cursor-pointer transition-colors duration-150"
+          (click)="navigateToWorkfile(workfile)"
+        >
+          <td>
+            <a
+              [routerLink]="['/forwarding/workfiles', workfile.id]"
+              class="text-foreground font-mono text-sm font-bold hover:underline"
+              (click)="$event.stopPropagation()"
+            >
+              {{ workfile.referenceNumber }}
+            </a>
+            @if (workfile.isReferenceLocked) {
+              <ui-badge value="Locked" severity="warn" size="sm" rounded class="ml-2" />
+            }
+          </td>
+
+          <td class="text-muted-foreground">{{ typeLabel(workfile.type) }}</td>
+
+          <td class="font-mono text-sm">{{ workfile.billOfLadingNumber || "—" }}</td>
+
+          <td class="max-w-48 truncate">{{ workfile.customerName }}</td>
+
+          <td class="text-muted-foreground">
+            {{ workfile.origin || "—" }} &rarr; {{ workfile.destination || "—" }}
+          </td>
+
+          <td class="text-muted-foreground">
+            {{ workfile.eta ? (workfile.eta | dateFormat) : "—" }}
+          </td>
+
+          <td>
+            <ui-badge
+              [value]="statusLabel(workfile.status)"
+              [severity]="statusIntent(workfile.status)"
+              size="sm"
+              rounded
+            />
+            @if (workfile.isForwardedToAccounting) {
+              <ui-badge value="Forwarded" severity="success" size="sm" rounded class="ml-1" />
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </ui-data-table>
+  </ui-data-container>
+</ui-card>

@@ -1,0 +1,24 @@
+﻿@page
+@using Trackwise.IdentityServer.Pages.Account.Manage
+@model Trackwise.IdentityServer.Pages.Account.Manage.Disable2faModel
+@{
+    ViewData["Title"] = "Disable two-factor authentication";
+    ViewData["ActivePage"] = ManageNavPages.TwoFactorAuthentication;
+}
+
+<partial name="_StatusMessage" for="StatusMessage" />
+
+<form method="post">
+    <div hlm-card>
+        <div hlm-card-header>
+            <div hlm-card-title>Disable two-factor authentication</div>
+            <div hlm-card-description>
+                This only turns 2FA off. It doesn't change the key your authenticator app uses - to change that,
+                <a asp-page="./ResetAuthenticator">reset your authenticator key</a>.
+            </div>
+        </div>
+        <div hlm-card-footer>
+            <button hlm-btn variant="destructive" type="submit">Disable 2FA</button>
+        </div>
+    </div>
+</form>

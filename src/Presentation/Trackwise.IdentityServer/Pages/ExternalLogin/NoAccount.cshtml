@@ -1,0 +1,16 @@
+@page
+@model Trackwise.IdentityServer.Pages.ExternalLogin.NoAccount
+@{
+    ViewData["Title"] = "No account";
+}
+
+<div class="flex flex-col gap-6 text-center">
+    <div class="flex flex-col items-center gap-1">
+        <h1 class="mb-0 text-2xl font-bold">No account for this Google email</h1>
+        <p class="text-muted-foreground text-sm text-balance">
+            TrackWise accounts are by invitation only. Ask your administrator to invite this email,
+            then accept the invitation before signing in with Google.
+        </p>
+    </div>
+    <a hlm-btn variant="outline" asp-page="/Account/Login/Index">Back to login</a>
+</div>

@@ -1,0 +1,31 @@
+using Trackwise.Application.Abstractions;
+using Trackwise.Domain.Entities;
+using Trackwise.Domain.Persistence;
+using Trackwise.Mappings;
+using Trackwise.Shared.Models;
+
+namespace Trackwise.Application.Modules.IdentityAccess.Subscriptions.Queries;
+
+internal sealed class GetSubscriptionHandler : IAppRequestHandler<GetSubscriptionQuery, Result<SubscriptionDto>>
+{
+    private readonly IMasterUnitOfWork _masterUow;
+
+    public GetSubscriptionHandler(IMasterUnitOfWork masterUow)
+    {
+        _masterUow = masterUow;
+    }
+
+    public async Task<Result<SubscriptionDto>> Handle(
+        GetSubscriptionQuery req, CancellationToken ct)
+    {
+        var subscription = await _masterUow.Repository<Subscription>().GetAsync(i => i.Id == req.Id);
+
+        if (subscription is null)
+        {
+            return Result<SubscriptionDto>.Fail($"Could not find a subscription with ID '{req.Id}'");
+        }
+
+        var dto = subscription.ToDto();
+        return Result<SubscriptionDto>.Ok(dto);
+    }
+}

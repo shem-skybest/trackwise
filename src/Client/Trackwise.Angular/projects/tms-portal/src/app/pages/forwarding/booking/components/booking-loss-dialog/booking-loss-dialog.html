@@ -1,0 +1,47 @@
+<!-- <ui-dialog [header]="header()" [(open)]="open" [modal]="true" width="30rem" (opened)="onOpened()">
+  <ui-stack gap="3">
+    <ui-form-field label="Why" for="lossReason" [required]="true">
+      <ui-select-field
+        id="lossReason"
+        [(value)]="reason"
+        [options]="reasonOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Pick a reason"
+      />
+    </ui-form-field>
+
+    @if (isCancel()) {
+      <ui-form-field label="Who cancelled" for="party">
+        <ui-select-field
+          id="party"
+          [(value)]="party"
+          [options]="partyOptions"
+          optionLabel="label"
+          optionValue="value"
+        />
+      </ui-form-field>
+    }
+
+    <ui-form-field label="Note" for="lossNote" hint="Optional">
+      <ui-textarea-field id="lossNote" [(value)]="note" [rows]="3" />
+    </ui-form-field>
+  </ui-stack>
+
+  <ng-template #footer>
+    <ui-button
+      appearance="text"
+      label="Keep booking"
+      [disabled]="isBusy()"
+      (click)="open.set(false)"
+    />
+    <ui-button
+      intent="danger"
+      icon="x"
+      [label]="header()"
+      [disabled]="!reason()"
+      [loading]="isBusy()"
+      (click)="confirm()"
+    />
+  </ng-template>
+</ui-dialog> -->

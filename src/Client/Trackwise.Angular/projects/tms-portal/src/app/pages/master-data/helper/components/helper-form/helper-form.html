@@ -1,0 +1,134 @@
+<ui-grid container spacing="3">
+  <ui-grid [size]="{ xs: 12, lg: 9, xl: 8 }">
+    <form [formRoot]="form">
+      <ui-stack gap="4">
+        <ui-stack tag="section" gap="3">
+          <ui-stack direction="row" gap="2" align="start">
+            <ui-icon name="user" color="secondary" class="mt-1" />
+            <ui-stack gap="0">
+              <ui-typography variant="overline" color="secondary">Helper Details</ui-typography>
+              <ui-typography variant="caption" color="muted">
+                The canonical record for this helper.
+              </ui-typography>
+            </ui-stack>
+          </ui-stack>
+
+          <ui-surface variant="elevated" [border]="true">
+            <ui-stack gap="3">
+              <ui-grid container spacing="3">
+                <ui-grid [size]="{ xs: 12, md: 8 }">
+                  <ui-form-field label="Name" for="name" [required]="true">
+                    <ui-text-field id="name" [formField]="form.name" type="text" />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field label="Code" for="code" [hint]="codeHint()">
+                    <ui-text-field id="code" [formField]="form.code" type="text" [maxlength]="30" />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field label="Phone" for="phoneNumber">
+                    <ui-text-field id="phoneNumber" [formField]="form.phoneNumber" type="tel" />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field label="Employment type" for="employmentType">
+                    <ui-select-field
+                      id="employmentType"
+                      [formField]="form.employmentType"
+                      [options]="employmentTypes"
+                      optionLabel="label"
+                      optionValue="value"
+                      placeholder="Not recorded"
+                      [showClear]="true"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field
+                    label="Home unit"
+                    for="homeUnit"
+                    hint="The unit they normally work for"
+                  >
+                    <ui-select-field
+                      id="homeUnit"
+                      [formField]="form.homeUnit"
+                      [options]="crewUnits"
+                      optionLabel="label"
+                      optionValue="value"
+                      placeholder="Not recorded"
+                      [showClear]="true"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field
+                    label="Branch"
+                    for="branchId"
+                    hint="One branch, or every branch if shared"
+                  >
+                    <ui-select-field
+                      id="branchId"
+                      [formField]="form.branchId"
+                      [options]="branchOptions()"
+                      optionLabel="label"
+                      optionValue="value"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+              </ui-grid>
+
+              <ui-form-field label="Active" for="isActive">
+                <ui-toggle-field
+                  id="isActive"
+                  [formField]="form.isActive"
+                  label="Offered for assignment"
+                />
+              </ui-form-field>
+            </ui-stack>
+          </ui-surface>
+        </ui-stack>
+
+        <ui-stack tag="section" gap="3">
+          <ui-stack direction="row" gap="2" align="start">
+            <ui-icon name="map-pin" color="secondary" class="mt-1" />
+            <ui-stack gap="0">
+              <ui-typography variant="overline" color="secondary">Address</ui-typography>
+              <ui-typography variant="caption" color="muted">Optional.</ui-typography>
+            </ui-stack>
+          </ui-stack>
+
+          <ui-surface variant="elevated" [border]="true">
+            <ui-stack gap="3">
+              <ui-form-field label="Address" hint="Optional">
+                <ui-address-form [formField]="form.address" />
+              </ui-form-field>
+
+              <ui-form-field label="Notes" for="notes" hint="Optional">
+                <ui-textarea-field id="notes" [formField]="form.notes" [rows]="3" />
+              </ui-form-field>
+            </ui-stack>
+          </ui-surface>
+        </ui-stack>
+
+        <ui-stack direction="row" gap="2" align="center">
+          <ui-button type="submit" icon="save" [label]="submitLabel()" [disabled]="isLoading()" />
+
+          <ui-button
+            type="button"
+            appearance="text"
+            icon="arrow-left"
+            label="Cancel"
+            [routerLink]="['/master-data/helpers']"
+            [disabled]="isLoading()"
+          />
+        </ui-stack>
+      </ui-stack>
+    </form>
+  </ui-grid>
+</ui-grid>

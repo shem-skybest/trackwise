@@ -1,0 +1,173 @@
+<ui-grid container spacing="3">
+  <ui-grid [size]="{ xs: 12, lg: 9, xl: 8 }">
+    <form [formRoot]="form">
+      <ui-stack gap="4">
+        <ui-stack tag="section" gap="3">
+          <ui-stack direction="row" gap="2" align="start">
+            <ui-icon name="map-pin" color="secondary" class="mt-1" />
+            <ui-stack gap="0">
+              <ui-typography variant="overline" color="secondary">Location Details</ui-typography>
+              <ui-typography variant="caption" color="muted">
+                Delivery points, warehouses and yards - and the zones that group them for pricing.
+              </ui-typography>
+            </ui-stack>
+          </ui-stack>
+
+          <ui-surface variant="elevated" [border]="true">
+            <ui-stack gap="3">
+              <ui-grid container spacing="3">
+                <ui-grid [size]="{ xs: 12, md: 8 }">
+                  <ui-form-field label="Name" for="name" [required]="true">
+                    <ui-text-field id="name" [formField]="form.name" type="text" />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field label="Code" for="code" [hint]="codeHint()">
+                    <ui-text-field id="code" [formField]="form.code" type="text" [maxlength]="30" />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field label="Type" for="type" [required]="true">
+                    <ui-select-field
+                      id="type"
+                      [formField]="form.type"
+                      [options]="typeOptions"
+                      optionLabel="label"
+                      optionValue="value"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field label="Zone" for="parentLocationId" hint="The zone this sits in">
+                    <ui-select-field
+                      id="parentLocationId"
+                      [formField]="form.parentLocationId"
+                      [options]="zoneOptions()"
+                      optionLabel="label"
+                      optionValue="value"
+                      [filter]="true"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field
+                    label="Branch"
+                    for="branchId"
+                    hint="One branch, or every branch if shared"
+                  >
+                    <ui-select-field
+                      id="branchId"
+                      [formField]="form.branchId"
+                      [options]="branchOptions()"
+                      optionLabel="label"
+                      optionValue="value"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+              </ui-grid>
+
+              @if (!isZone()) {
+                <ui-grid container spacing="3">
+                  <ui-grid [size]="{ xs: 12, md: 6 }">
+                    <ui-form-field
+                      label="Customer"
+                      for="customer"
+                      hint="Whose outlet this is. Leave blank for a site any customer can use."
+                    >
+                      <app-search-customer [formField]="form.customer" />
+                    </ui-form-field>
+                  </ui-grid>
+
+                  <ui-grid [size]="{ xs: 12, md: 3 }">
+                    <ui-form-field label="Usual cut-off" for="cutoff" hint="Pre-fills deliver-by">
+                      <ui-date-field inputId="cutoff" [formField]="form.cutoff" [timeOnly]="true" />
+                    </ui-form-field>
+                  </ui-grid>
+
+                  <ui-grid [size]="{ xs: 12, md: 3 }">
+                    <ui-form-field
+                      label="Arrival radius (m)"
+                      for="zoneRadiusMeters"
+                      hint="For GPS arrival times"
+                    >
+                      <ui-number-field id="zoneRadiusMeters" [formField]="form.zoneRadiusMeters" />
+                    </ui-form-field>
+                  </ui-grid>
+                </ui-grid>
+              }
+
+              <ui-form-field label="Active" for="isActive">
+                <ui-toggle-field
+                  id="isActive"
+                  [formField]="form.isActive"
+                  label="Offered for new work"
+                />
+              </ui-form-field>
+            </ui-stack>
+          </ui-surface>
+        </ui-stack>
+
+        <ui-stack tag="section" gap="3">
+          <ui-stack direction="row" gap="2" align="start">
+            <ui-icon name="map" color="secondary" class="mt-1" />
+            <ui-stack gap="0">
+              <ui-typography variant="overline" color="secondary">Where It Is</ui-typography>
+              <ui-typography variant="caption" color="muted">
+                @if (isZone()) {
+                  A zone is a grouping rather than a place, so it has no address of its own.
+                } @else {
+                  Coordinates are optional, but both halves travel together.
+                }
+              </ui-typography>
+            </ui-stack>
+          </ui-stack>
+
+          <ui-surface variant="elevated" [border]="true">
+            <ui-stack gap="3">
+              @if (!isZone()) {
+                <ui-form-field label="Address" [required]="true">
+                  <ui-address-form [formField]="form.address" />
+                </ui-form-field>
+
+                <ui-grid container spacing="3">
+                  <ui-grid [size]="{ xs: 12, md: 4 }">
+                    <ui-form-field label="Latitude" for="latitude" hint="Decimal degrees">
+                      <ui-number-field id="latitude" [formField]="form.latitude" />
+                    </ui-form-field>
+                  </ui-grid>
+
+                  <ui-grid [size]="{ xs: 12, md: 4 }">
+                    <ui-form-field label="Longitude" for="longitude" hint="Decimal degrees">
+                      <ui-number-field id="longitude" [formField]="form.longitude" />
+                    </ui-form-field>
+                  </ui-grid>
+                </ui-grid>
+              }
+
+              <ui-form-field label="Notes" for="notes" hint="Optional">
+                <ui-textarea-field id="notes" [formField]="form.notes" [rows]="3" />
+              </ui-form-field>
+            </ui-stack>
+          </ui-surface>
+        </ui-stack>
+
+        <ui-stack direction="row" gap="2" align="center">
+          <ui-button type="submit" icon="save" [label]="submitLabel()" [disabled]="isLoading()" />
+
+          <ui-button
+            type="button"
+            appearance="text"
+            icon="arrow-left"
+            label="Cancel"
+            [routerLink]="['/master-data/locations']"
+            [disabled]="isLoading()"
+          />
+        </ui-stack>
+      </ui-stack>
+    </form>
+  </ui-grid>
+</ui-grid>

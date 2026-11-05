@@ -1,0 +1,12 @@
+using Trackwise.Application.Abstractions.Agents;
+
+namespace Trackwise.Infrastructure.AI.Tools;
+
+/// <summary>
+/// A tool's catalogue entry. Static because the catalogue is read at startup, before a tool's
+/// scoped dependencies exist.
+/// </summary>
+internal interface IAgentToolMetadata
+{
+    static abstract AgentToolDefinition Definition { get; }
+}

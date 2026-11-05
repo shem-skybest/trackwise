@@ -1,0 +1,33 @@
+<div class="animate-in fade-in space-y-4">
+  <ui-page-header title="Edit Vessel" backLink="/master-data/vessels">
+    <ui-button
+      type="button"
+      appearance="text"
+      intent="danger"
+      icon="trash"
+      label="Delete"
+      [disabled]="isBusy() || isLoading()"
+      (click)="confirmDelete()"
+    />
+  </ui-page-header>
+
+  @if (isLoading()) {
+    <div class="flex justify-center py-12">
+      <ui-spinner />
+    </div>
+  } @else {
+    <app-vessel-form
+      [vessel]="vessel()"
+      [isLoading]="isBusy()"
+      [isEdit]="true"
+      submitLabel="Save Changes"
+      (save)="update($event)"
+    />
+
+    @if (id) {
+      <div class="max-w-5xl">
+        <app-master-data-history entity="vessel" [recordId]="id" [version]="historyVersion()" />
+      </div>
+    }
+  }
+</div>

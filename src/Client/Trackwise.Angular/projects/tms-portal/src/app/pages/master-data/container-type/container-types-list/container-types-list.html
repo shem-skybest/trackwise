@@ -1,0 +1,78 @@
+<div class="animate-in fade-in space-y-4">
+  <ui-page-header
+    title="Container Types"
+    addRoute="/master-data/container-types/add"
+    addTooltip="Add a new container type"
+  />
+
+  <ui-card>
+    <ui-stack gap="3" class="p-4">
+      <ui-grid container spacing="3">
+        <ui-grid [size]="{ xs: 12, md: 4 }">
+          <ui-form-field label="Search" for="search" hint="Name, code or ISO code">
+            <ui-text-field
+              id="search"
+              icon="search"
+              placeholder="Search container types..."
+              (input)="onSearch($any($event.target).value)"
+            />
+          </ui-form-field>
+        </ui-grid>
+
+        <ui-grid [size]="{ xs: 12, md: 3 }">
+          <ui-form-field label="Category" for="category">
+            <ui-select-field
+              id="category"
+              [options]="categoryOptions"
+              optionLabel="label"
+              optionValue="value"
+              [value]="selectedCategory()"
+              (valueChange)="onCategoryChange($event)"
+            />
+          </ui-form-field>
+        </ui-grid>
+
+        <ui-grid [size]="{ xs: 12, md: 2 }">
+          <ui-form-field label="Size" for="length">
+            <ui-select-field
+              id="length"
+              [options]="lengthOptions"
+              optionLabel="label"
+              optionValue="value"
+              [value]="selectedLength()"
+              (valueChange)="onLengthChange($event)"
+            />
+          </ui-form-field>
+        </ui-grid>
+
+        <ui-grid [size]="{ xs: 12, md: 3 }">
+          <ui-form-field label="Deleted records" for="includeDeleted">
+            <ui-select-field
+              id="includeDeleted"
+              [options]="deletedOptions"
+              optionLabel="label"
+              optionValue="value"
+              [value]="includeDeleted()"
+              (valueChange)="onIncludeDeletedChange($event)"
+            />
+          </ui-form-field>
+        </ui-grid>
+      </ui-grid>
+    </ui-stack>
+  </ui-card>
+
+  <app-container-types-table
+    [data]="store.data()"
+    [isLoading]="store.isLoading()"
+    [error]="store.error()"
+    [isEmpty]="store.isEmpty()"
+    [totalRecords]="store.totalRecords()"
+    [pageSize]="store.pageSize()"
+    [first]="store.first()"
+    [canManage]="canManage"
+    (lazyLoad)="store.onLazyLoad($event)"
+    (retry)="store.retry()"
+    (addContainerType)="addContainerType()"
+    (restoreContainerType)="restore($event)"
+  />
+</div>

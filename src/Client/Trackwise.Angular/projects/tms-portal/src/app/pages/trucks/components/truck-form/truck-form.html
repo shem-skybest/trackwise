@@ -1,0 +1,356 @@
+<ui-stack [direction]="{ sm: 'col', md: 'row' }" gap="6">
+  <!-- Left: Form -->
+  @if (isLoading()) {
+    <ui-stack direction="row" justify="center" class="py-8">
+      <ui-icon name="loader-circle" spin size="xl" />
+    </ui-stack>
+  }
+
+  <form [formRoot]="form">
+    <ui-stack gap="6">
+      <!-- Truck Information Section -->
+      <ui-stack tag="section" gap="3">
+        <ui-stack direction="row" gap="2" align="center">
+          <ui-icon name="truck" color="secondary" />
+          <ui-typography variant="overline" color="secondary">Truck Information</ui-typography>
+        </ui-stack>
+        <ui-surface variant="elevated" [border]="true">
+          <ui-form-field label="Truck Number" for="truckNumber" [required]="true">
+            <ui-text-field
+              id="truckNumber"
+              [formField]="form.truckNumber"
+              type="text"
+              placeholder="e.g., T-001"
+            />
+          </ui-form-field>
+
+          <ui-form-field
+            label="Name"
+            for="name"
+            [required]="mode() === 'edit'"
+            [hint]="
+              mode() === 'create'
+                ? 'How dispatch boards show it, e.g. ABF3727 (4T Reefer). Leave blank to use the year, make and model.'
+                : 'How dispatch boards show it, e.g. ABF3727 (4T Reefer).'
+            "
+          >
+            <ui-text-field id="name" [formField]="form.name" type="text" />
+          </ui-form-field>
+
+          <ui-form-field label="Truck Type" for="truckType" [required]="true">
+            <ui-select-field
+              [formField]="form.truckType"
+              [options]="truckTypes"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Select truck type"
+            />
+          </ui-form-field>
+
+          <ui-form-field
+            label="Tonnage Class"
+            for="tonnageClass"
+            hint="Payload weight class, for reefer/trucking distance-band rate cards. Leave blank if not applicable."
+          >
+            <ui-select-field
+              [formField]="form.tonnageClass"
+              [options]="tonnageClasses"
+              optionLabel="label"
+              optionValue="value"
+              [showClear]="true"
+              placeholder="Not applicable"
+            />
+          </ui-form-field>
+
+          <ui-form-field
+            label="Gross Vehicle Weight (kg)"
+            for="grossVehicleWeightKg"
+            hint="As printed on the CR. Decides the driver's DL code: B2 up to 3,500 kg, C above."
+          >
+            <ui-number-field
+              [formField]="form.grossVehicleWeightKg"
+              inputId="grossVehicleWeightKg"
+              placeholder="e.g., 7500"
+            />
+          </ui-form-field>
+
+          @if (mode() === "edit") {
+            <ui-form-field label="Status" for="truckStatus" [required]="true">
+              <ui-select-field
+                [formField]="form.truckStatus"
+                [options]="truckStatuses"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Select status"
+              />
+            </ui-form-field>
+          }
+
+          @if (isCarHauler()) {
+            <ui-form-field
+              label="Vehicle Capacity"
+              for="vehicleCapacity"
+              hint="Maximum number of vehicles this hauler can carry"
+            >
+              <ui-number-field
+                [formField]="form.vehicleCapacity"
+                inputId="vehicleCapacity"
+                placeholder="e.g., 8"
+              />
+            </ui-form-field>
+          }
+
+          <ui-form-field
+            label="Branch"
+            for="branchId"
+            hint='Which office maintains this truck. Leave as "Every branch" if it&apos;s shared.'
+          >
+            <ui-select-field
+              [formField]="form.branchId"
+              [options]="branchOptions()"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Every branch"
+            />
+          </ui-form-field>
+
+          <ui-grid container spacing="4">
+            <ui-grid [size]="{ xs: 12, md: 6 }">
+              <ui-form-field
+                label="Asset Code"
+                for="assetCode"
+                hint="The company's own asset tag, e.g. R230325."
+              >
+                <ui-text-field
+                  id="assetCode"
+                  [formField]="form.assetCode"
+                  type="text"
+                  placeholder="e.g., R230325"
+                />
+              </ui-form-field>
+            </ui-grid>
+
+            <ui-grid [size]="{ xs: 12, md: 6 }">
+              <ui-form-field label="Ownership" for="ownership">
+                <ui-select-field
+                  [formField]="form.ownership"
+                  [options]="ownershipOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  placeholder="Not confirmed"
+                />
+              </ui-form-field>
+            </ui-grid>
+          </ui-grid>
+
+          @if (mode() === "edit") {
+            <ui-form-field
+              label="Active"
+              for="isActive"
+              hint="Whether this truck is still offered for new work. Distinct from Status above."
+              class="mb-0"
+            >
+              <ui-toggle-field id="isActive" [formField]="form.isActive" />
+            </ui-form-field>
+          }
+        </ui-surface>
+      </ui-stack>
+
+      <!-- Vehicle Details Section -->
+      <ui-stack tag="section" gap="3">
+        <ui-stack direction="row" gap="2" align="center">
+          <ui-icon name="car" color="secondary" />
+          <ui-typography variant="overline" color="secondary">Vehicle Details</ui-typography>
+        </ui-stack>
+        <ui-surface variant="elevated" [border]="true">
+          <ui-grid container spacing="4">
+            <ui-grid [size]="{ xs: 12, md: 6 }">
+              <ui-form-field label="Make" for="make">
+                <ui-text-field
+                  id="make"
+                  [formField]="form.make"
+                  type="text"
+                  placeholder="e.g., Freightliner"
+                />
+              </ui-form-field>
+            </ui-grid>
+
+            <ui-grid [size]="{ xs: 12, md: 6 }">
+              <ui-form-field label="Model" for="model">
+                <ui-text-field
+                  id="model"
+                  [formField]="form.model"
+                  type="text"
+                  placeholder="e.g., Cascadia"
+                />
+              </ui-form-field>
+            </ui-grid>
+
+            <ui-grid [size]="{ xs: 12, md: 6 }">
+              <ui-form-field label="Year" for="year">
+                <ui-number-field
+                  [formField]="form.year"
+                  inputId="year"
+                  [useGrouping]="false"
+                  placeholder="e.g., 2023"
+                />
+              </ui-form-field>
+            </ui-grid>
+
+            <ui-grid [size]="{ xs: 12, md: 6 }">
+              <app-truck-vin-field [field]="form" />
+            </ui-grid>
+
+            <ui-grid [size]="{ xs: 12, md: 6 }">
+              <ui-form-field label="Engine Number" for="engineNumber" hint="As printed on the CR.">
+                <ui-text-field id="engineNumber" [formField]="form.engineNumber" type="text" />
+              </ui-form-field>
+            </ui-grid>
+
+            <ui-grid [size]="{ xs: 12, md: 6 }">
+              <ui-form-field
+                label="Acquired On"
+                for="acquiredOn"
+                hint="When the company bought it."
+              >
+                <ui-date-field
+                  id="acquiredOn"
+                  [formField]="form.acquiredOn"
+                  dateFormat="yy-mm-dd"
+                  appendTo="body"
+                />
+              </ui-form-field>
+            </ui-grid>
+
+            <ui-grid [size]="{ xs: 12, md: 6 }">
+              <ui-form-field label="Supplier" for="supplier" class="mb-0">
+                <ui-text-field
+                  id="supplier"
+                  [formField]="form.supplier"
+                  type="text"
+                  placeholder="Dealer or auction house"
+                />
+              </ui-form-field>
+            </ui-grid>
+          </ui-grid>
+        </ui-surface>
+      </ui-stack>
+
+      <!-- Registration Section -->
+      <ui-stack tag="section" gap="3">
+        <ui-stack direction="row" gap="2" align="center">
+          <ui-icon name="id-card" color="secondary" />
+          <ui-typography variant="overline" color="secondary">Registration</ui-typography>
+        </ui-stack>
+        <ui-surface variant="elevated" [border]="true">
+          <ui-grid container spacing="4">
+            <ui-grid [size]="{ xs: 12, md: 6 }">
+              <ui-form-field label="License Plate" for="licensePlate">
+                <ui-text-field
+                  id="licensePlate"
+                  [formField]="form.licensePlate"
+                  type="text"
+                  placeholder="e.g., ABC-1234"
+                />
+              </ui-form-field>
+            </ui-grid>
+
+            <ui-grid [size]="{ xs: 12, md: 6 }">
+              <ui-form-field label="License Plate State" for="licensePlateState">
+                <ui-text-field
+                  id="licensePlateState"
+                  [formField]="form.licensePlateState"
+                  type="text"
+                  placeholder="e.g., TX"
+                  [maxlength]="2"
+                />
+              </ui-form-field>
+            </ui-grid>
+
+            <ui-grid [size]="{ xs: 12, md: 6 }">
+              <ui-form-field
+                label="Conduction Sticker"
+                for="conductionSticker"
+                hint="The temporary LTO sticker a new unit runs on before its plate is issued."
+                class="mb-0"
+              >
+                <ui-text-field
+                  id="conductionSticker"
+                  [formField]="form.conductionSticker"
+                  type="text"
+                  placeholder="e.g., RK861A"
+                />
+              </ui-form-field>
+            </ui-grid>
+          </ui-grid>
+        </ui-surface>
+      </ui-stack>
+
+      <!-- Driver Assignment Section -->
+      <ui-stack tag="section" gap="3">
+        <ui-stack direction="row" gap="2" align="center">
+          <ui-icon name="users" color="secondary" />
+          <ui-typography variant="overline" color="secondary">Driver Assignment</ui-typography>
+        </ui-stack>
+        <ui-surface variant="elevated" [border]="true">
+          <ui-form-field label="Main Driver" for="mainDriver">
+            <ui-autocomplete-field
+              [formField]="form.mainDriver"
+              placeholder="Search for a driver..."
+              optionLabel="fullName"
+              [minQueryLength]="2"
+              [suggestions]="suggestedDrivers()"
+              (completeMethod)="searchDriver($event)"
+            />
+          </ui-form-field>
+
+          <ui-form-field label="Secondary Driver" for="secondaryDriver" class="mb-0">
+            <ui-autocomplete-field
+              [formField]="form.secondaryDriver"
+              placeholder="Search for a driver..."
+              optionLabel="fullName"
+              [minQueryLength]="2"
+              [suggestions]="suggestedDrivers()"
+              (completeMethod)="searchDriver($event)"
+            />
+          </ui-form-field>
+        </ui-surface>
+      </ui-stack>
+
+      <app-truck-hazmat-section [field]="form" />
+
+      <!-- Action Buttons -->
+      <ui-stack direction="row" gap="2">
+        <ui-button
+          type="submit"
+          icon="check"
+          [label]="mode() === 'create' ? 'Create Truck' : 'Update Truck'"
+          [disabled]="isLoading()"
+        />
+
+        @if (mode() === "edit") {
+          <ui-button
+            intent="danger"
+            type="button"
+            icon="trash"
+            label="Delete"
+            [disabled]="isLoading()"
+            (click)="askRemove()"
+          />
+        }
+
+        <ui-button
+          appearance="outlined"
+          type="button"
+          icon="arrow-left"
+          label="Back to list"
+          [routerLink]="['/master-data/trucks']"
+        />
+      </ui-stack>
+    </ui-stack>
+  </form>
+
+  <!-- Right: Tips Panel -->
+
+  <app-truck-form-tips [mode]="mode()" />
+</ui-stack>

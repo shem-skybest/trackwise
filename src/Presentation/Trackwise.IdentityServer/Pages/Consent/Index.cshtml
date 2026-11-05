@@ -1,0 +1,77 @@
+@page
+@model Trackwise.IdentityServer.Pages.Consent.Index
+@{
+    ViewData["Title"] = "Consent";
+    ViewData["AuthWidth"] = "max-w-md";
+}
+
+<form asp-page="/Consent/Index">
+    <input type="hidden" asp-for="Input.ReturnUrl" />
+
+    <div hlm-field-group>
+        <div class="flex flex-col items-center gap-1 text-center">
+            @if (Model.View.ClientLogoUrl != null)
+            {
+                <img src="@Model.View.ClientLogoUrl" alt="" class="mb-2 size-12" />
+            }
+            <h1 class="mb-0 text-2xl font-bold">@Model.View.ClientName is requesting your permission</h1>
+            <p class="text-muted-foreground text-sm text-balance">Uncheck the permissions you do not wish to grant.</p>
+        </div>
+
+        <partial name="_ValidationSummary" />
+
+        @if (Model.View.IdentityScopes.Any())
+        {
+            <div hlm-card>
+                <div hlm-card-header><div hlm-card-title>Personal information</div></div>
+                <div hlm-card-content>
+                    <ul class="divide-y">
+                        @foreach (var scope in Model.View.IdentityScopes)
+                        {
+                            <partial name="_ScopeListItem" model="@scope" />
+                        }
+                    </ul>
+                </div>
+            </div>
+        }
+
+        @if (Model.View.ApiScopes.Any())
+        {
+            <div hlm-card>
+                <div hlm-card-header><div hlm-card-title>Application access</div></div>
+                <div hlm-card-content>
+                    <ul class="divide-y">
+                        @foreach (var scope in Model.View.ApiScopes)
+                        {
+                            <partial name="_ScopeListItem" model="scope" />
+                        }
+                    </ul>
+                </div>
+            </div>
+        }
+
+        <div hlm-field>
+            <label hlm-field-label asp-for="Input.Description">Description</label>
+            <input hlm-input asp-for="Input.Description" placeholder="Description or name of device" />
+        </div>
+
+        @if (Model.View.AllowRememberConsent)
+        {
+            <div hlm-field orientation="horizontal">
+                <input hlm-checkbox asp-for="Input.RememberConsent" />
+                <label hlm-field-label asp-for="Input.RememberConsent">Remember my decision</label>
+            </div>
+        }
+
+        <div hlm-field>
+            <div class="flex gap-2">
+                <button hlm-btn name="Input.button" value="yes" class="flex-1" autofocus>Yes, allow</button>
+                <button hlm-btn variant="outline" name="Input.button" value="no" class="flex-1">No, don't allow</button>
+            </div>
+            @if (Model.View.ClientUrl != null)
+            {
+                <p hlm-field-description class="text-center"><a href="@Model.View.ClientUrl">About @Model.View.ClientName</a></p>
+            }
+        </div>
+    </div>
+</form>

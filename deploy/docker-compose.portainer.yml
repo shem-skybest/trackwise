@@ -1,0 +1,16 @@
+# Portainer as its own compose project so an app-stack `--remove-orphans` never removes it.
+# Port 9000 is loopback-only, fronted by portainer.trackwise.app in deploy/nginx/trackwise.conf.
+name: portainer
+
+services:
+  portainer:
+    image: portainer/portainer-ce:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - portainer-data:/data
+
+volumes:
+  portainer-data: {}

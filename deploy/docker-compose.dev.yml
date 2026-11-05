@@ -1,0 +1,58 @@
+# Local development infrastructure (replaces the old Aspire dev inner loop).
+#
+# Usage:
+#   docker compose -f deploy/docker-compose.dev.yml up -d   # Postgres, runs the migrator once
+# Then run the apps on the host:
+#   dotnet run --project src/Presentation/Trackwise.IdentityServer
+#   dotnet run --project src/Presentation/Trackwise.API
+#   bun start:tms   # (and start:admin / start:customer / start:website) from src/Client/Trackwise.Angular
+#
+# Postgres: localhost:5433
+
+name: trackwise-dev
+
+services:
+  postgres:
+    # Pinned major version; 18+ images store data under /var/lib/postgresql (not .../data),
+    # so the volume mounts there. Bumping the major requires pg_upgrade or a fresh volume.
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "Test12345#"
+      POSTGRES_DB: master_trackwise
+    ports:
+      - "5433:5432"
+    volumes:
+      - trackwise-pg-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # One-shot DB migrate + seed. Metadata comes from the DbMigrator's appsettings.json; here we
+  # only force Development and point the DB hosts at `postgres`. Tenant hosts must use
+  # Tenants__N__ConnectionString (the seeder reads it before the ConnectionStrings:*TenantDatabase
+  # fallback).
+  migrator:
+    build:
+      context: ..
+      dockerfile: src/Presentation/Trackwise.DbMigrator/Dockerfile
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      # The migrator is a generic host, which reads DOTNET_ENVIRONMENT only.
+      DOTNET_ENVIRONMENT: "Development"
+      ConnectionStrings__MasterDatabase: "Host=postgres;Port=5432;Database=master_trackwise;Username=postgres;Password=Test12345#"
+      Tenants__0__ConnectionString: "Host=postgres;Port=5432;Database=skybest_trackwise;Username=postgres;Password=Test12345#"
+      Tenants__1__ConnectionString: "Host=postgres;Port=5432;Database=bestchill_trackwise;Username=postgres;Password=Test12345#"
+      Tenants__2__ConnectionString: "Host=postgres;Port=5432;Database=solo_trackwise;Username=postgres;Password=Test12345#"
+      SuperAdmin__Email: "admin@trackwise.com"
+      SuperAdmin__Password: "Test12345#"
+
+volumes:
+  trackwise-pg-data:

@@ -1,0 +1,72 @@
+<ui-stack direction="row" align="center" justify="between" class="mb-4">
+  <ui-typography variant="h5" tag="h3" class="m-0">Papers</ui-typography>
+  <ui-button size="sm" label="Add paper" icon="plus" (click)="openCreate()" />
+</ui-stack>
+
+<ui-data-table [value]="rows()" [loading]="isLoading()">
+  <ng-template #header>
+    <tr>
+      <th>Paper</th>
+      <th>Number</th>
+      <th>Issued</th>
+      <th>Expires</th>
+      <th>Status</th>
+      <th>Cost</th>
+      <th>Notes</th>
+      <th class="w-24"></th>
+    </tr>
+  </ng-template>
+
+  <ng-template #body let-row>
+    <tr>
+      <td>{{ row.typeLabel }}</td>
+      <td class="font-mono text-sm">{{ row.permit.number ?? "-" }}</td>
+      <td>{{ row.permit.issuedOn ? (row.permit.issuedOn | date: "mediumDate") : "-" }}</td>
+      <td>{{ row.permit.expiresOn | date: "mediumDate" }}</td>
+      <td><ui-badge [value]="row.expiry.label" [severity]="row.expiry.intent" /></td>
+      <td>{{ (row.permit.cost ?? null) !== null ? (row.permit.cost | currencyFormat) : "-" }}</td>
+      <td class="text-muted-foreground max-w-xs truncate text-sm" [title]="row.permit.notes ?? ''">
+        {{ row.permit.notes ?? "" }}
+      </td>
+      <td>
+        <ui-stack direction="row" gap="1">
+          <ui-button
+            intent="secondary"
+            appearance="text"
+            size="sm"
+            ariaLabel="Edit paper"
+            icon="pencil"
+            [rounded]="true"
+            (click)="openEdit(row.permit)"
+          />
+          <ui-button
+            intent="danger"
+            appearance="text"
+            size="sm"
+            ariaLabel="Delete paper"
+            icon="trash"
+            [rounded]="true"
+            (click)="onDelete(row.permit)"
+          />
+        </ui-stack>
+      </td>
+    </tr>
+  </ng-template>
+
+  <ng-template #empty>
+    <tr>
+      <td colspan="8" class="text-muted-foreground py-12 text-center">
+        No papers on file. Add the LTO registration, LTFRB franchise or insurance to get expiry
+        reminders.
+      </td>
+    </tr>
+  </ng-template>
+</ui-data-table>
+
+<app-vehicle-permit-dialog
+  [(visible)]="dialogVisible"
+  [truckId]="truckId()"
+  [trailerId]="trailerId()"
+  [permit]="editing()"
+  (saved)="refresh()"
+/>

@@ -1,0 +1,19 @@
+<ui-autocomplete-field
+  class="w-full"
+  placeholder="Type a helper name or code"
+  optionLabel="name"
+  [delay]="300"
+  [minQueryLength]="2"
+  [suggestions]="suggestedHelpers()"
+  [(value)]="value"
+  (completeMethod)="searchHelper($event)"
+  (touch)="markTouched()"
+  [disabled]="disabled()"
+>
+  <ng-template #item let-helper>
+    <div class="flex items-center gap-2">
+      <span class="font-bold">{{ helper.code }} -</span>
+      <span class="text-muted-foreground text-sm">{{ helper.name }}</span>
+    </div>
+  </ng-template>
+</ui-autocomplete-field>

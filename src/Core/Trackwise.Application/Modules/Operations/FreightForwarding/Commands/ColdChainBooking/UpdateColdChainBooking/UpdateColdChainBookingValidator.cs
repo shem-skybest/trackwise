@@ -1,0 +1,3 @@
+namespace Trackwise.Application.Modules.Operations.FreightForwarding.Commands;
+
+internal sealed class UpdateColdChainBookingValidator : ColdChainBookingPlanValidator<UpdateColdChainBookingCommand>;

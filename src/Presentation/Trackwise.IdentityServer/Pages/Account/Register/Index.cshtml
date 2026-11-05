@@ -1,0 +1,69 @@
+@page
+@model Trackwise.IdentityServer.Pages.Account.Register.Index
+@{
+    ViewData["Title"] = "Sign up";
+    var captchaError = ViewData.ModelState["captcha"]?.Errors.FirstOrDefault()?.ErrorMessage;
+}
+
+@section scripts
+{
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+}
+
+<form asp-page="/Account/Register/Index" asp-route-returnUrl="@Model.ReturnUrl">
+    <div hlm-field-group>
+        <div class="flex flex-col items-center gap-1 text-center">
+            <h1 class="mb-0 text-2xl font-bold">Create your account</h1>
+            <p class="text-muted-foreground text-sm text-balance">Fill in your details below to get started</p>
+        </div>
+
+        <partial name="_ValidationSummary" />
+
+        <div hlm-field>
+            <label hlm-field-label asp-for="Input.Email">Email</label>
+            <input hlm-input asp-for="Input.Email" placeholder="m@example.com" autocomplete="email" />
+            <span hlm-field-error asp-validation-for="Input.Email"></span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div hlm-field>
+                <label hlm-field-label asp-for="Input.FirstName">First name</label>
+                <input hlm-input asp-for="Input.FirstName" autocomplete="given-name" />
+                <span hlm-field-error asp-validation-for="Input.FirstName"></span>
+            </div>
+            <div hlm-field>
+                <label hlm-field-label asp-for="Input.LastName">Last name</label>
+                <input hlm-input asp-for="Input.LastName" autocomplete="family-name" />
+                <span hlm-field-error asp-validation-for="Input.LastName"></span>
+            </div>
+        </div>
+
+        <div hlm-field>
+            <label hlm-field-label asp-for="Input.Password">Password</label>
+            <input hlm-input asp-for="Input.Password" autocomplete="new-password" />
+            <span hlm-field-error asp-validation-for="Input.Password"></span>
+        </div>
+
+        <div hlm-field>
+            <label hlm-field-label asp-for="Input.ConfirmPassword">Confirm password</label>
+            <input hlm-input asp-for="Input.ConfirmPassword" autocomplete="new-password" />
+            <span hlm-field-error asp-validation-for="Input.ConfirmPassword"></span>
+        </div>
+
+        <div hlm-field>
+            <div class="g-recaptcha" data-sitekey="@Model.CaptchaSiteKey"></div>
+            @if (captchaError is not null)
+            {
+                <span hlm-field-error>@captchaError</span>
+            }
+        </div>
+
+        <div hlm-field>
+            <button hlm-btn type="submit">Create account</button>
+            <p hlm-field-description class="text-center">
+                Already have an account?
+                <a asp-page="/Account/Login/Index" asp-route-returnUrl="@Model.ReturnUrl">Log in</a>
+            </p>
+        </div>
+    </div>
+</form>

@@ -1,0 +1,79 @@
+/**
+ * app.css - Tailwind entry for the Identity Server's Razor pages, built to wwwroot/css/app.css.
+ *
+ * Rebuild after changing classes in Pages/ or TagHelpers/: `bun run build:identity-css` from the
+ * repo root. The output is committed, so neither `dotnet build` nor the Docker image needs Node.
+ *
+ * Everything must be served from this host: SecurityHeadersAttribute sends `default-src 'self'`, which
+ * blocks Google Fonts, CDN images and `data:` URIs on the login, logout and consent pages.
+ */
+
+/* Resolved from the Angular workspace, the only place tailwindcss is installed; a bare
+   "tailwindcss" would be looked up next to this file and fail. */
+@import "../../../Client/Trackwise.Angular/node_modules/tailwindcss/index.css" source(none);
+@source "../Pages";
+@source "../TagHelpers";
+
+/* The portals' palette, tokens and `.dark-theme` variant, so sign-in matches TMS / Admin / Customer. */
+@import "../../../Client/Trackwise.Angular/projects/shared/src/styles/theme.css";
+
+/* Layered so a utility on the element can still override a spartan class, as it can in Angular. */
+@import "./spartan-vega.css" layer(components);
+
+@font-face {
+  font-family: "DM Sans";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("../fonts/dm-sans-latin.woff2") format("woff2");
+}
+
+/* spartan's install step: without it a bare `border` / `divide-y` falls back to currentColor. */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+}
+
+@layer components {
+  /* ASP.NET marks an invalid field with .input-validation-error where brain sets
+     data-matches-spartan-invalid; same treatment as spartan-input's invalid state. */
+  .style-vega .input-validation-error {
+    @apply border-destructive ring-destructive/20 dark:border-destructive/50 dark:ring-destructive/40 ring-3;
+  }
+
+  .style-vega .field-validation-valid,
+  .style-vega .validation-summary-valid {
+    @apply hidden;
+  }
+
+  .style-vega .validation-summary-errors ul {
+    @apply m-0 list-none p-0;
+  }
+
+  .style-vega .validation-summary-errors ul:has(> li + li) {
+    @apply list-disc ps-4;
+  }
+
+  /* theme.css colours every <a> as a link. A link-styled-as-button whose variant sets no text colour
+     (outline, ghost) must keep the surrounding ink instead; :where() keeps this below the variants. */
+  .style-vega :where(a[data-slot="button"]) {
+    color: inherit;
+  }
+
+  /* spartan-dialog-content sets display: grid, which would otherwise beat the UA's hiding of a
+     closed <dialog>. */
+  .style-vega dialog:not([open]) {
+    display: none;
+  }
+
+  /* brain's checkbox is a custom element; these pages post a native one, drawn to match. */
+  .style-vega input[type="checkbox"].spartan-checkbox {
+    @apply checked:border-primary checked:bg-primary appearance-none bg-center bg-no-repeat;
+  }
+
+  .style-vega input[type="checkbox"].spartan-checkbox:checked {
+    background-image: url("../img/check.svg");
+    background-size: 0.75rem;
+  }
+}

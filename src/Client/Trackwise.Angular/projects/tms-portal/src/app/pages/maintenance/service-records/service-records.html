@@ -1,0 +1,126 @@
+<ui-page-header
+  title="Service Records"
+  backLink="/maintenance"
+  addRoute="/maintenance/records/add"
+  addTooltip="Log new service"
+/>
+
+<ui-card>
+  <ui-grid container spacing="3" class="mb-4">
+    <ui-grid [size]="{ xs: 12, md: 6 }">
+      <ui-form-field label="Search" for="search" class="mb-0">
+        <ui-search-field
+          placeholder="Requisition no., shop, truck or description"
+          (searchChange)="onSearch($event)"
+        />
+      </ui-form-field>
+    </ui-grid>
+    <ui-grid [size]="{ xs: 6, md: 3 }">
+      <ui-form-field label="Type" for="type" class="mb-0">
+        <ui-select-field
+          id="type"
+          [options]="typeOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All types"
+          [showClear]="true"
+          [value]="type()"
+          (valueChange)="onTypeChange($event)"
+        />
+      </ui-form-field>
+    </ui-grid>
+    <ui-grid [size]="{ xs: 6, md: 3 }">
+      <ui-form-field label="System" for="system" class="mb-0">
+        <ui-select-field
+          id="system"
+          [options]="systemOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All systems"
+          [showClear]="true"
+          [value]="system()"
+          (valueChange)="onSystemChange($event)"
+        />
+      </ui-form-field>
+    </ui-grid>
+  </ui-grid>
+
+  <ui-data-container
+    [loading]="store.isLoading()"
+    [error]="store.error()"
+    [isEmpty]="store.isEmpty()"
+    skeletonVariant="table"
+    [skeletonRows]="10"
+    emptyTitle="No service records"
+    emptyMessage="No maintenance matches. Log a repair or a PMS to start a truck's history."
+    emptyActionLabel="Log Service"
+    (retry)="store.retry()"
+    (emptyAction)="addRecord()"
+  >
+    <ui-data-table
+      [value]="store.data()"
+      [lazy]="true"
+      [paginator]="true"
+      [showCurrentPageReport]="true"
+      (lazyLoad)="store.onLazyLoad($event)"
+      [rows]="store.pageSize()"
+      [first]="store.first()"
+      [totalRecords]="store.totalRecords()"
+      [loading]="store.isLoading()"
+      [rowsPerPageOptions]="[10, 25, 50]"
+    >
+      <ng-template #header>
+        <tr>
+          <th uiSortHeader="ServiceDate">Date</th>
+          <th uiSortHeader="Truck.Number">Truck</th>
+          <th>Type</th>
+          <th>System</th>
+          <th>Description</th>
+          <th uiSortHeader="RequisitionNumber">Requisition</th>
+          <th>Shop</th>
+          <th uiSortHeader="TotalCost" class="text-right">Cost</th>
+          <th></th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-record>
+        <tr class="cursor-pointer" (click)="viewDetails(record)">
+          <td class="whitespace-nowrap">{{ record.serviceDate | date: "mediumDate" }}</td>
+          <td class="font-mono">{{ record.truckNumber || "-" }}</td>
+          <td>
+            <ui-badge
+              [value]="record.typeDisplay || record.type"
+              [severity]="typeIntent(record.type)"
+            />
+          </td>
+          <td>{{ systemLabel(record.vehicleSystem) }}</td>
+          <td class="max-w-72 truncate" [title]="record.description">{{ record.description }}</td>
+          <td class="font-mono whitespace-nowrap">
+            @if (record.requisitionNumber) {
+              <a
+                class="underline"
+                [routerLink]="['/maintenance/requisitions', record.requisitionNumber]"
+                (click)="$event.stopPropagation()"
+              >
+                {{ record.requisitionNumber }}
+              </a>
+            } @else {
+              -
+            }
+          </td>
+          <td>{{ record.vendorName || "-" }}</td>
+          <td class="text-right whitespace-nowrap">{{ record.totalCost | currencyFormat }}</td>
+          <td>
+            <ui-button
+              appearance="text"
+              icon="ellipsis-vertical"
+              ariaLabel="Show actions menu"
+              (click)="$event.stopPropagation(); selectedRow.set(record); menu.toggle($event)"
+            />
+          </td>
+        </tr>
+      </ng-template>
+    </ui-data-table>
+  </ui-data-container>
+</ui-card>
+
+<ui-menu #menu [items]="actionMenuItems" />

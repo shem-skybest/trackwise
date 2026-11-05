@@ -1,0 +1,17 @@
+using Trackwise.Application.Abstractions;
+using Trackwise.Shared.Models;
+
+namespace Trackwise.Application.Modules.Financial.Expenses.Queries;
+
+public class GetExpenseStatsQuery : IQuery<Result<ExpenseStatsDto>>
+{
+    /// <summary>
+    ///     Filter from this date
+    /// </summary>
+    public DateTime? FromDate { get; set; }
+
+    /// <summary>
+    ///     Filter until this date
+    /// </summary>
+    public DateTime? ToDate { get; set; }
+}

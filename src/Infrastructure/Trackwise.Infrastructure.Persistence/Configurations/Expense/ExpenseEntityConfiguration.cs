@@ -1,0 +1,103 @@
+using Trackwise.Domain.Entities;
+using Trackwise.Domain.Primitives.Enums;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace Trackwise.Infrastructure.Persistence.Configurations;
+
+internal sealed class ExpenseEntityConfiguration : IEntityTypeConfiguration<Expense>
+{
+    // Expense (TPH)
+    public void Configure(EntityTypeBuilder<Expense> builder)
+    {
+        builder.ToTable("expenses");
+
+        builder.HasDiscriminator(e => e.Type)
+            .HasValue<CompanyExpense>(ExpenseType.Company)
+            .HasValue<TruckExpense>(ExpenseType.Truck)
+            .HasValue<BodyShopExpense>(ExpenseType.BodyShop);
+
+        builder.Property(e => e.Number)
+            .UseIdentityAlwaysColumn()
+            .IsRequired();
+
+        // Prevent EF from trying to update the Number column on updates
+        builder.Property(e => e.Number)
+            .Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Ignore);
+
+        builder.HasIndex(e => e.Number)
+            .IsUnique();
+
+        builder.ComplexProperty(e => e.Amount, money =>
+        {
+            money.Property(m => m.Amount).HasPrecision(18, 2);
+            money.Property(m => m.Currency).HasMaxLength(3);
+        });
+
+        builder.Property(e => e.VendorName).HasMaxLength(255);
+        builder.Property(e => e.ReceiptBlobPath).HasMaxLength(500);
+        builder.Property(e => e.Notes).HasMaxLength(2000);
+        builder.Property(e => e.ApprovedById).HasMaxLength(50);
+        builder.Property(e => e.RejectionReason).HasMaxLength(500);
+
+        // Indexes for common queries
+        builder.HasIndex(e => e.Status);
+        builder.HasIndex(e => e.ExpenseDate);
+        builder.HasIndex(e => e.Type);
+    }
+
+    #region Derived Types Configuration
+
+    public sealed class CompanyExpenseEntityConfiguration : IEntityTypeConfiguration<CompanyExpense>
+    {
+        public void Configure(EntityTypeBuilder<CompanyExpense> builder)
+        {
+            // CompanyExpense has no navigation properties, just the Category enum
+        }
+    }
+
+    public sealed class TruckExpenseEntityConfiguration : IEntityTypeConfiguration<TruckExpense>
+    {
+        public void Configure(EntityTypeBuilder<TruckExpense> builder)
+        {
+            builder.HasOne(e => e.Truck)
+                .WithMany()
+                .HasForeignKey(e => e.TruckId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Property(e => e.ExternalTransactionId).HasMaxLength(100);
+            builder.Property(e => e.PricePerUnit).HasPrecision(18, 4);
+
+            builder.HasOne(e => e.Trip)
+                .WithMany()
+                .HasForeignKey(e => e.TripId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            builder.HasIndex(e => e.TripId);
+
+            // Belt-and-suspenders idempotency for fuel-card imports (the staging table's
+            // unique index is the primary guard).
+            builder.HasIndex(e => new { e.FuelCardProvider, e.ExternalTransactionId })
+                .IsUnique()
+                .HasFilter("external_transaction_id IS NOT NULL");
+        }
+    }
+
+    public sealed class BodyShopExpenseEntityConfiguration : IEntityTypeConfiguration<BodyShopExpense>
+    {
+        public void Configure(EntityTypeBuilder<BodyShopExpense> builder)
+        {
+            builder.Property(e => e.VendorAddress).HasMaxLength(500);
+            builder.Property(e => e.VendorPhone).HasMaxLength(20);
+            builder.Property(e => e.RepairDescription).HasMaxLength(2000);
+
+            builder.HasOne(e => e.Truck)
+                .WithMany()
+                .HasForeignKey(e => e.TruckId)
+                .OnDelete(DeleteBehavior.Restrict);
+        }
+    }
+
+    #endregion
+}

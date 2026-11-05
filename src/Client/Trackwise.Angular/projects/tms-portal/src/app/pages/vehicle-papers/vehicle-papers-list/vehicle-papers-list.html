@@ -1,0 +1,108 @@
+<ui-page-header title="Vehicle Papers">
+  <ui-button appearance="outlined" icon="refresh-cw" label="Refresh" (click)="refresh()" />
+</ui-page-header>
+
+<ui-grid container spacing="4" class="mb-4">
+  <ui-grid [size]="{ xs: 12, md: 4 }">
+    <ui-card>
+      <ui-stat-item label="Expired" [value]="'' + expiredCount()" intent="danger" />
+    </ui-card>
+  </ui-grid>
+  <ui-grid [size]="{ xs: 12, md: 4 }">
+    <ui-card>
+      <ui-stat-item label="Due within 30 days" [value]="'' + due30Count()" intent="warning" />
+    </ui-card>
+  </ui-grid>
+  <ui-grid [size]="{ xs: 12, md: 4 }">
+    <ui-card>
+      <ui-stat-item label="Due in 31-60 days" [value]="'' + due60Count()" />
+    </ui-card>
+  </ui-grid>
+</ui-grid>
+
+<ui-card>
+  <ui-stack direction="row" gap="3" class="mb-2 flex-wrap">
+    <ui-form-field label="Show" for="window" class="w-56">
+      <ui-select-field
+        id="window"
+        [(value)]="window"
+        [options]="windows"
+        optionLabel="label"
+        optionValue="value"
+      />
+    </ui-form-field>
+    <ui-form-field label="Paper" for="type" class="w-56">
+      <ui-select-field
+        id="type"
+        [(value)]="type"
+        [options]="typeOptions"
+        optionLabel="label"
+        optionValue="value"
+      />
+    </ui-form-field>
+  </ui-stack>
+
+  <ui-data-table [value]="rows()" [loading]="isLoading()">
+    <ng-template #header>
+      <tr>
+        <th>Vehicle</th>
+        <th>Paper</th>
+        <th>Number</th>
+        <th>Expires</th>
+        <th>Status</th>
+        <th>Notes</th>
+        <th class="w-16"></th>
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-row>
+      <tr>
+        <td>
+          <a
+            [routerLink]="vehicleLink(row.permit)"
+            class="text-foreground font-medium hover:underline"
+          >
+            {{ row.permit.vehicleName ?? row.permit.vehicleCode }}
+          </a>
+        </td>
+        <td>{{ row.typeLabel }}</td>
+        <td class="font-mono text-sm">{{ row.permit.number ?? "-" }}</td>
+        <td>{{ row.permit.expiresOn | date: "mediumDate" }}</td>
+        <td><ui-badge [value]="row.expiry.label" [severity]="row.expiry.intent" /></td>
+        <td
+          class="text-muted-foreground max-w-xs truncate text-sm"
+          [title]="row.permit.notes ?? ''"
+        >
+          {{ row.permit.notes ?? "" }}
+        </td>
+        <td>
+          <ui-button
+            intent="secondary"
+            appearance="text"
+            size="sm"
+            ariaLabel="Edit paper"
+            icon="pencil"
+            [rounded]="true"
+            (click)="openEdit(row.permit)"
+          />
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template #empty>
+      <tr>
+        <td colspan="7" class="text-muted-foreground py-12 text-center">
+          Nothing due in this window.
+        </td>
+      </tr>
+    </ng-template>
+  </ui-data-table>
+</ui-card>
+
+<app-vehicle-permit-dialog
+  [(visible)]="dialogVisible"
+  [truckId]="editing()?.truckId ?? null"
+  [trailerId]="editing()?.trailerId ?? null"
+  [permit]="editing()"
+  (saved)="refresh()"
+/>
