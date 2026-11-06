@@ -17,13 +17,6 @@ public partial class AddRateNegotiation : Migration
             type: "uuid",
             nullable: true);
 
-        migrationBuilder.AddColumn<int>(
-            name: "last_sequence",
-            table: "agent_conversations",
-            type: "integer",
-            nullable: false,
-            defaultValue: 0);
-
         migrationBuilder.CreateTable(
             name: "lane_rate_floors",
             columns: table => new
