@@ -10,8 +10,19 @@ internal sealed class CreateTariffHandler(ITenantUnitOfWork tenantUow)
 {
     public async Task<Result<Guid>> Handle(CreateTariffCommand req, CancellationToken ct)
     {
+        if (req.CustomerId.HasValue &&
+            await tenantUow.Repository<Customer>().GetByIdAsync(req.CustomerId.Value, ct) is null)
+        {
+            return Result<Guid>.Fail($"Customer with ID '{req.CustomerId}' not found.");
+        }
+
         var existing = await tenantUow.Repository<Tariff>()
-            .GetAsync(i => i.Name == req.Name, ct);
+            .GetAsync(i => i.Name == req.Name &&
+                           i.Mode == req.Mode &&
+                           i.ServiceLevel == req.ServiceLevel &&
+                           i.ContractId == req.ContractId &&
+                           i.CustomerId == req.CustomerId &&
+                           i.IsActive, ct);
 
         if (existing is not null)
         {
@@ -28,7 +39,8 @@ internal sealed class CreateTariffHandler(ITenantUnitOfWork tenantUow)
             containerTypeId: req.ContainerTypeId,
             carrierId: req.CarrierId,
             effectiveFrom: req.EffectiveFrom,
-            contractId: req.ContractId);
+            contractId: req.ContractId,
+            customerId: req.CustomerId);
 
         await tenantUow.Repository<Tariff>().AddAsync(tariff, ct);
         await tenantUow.SaveChangesAsync(ct);

@@ -290,6 +290,7 @@ public class QuotationLifecycleHandlersTests
 
         return Quotation.Create(
             customerId: Guid.NewGuid(),
+            branchId: Guid.NewGuid(),
             referenceNumber: "QT-TEST-2026",
             currency: "USD",
             mode: TransportMode.Road,

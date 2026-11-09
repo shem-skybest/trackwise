@@ -7,6 +7,7 @@
     <AspNetCoreHostingModel>OutOfProcess</AspNetCoreHostingModel>
     <PublishSingleFile>true</PublishSingleFile>
     <LangVersion>default</LangVersion>
+    <UserSecretsId>616c0ab4-ba31-49fb-84ca-d1561545f469</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

@@ -61,7 +61,7 @@ public class CreateQuotationHandlerTests
         _locationRepo.GetByIdAsync(_destination.Id, Arg.Any<CancellationToken>()).Returns(_destination);
         _locationRepo.Query().Returns(_ => new List<Location> { _origin, _destination }.BuildMock());
         fxRateService.GetRateAsync("USD", "PHP", Arg.Any<CancellationToken>()).Returns(56m);
-        referenceGenerator.NextAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns("QT-DOM-0001");
+        referenceGenerator.NextAsync(FreightMode.Domestic, "", Arg.Any<CancellationToken>()).Returns("QT-DOM-0001");
 
         _sut = new CreateQuotationHandler(_tenantUow, _ratingEngine, referenceGenerator, fxRateService);
     }

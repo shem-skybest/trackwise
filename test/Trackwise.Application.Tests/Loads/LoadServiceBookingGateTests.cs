@@ -46,6 +46,7 @@ public class LoadServiceBookingGateTests
 
         var quotation = Quotation.Create(
             customerId: customer.Id,
+            branchId: customer.Id,
             referenceNumber: "QT-TEST-001",
             currency: "USD",
             mode: TransportMode.Road,
@@ -56,7 +57,7 @@ public class LoadServiceBookingGateTests
             cargoSpec: cargo);
 
         TestQuotations.Accepted(quotation);
-        booking = Booking.CreateDraftFromQuotation(quotation);
+        booking = Booking.CreateDraftFromQuotation(quotation, 1);
 
         tenantUow.Repository<Employee>().Returns(employeeRepo);
         tenantUow.Repository<Truck>().Returns(truckRepo);

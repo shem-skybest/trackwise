@@ -23,20 +23,27 @@ internal sealed class ConvertQuotationToBookingHandler(ITenantUnitOfWork tenantU
             return Result<Guid>.Fail("Only Accepted quotations can be converted to a Booking.");
         }
 
-        var alreadyBooked = await tenantUow.Repository<Booking>().Query()
-            .AnyAsync(b => b.QuotationId == req.QuotationId, ct);
-        if (alreadyBooked)
+        if (!req.Repeat)
         {
-            return Result<Guid>.Fail("This Quotation has already been converted to a Booking.");
+            var existingBooking = await tenantUow.Repository<Booking>().Query()
+                .Where(b => b.QuotationId == req.QuotationId)
+                .Select(b => (Guid?)b.Id)
+                .FirstOrDefaultAsync(ct);
+
+            if (existingBooking.HasValue)
+                return Result<Guid>.Ok(existingBooking.Value);
         }
 
+        var existingCount = await tenantUow.Repository<Booking>().Query()
+            .IgnoreQueryFilters()
+            .CountAsync(b => b.QuotationId == quotation.Id, ct);
+
         var booking = Booking.CreateDraftFromQuotation(
-            quotation
-            //req.ContainerTypeId,
-            //req.RequestedPickupDate,
-            //req.RequestedDeliveryDate,
-            //req.Notes
-            );
+            quotation,
+            bookingSequence: existingCount + 1,
+            requestedPickupDate: req.RequestedPickupDate,
+            requestedDeliveryDate: req.RequestedDeliveryDate,
+            notes: req.Notes);
 
         await tenantUow.Repository<Booking>().AddAsync(booking, ct);
         await tenantUow.SaveChangesAsync(ct);

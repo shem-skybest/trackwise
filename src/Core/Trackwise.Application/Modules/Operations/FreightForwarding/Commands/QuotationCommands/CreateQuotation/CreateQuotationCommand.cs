@@ -9,6 +9,7 @@ namespace Trackwise.Application.Modules.Operations.FreightForwarding.Commands.Qu
 public class CreateQuotationCommand : ICommand<Result<Guid>>
 {
     public Guid CustomerId { get; set; }
+    public Guid BranchId { get; set; }
     public string Currency { get; set; } = default!;
     public TransportMode Mode { get; set; }
     public FreightMode FreightMode { get; set; } = FreightMode.Domestic;

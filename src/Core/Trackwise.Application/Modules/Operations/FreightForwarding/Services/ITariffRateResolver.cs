@@ -9,6 +9,7 @@ namespace Trackwise.Application.Modules.Operations.FreightForwarding.Services;
 public interface ITariffRateResolver
 {
     Task<TariffRate?> ResolveRateAsync(
+        Guid? customerId,
         Guid? contractId,
         string chargeCode,
         FreightMode mode,

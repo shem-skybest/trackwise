@@ -44,6 +44,23 @@
 
                 <ui-grid [size]="{ xs: 12, md: 4 }">
                   <ui-form-field
+                    label="Branch"
+                    for="branchId"
+                    [required]="true"
+                    hint="Branch that owns this quotation"
+                  >
+                    <ui-select-field
+                      id="branchId"
+                      [formField]="form.branchId"
+                      [options]="branchOptions()"
+                      optionLabel="label"
+                      optionValue="value"
+                    />
+                  </ui-form-field>
+                </ui-grid>
+
+                <ui-grid [size]="{ xs: 12, md: 4 }">
+                  <ui-form-field
                     label="Incoterm"
                     for="incoterm"
                     [required]="true"
@@ -450,7 +467,11 @@
                   </ui-grid>
 
                   <ui-grid [size]="{ xs: 12, md: 6 }">
-                    <ui-form-field label="Setpoint (°C)" for="setpointCelsius">
+                    <ui-form-field
+                      label="Setpoint (°C)"
+                      for="setpointCelsius"
+                      [required]="isColdChainRequired()"
+                    >
                       <ui-text-field
                         id="setpointCelsius"
                         [formField]="form.setpointCelsius"
@@ -509,7 +530,7 @@
             icon="arrow-left"
             label="Cancel"
             [routerLink]="[
-              quotation()?.id ? `/quotations/${quotation()?.id}` : '/quotations',
+              quotation()?.id != null ? `/quotations/${quotation()?.id}` : '/quotations',
             ]"
             [disabled]="isLoading() || form().submitting()"
           />

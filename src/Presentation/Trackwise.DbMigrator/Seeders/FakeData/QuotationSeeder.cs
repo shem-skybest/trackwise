@@ -30,7 +30,7 @@ internal class QuotationSeeder(ILogger<QuotationSeeder> logger) : SeederBase(log
     public override int Order => 225;
 
     public override IReadOnlyList<string> DependsOn =>
-        [nameof(CustomerSeeder), nameof(TariffSeeder), nameof(LocationSeeder)];
+        [nameof(CustomerSeeder), nameof(BranchSeeder), nameof(TariffSeeder), nameof(LocationSeeder)];
 
     protected override async Task<bool> HasExistingDataAsync(SeederContext context, CancellationToken cancellationToken)
     {
@@ -76,6 +76,9 @@ internal class QuotationSeeder(ILogger<QuotationSeeder> logger) : SeederBase(log
 
         LogStarting();
 
+        var branches = context.CreatedBranches ?? [];
+        Guid Branch(int index) => branches[index % branches.Count].Id;
+
         var now = DateTimeOffset.UtcNow;
         var origin = locations[0];
         var dest = locations[1];
@@ -104,6 +107,7 @@ internal class QuotationSeeder(ILogger<QuotationSeeder> logger) : SeederBase(log
 
         var importQuotation = Quotation.Create(
             customerId: Customer(0),
+            branchId: Branch(0),
             referenceNumber: "QT-2026-IMP-001",
             currency: "USD",
             mode: TransportMode.Ocean,
@@ -135,6 +139,7 @@ internal class QuotationSeeder(ILogger<QuotationSeeder> logger) : SeederBase(log
         // =========================================================================
         var secondImportQuotation = Quotation.Create(
             customerId: Customer(0),
+            branchId: Branch(0),
             referenceNumber: "QT-2026-IMP-002",
             currency: "USD",
             mode: TransportMode.Ocean,
@@ -167,6 +172,7 @@ internal class QuotationSeeder(ILogger<QuotationSeeder> logger) : SeederBase(log
 
         var exportQuotation = Quotation.Create(
             customerId: Customer(1),
+            branchId: Branch(1),
             referenceNumber: "QT-2026-EXP-001",
             currency: "USD",
             mode: TransportMode.Air,
@@ -202,6 +208,7 @@ internal class QuotationSeeder(ILogger<QuotationSeeder> logger) : SeederBase(log
 
         var triangularQuotation = Quotation.Create(
             customerId: Customer(1),
+            branchId: Branch(1),
             referenceNumber: "QT-2026-TRI-001",
             currency: "USD",
             mode: TransportMode.Ocean,
@@ -243,6 +250,7 @@ internal class QuotationSeeder(ILogger<QuotationSeeder> logger) : SeederBase(log
 
         var coldChainQuotation = Quotation.Create(
             customerId: Customer(2),
+            branchId: Branch(2),
             referenceNumber: "QT-2026-COLD-001",
             currency: "PHP",
             mode: TransportMode.Road,
@@ -270,6 +278,7 @@ internal class QuotationSeeder(ILogger<QuotationSeeder> logger) : SeederBase(log
 
         var reeferQuotation = Quotation.Create(
             customerId: Customer(2),
+            branchId: Branch(2),
             referenceNumber: "QT-2026-COLD-002",
             currency: "PHP",
             mode: TransportMode.Road,
@@ -297,6 +306,7 @@ internal class QuotationSeeder(ILogger<QuotationSeeder> logger) : SeederBase(log
 
         var rejectedQuotation = Quotation.Create(
             customerId: Customer(3),
+            branchId: Branch(3),
             referenceNumber: "QT-2026-DOM-REJ",
             currency: "PHP",
             mode: TransportMode.Road,
@@ -325,6 +335,7 @@ internal class QuotationSeeder(ILogger<QuotationSeeder> logger) : SeederBase(log
 
         var draftQuotation = Quotation.Create(
             customerId: Customer(4),
+            branchId: Branch(4),
             referenceNumber: "QT-2026-DOM-DFT",
             currency: "PHP",
             mode: TransportMode.Road,
@@ -356,6 +367,7 @@ internal class QuotationSeeder(ILogger<QuotationSeeder> logger) : SeederBase(log
 
         var cancelledLaneQuotation = Quotation.Create(
             customerId: Customer(5),
+            branchId: Branch(5),
             referenceNumber: "QT-2026-DOM-CANC",
             currency: "PHP",
             mode: TransportMode.Road,

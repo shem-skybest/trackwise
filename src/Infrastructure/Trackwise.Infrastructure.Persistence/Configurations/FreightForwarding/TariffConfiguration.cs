@@ -38,6 +38,10 @@ internal sealed class TariffConfiguration : IEntityTypeConfiguration<Tariff>
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(x => x.ContainerTypeId);
+        builder.HasOne(x => x.Customer)
+            .WithMany()
+            .HasForeignKey(x => x.CustomerId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(x => x.Currency)
             .HasMaxLength(3)
@@ -63,7 +67,7 @@ internal sealed class TariffConfiguration : IEntityTypeConfiguration<Tariff>
             .IsRequired(false);
 
         // Indexes
-        builder.HasIndex(x => new { x.Name, x.Mode, x.ServiceLevel, x.ContractId, x.IsActive })
+        builder.HasIndex(x => new { x.Name, x.Mode, x.ServiceLevel, x.ContractId, x.CustomerId, x.IsActive })
             .IsUnique();
 
         // Relationships (we'll configure FKs in the infrastructure layer if needed)

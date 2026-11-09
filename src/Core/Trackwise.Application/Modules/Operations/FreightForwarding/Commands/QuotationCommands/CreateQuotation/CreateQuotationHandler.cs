@@ -24,15 +24,21 @@ internal sealed class CreateQuotationHandler(
         var customerRepo = tenantUow.Repository<Domain.Entities.Customer>();
         var locationRepo = tenantUow.Repository<Location>();
         var quotationRepo = tenantUow.Repository<Quotation>();
+        var branchRepo = tenantUow.Repository<Branch>();
 
         // 1. Verify Customer
         var customer = await customerRepo.GetByIdAsync(req.CustomerId, ct);
         if (customer is null)
             return Result<Guid>.Fail($"Customer with ID '{req.CustomerId}' not found.");
 
+        // 2. Verify Branch
+        var branch = await branchRepo.GetByIdAsync(req.BranchId, ct);
+        if (branch is null)
+            return Result<Guid>.Fail($"Branch with ID '{req.BranchId}' not found.");
+
         // 2. Reference numbers must be unique per tenant (the DB index is not unique, so enforce it here
         //    and add a unique (TenantId, ReferenceNumber) index to close the race).
-        var referenceNumber = await referenceGenerator.NextAsync(req.FreightMode.ToString()[..3].ToUpper(), ct);
+        var referenceNumber = await referenceGenerator.NextAsync(req.FreightMode, branch.Code, ct);
 
         // 3. Normalize and Resolve Route Stops (Multi-Drop or Point-to-Point)
         var stopDtos = QuotationRouteResolver.ResolveStops(req.Lane);
@@ -141,6 +147,7 @@ internal sealed class CreateQuotationHandler(
             // 7. Instantiate Quotation Aggregate Root
             quotation = Quotation.Create(
                 customerId: req.CustomerId,
+                branchId: req.BranchId,
                 referenceNumber: referenceNumber,
                 currency: req.Currency,
                 mode: req.Mode,

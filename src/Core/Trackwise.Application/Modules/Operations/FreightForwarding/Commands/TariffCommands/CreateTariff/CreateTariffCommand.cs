@@ -16,4 +16,5 @@ public class CreateTariffCommand : ICommand<Result<Guid>>
     public Guid? CarrierId { get; set; }
     public DateOnly EffectiveFrom { get; set; }
     public Guid? ContractId { get; set; }
+    public Guid? CustomerId { get; set; }
 }

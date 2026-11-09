@@ -119,9 +119,9 @@ public class CreateTripFromBookingResultDto
 {
     public Guid TripId { get; set; }
 
-    /// <summary>The trip's price from the agreement, or null when it couldn't be priced.</summary>
+    /// <summary>The booking's selling total carried onto the trip.</summary>
     public decimal? PricedTotal { get; set; }
 
-    /// <summary>Why the trip wasn't priced. The trip is created either way.</summary>
+    /// <summary>Retained for compatibility with clients that expect pricing errors.</summary>
     public string? PricingError { get; set; }
 }

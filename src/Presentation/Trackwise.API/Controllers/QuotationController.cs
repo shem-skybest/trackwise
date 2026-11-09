@@ -7,6 +7,7 @@ using Trackwise.Application.Modules.Operations.FreightForwarding.Commands.Quotat
 using Trackwise.Application.Modules.Operations.FreightForwarding.Commands.QuotationCommands.ApproveQuotation;
 using Trackwise.Application.Modules.Operations.FreightForwarding.Commands.QuotationCommands.ConvertQuotationToBooking;
 using Trackwise.Application.Modules.Operations.FreightForwarding.Commands.QuotationCommands.CreateQuotation;
+using Trackwise.Application.Modules.Operations.FreightForwarding.Commands.QuotationCommands.CreateQuotationRevision;
 using Trackwise.Application.Modules.Operations.FreightForwarding.Commands.QuotationCommands.GenerateQuotationPdf;
 using Trackwise.Application.Modules.Operations.FreightForwarding.Commands.QuotationCommands.ExpireQuotation;
 using Trackwise.Application.Modules.Operations.FreightForwarding.Commands.QuotationCommands.IssueQuotation;
@@ -67,6 +68,28 @@ public class QuotationController(IMediator mediator) : ControllerBase
         return result.IsSuccess
             ? CreatedAtRoute("GetQuotationById", new { id = result.Value }, result.Value)
             : BadRequest(ErrorResponse.FromResult(result));
+    }
+
+    [HttpPost("{id:guid}/revisions", Name = "CreateQuotationRevision")]
+    [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    [Authorize(Policy = Permission.Quotation.Manage)]
+    public async Task<IActionResult> CreateRevision(Guid id, CancellationToken ct)
+    {
+        var result = await mediator.Send(new CreateQuotationRevisionCommand(id), ct);
+        if (result.IsSuccess)
+            return CreatedAtRoute("GetQuotationById", new { id = result.Value }, result.Value);
+
+        return result.ErrorCode switch
+        {
+            ErrorCodes.NotFound => NotFound(ErrorResponse.FromResult(result)),
+            ErrorCodes.Conflict => Conflict(ErrorResponse.FromResult(result)),
+            _ => BadRequest(ErrorResponse.FromResult(result))
+        };
     }
 
     [HttpPut("{id:guid}", Name = "UpdateQuotation")]
@@ -217,7 +240,8 @@ public class QuotationController(IMediator mediator) : ControllerBase
             ContainerTypeId = request.ContainerTypeId,
             RequestedPickupDate = request.RequestedPickupDate,
             RequestedDeliveryDate = request.RequestedDeliveryDate,
-            Notes = request.Notes
+            Notes = request.Notes,
+            Repeat = request.Repeat
         }, ct);
         return result.IsSuccess
             ? CreatedAtRoute("GetBookingById", new { id = result.Value }, result.Value)

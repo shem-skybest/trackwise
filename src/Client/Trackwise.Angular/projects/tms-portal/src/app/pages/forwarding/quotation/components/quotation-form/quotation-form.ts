@@ -8,7 +8,7 @@ import {
   signal,
   untracked,
 } from "@angular/core";
-import { form, FormField, FormRoot, maxLength, required } from "@angular/forms/signals";
+import { form, FormField, FormRoot, maxLength, pattern, required } from "@angular/forms/signals";
 import { RouterLink } from "@angular/router";
 import { createListStore, EmptyState, getLocations } from "@trackwise/shared";
 import type {
@@ -39,10 +39,12 @@ import {
   ValidatedForm,
 } from "@trackwise/shared/ui";
 import { SearchCustomer } from "@/shared/components/search";
+import { BranchesStore } from "../../store/branches-list.store";
 import { RouteStopDialog, type FormModel } from "../add-stop-dialog/add-stop-dialog";
 
 export interface QuotationFormModel {
   customer: CustomerDto | null;
+  branchId: string;
   currency: string;
   incoterm: Incoterm;
   freightMode: FreightMode;
@@ -79,6 +81,7 @@ export interface QuotationFormModel {
 
 const EMPTY_FORM: QuotationFormModel = {
   customer: null,
+  branchId: "",
   currency: "PHP",
   incoterm: "fca",
   freightMode: "domestic",
@@ -145,7 +148,7 @@ const SHIPMENT_TYPES_BY_MODE: Record<TransportMode, { label: string; value: Ship
 @Component({
   selector: "app-quotation-form",
   templateUrl: "./quotation-form.html",
-  providers: [CustomerLocationsStore],
+  providers: [CustomerLocationsStore, BranchesStore],
   imports: [
     FormField,
     FormRoot,
@@ -169,6 +172,7 @@ const SHIPMENT_TYPES_BY_MODE: Record<TransportMode, { label: string; value: Ship
 })
 export class QuotationForm {
   protected readonly selectedCustomerLocationsStore = inject(CustomerLocationsStore);
+  protected readonly branchesStore = inject(BranchesStore);
 
   public readonly isLoading = input(false);
 
@@ -189,6 +193,13 @@ export class QuotationForm {
   protected readonly currentTransportMode = computed(() => this.model().mode);
   protected readonly isDomestic = computed(() => this.currentFreightMode() === "domestic");
   protected readonly isColdChainRequired = computed(() => this.model().requiresActiveRefrigeration);
+
+  protected readonly branchOptions = computed(() =>
+    this.branchesStore.data().map((b) => ({
+      value: b.id ?? "",
+      label: b.code ? `${b.code} — ${b.name}` : (b.name ?? ""),
+    })),
+  );
 
   // Dynamic Shipment Types filtered strictly by the chosen Transport Mode
   protected readonly shipmentTypeOptions = computed(() => {
@@ -277,12 +288,21 @@ export class QuotationForm {
     this.model,
     (p) => {
       required(p.customer, { message: "Customer is required." });
+      required(p.branchId, { message: "Branch is required." });
       required(p.currency, { message: "Currency is required." });
       maxLength(p.currency, 3, { message: "Currency must be a 3-letter ISO code." });
       required(p.freightMode, { message: "Freight mode is required." });
       required(p.mode, { message: "Transport mode is required." });
       required(p.shipmentType, { message: "Shipment type is required." });
       required(p.incoterm, { message: "Incoterm is required." });
+      required(p.setpointCelsius, {
+        when: ({ valueOf }) => valueOf(p.requiresActiveRefrigeration),
+        message: "Temperature setpoint is required when Cold Chain is selected.",
+      });
+      pattern(p.setpointCelsius, /^-?(?:\d+\.?\d*|\.\d+)$/, {
+        when: ({ valueOf }) => valueOf(p.requiresActiveRefrigeration),
+        message: "Enter a valid temperature setpoint.",
+      });
     },
     {
       submission: {
@@ -332,6 +352,16 @@ export class QuotationForm {
         untracked(() => this.handleTransportModeChange(mode));
       }
     });
+
+    // 5. Load active branches once
+    this.branchesStore.setFilters({ IsActive: true }, { reload: true });
+
+    // 6. Create mode: preselect the branch when there is only one choice
+    effect(() => {
+      const branches = this.branchesStore.data();
+      if (this.quotation() || this.model().branchId || branches.length !== 1) return;
+      untracked(() => this.model.update((m) => ({ ...m, branchId: branches[0].id ?? "" })));
+    });
   }
 
   /**
@@ -363,6 +393,7 @@ export class QuotationForm {
 
     this.model.set({
       ...EMPTY_FORM,
+      branchId: q.branchId ?? "",
       customer: q.customerId
         ? ({ id: q.customerId, name: q.customerName ?? "" } as CustomerDto)
         : null,
@@ -470,6 +501,7 @@ export class QuotationForm {
 
     const command: CreateQuotationCommand = {
       customerId: v.customer?.id ?? "",
+      branchId: v.branchId,
       currency: v.currency.trim().toUpperCase(),
       freightMode: v.freightMode,
       mode: v.mode,

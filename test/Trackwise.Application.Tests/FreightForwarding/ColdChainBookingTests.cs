@@ -177,7 +177,7 @@ public class ColdChainBookingTests
     public void Cancel_ForwardingBooking_StillNeedsNoPickedReason()
     {
         var quotation = CreateTestQuotation();
-        var booking = Booking.CreateDraftFromQuotation(quotation);
+        var booking = Booking.CreateDraftFromQuotation(quotation, 1);
 
         booking.Cancel("ops", "Shipper withdrew");
 
@@ -246,7 +246,7 @@ public class ColdChainBookingTests
     public void PlanOn_ForwardingBooking_Throws()
     {
         var quotation = CreateTestQuotation();
-        var booking = Booking.CreateDraftFromQuotation(quotation);
+        var booking = Booking.CreateDraftFromQuotation(quotation, 1);
 
         Assert.Throws<InvalidOperationException>(() => booking.PlanOn(March13));
     }
@@ -282,6 +282,7 @@ public class ColdChainBookingTests
 
         var quotation = Quotation.Create(
             customerId: Guid.NewGuid(),
+            branchId: Guid.NewGuid(),
             referenceNumber: "QT-TEST-001",
             currency: "USD",
             mode: TransportMode.Road,

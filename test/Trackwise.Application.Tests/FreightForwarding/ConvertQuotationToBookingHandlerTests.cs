@@ -1,4 +1,3 @@
-using Trackwise.Application.Tests.TestKit;
 using MockQueryable;
 using NSubstitute;
 using Trackwise.Application.Modules.Operations.FreightForwarding.Commands.QuotationCommands.ConvertQuotationToBooking;
@@ -50,6 +49,8 @@ public class ConvertQuotationToBookingHandlerTests
     [Fact]
     public async Task Handle_QuotationNotAccepted_Fails()
     {
+        typeof(Quotation).GetProperty(nameof(Quotation.Status))!
+            .SetValue(quotation, QuotationStatus.Draft);
         var command = new ConvertQuotationToBookingCommand { QuotationId = quotation.Id };
 
         var result = await sut.Handle(command, CancellationToken.None);
@@ -60,29 +61,29 @@ public class ConvertQuotationToBookingHandlerTests
     }
 
     [Fact]
-    public async Task Handle_AlreadyConvertedQuotation_Fails()
+    public async Task Handle_AlreadyConvertedQuotation_ReturnsExistingBooking()
     {
-        TestQuotations.Accepted(quotation);
-        bookingRepo.Query().Returns(new List<Booking> { CreateExistingBooking() }.BuildMock());
+        var existing = CreateExistingBooking();
+        bookingRepo.Query().Returns(new List<Booking> { existing }.BuildMock());
 
         var command = new ConvertQuotationToBookingCommand { QuotationId = quotation.Id };
 
         var result = await sut.Handle(command, CancellationToken.None);
 
-        Assert.False(result.IsSuccess);
-        Assert.Contains("already been converted", result.Error);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(existing.Id, result.Value);
+        await bookingRepo.DidNotReceiveWithAnyArgs().AddAsync(default!, default);
     }
 
     [Fact]
     public async Task Handle_AcceptedQuotation_CreatesDraftBooking()
     {
-        TestQuotations.Accepted(quotation);
-
         var command = new ConvertQuotationToBookingCommand
         {
             QuotationId = quotation.Id,
             ContainerTypeId = Guid.NewGuid(),
-            Notes = "Handle with care"
+            Notes = "Handle with care",
+            RequestedPickupDate = DateTime.UtcNow.Date.AddDays(2)
         };
 
         var result = await sut.Handle(command, CancellationToken.None);
@@ -93,14 +94,39 @@ public class ConvertQuotationToBookingHandlerTests
                 b.QuotationId == quotation.Id &&
                 b.CustomerId == quotation.CustomerId &&
                 b.Currency == quotation.Currency &&
-                b.Status == BookingStatus.Draft),
+                b.Status == BookingStatus.Draft &&
+                b.RequestedPickupStart == new DateTimeOffset(command.RequestedPickupDate.Value, TimeSpan.Zero)),
             Arg.Any<CancellationToken>());
         await tenantUow.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task Handle_RepeatAcceptedQuotation_CreatesAnotherBookingWithNewNumber()
+    {
+        var existing = CreateExistingBooking();
+        bookingRepo.Query().Returns(new List<Booking> { existing }.BuildMock());
+
+        var command = new ConvertQuotationToBookingCommand
+        {
+            QuotationId = quotation.Id,
+            Repeat = true
+        };
+
+        var result = await sut.Handle(command, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotEqual(existing.Id, result.Value);
+        await bookingRepo.Received(1).AddAsync(
+            Arg.Is<Booking>(b =>
+                b.QuotationId == quotation.Id &&
+                b.BookingNumber != existing.BookingNumber &&
+                b.Status == BookingStatus.Draft),
+            Arg.Any<CancellationToken>());
+    }
+
     private Booking CreateExistingBooking()
     {
-        return Booking.CreateDraftFromQuotation(quotation);
+        return Booking.CreateDraftFromQuotation(quotation, 1);
     }
 
     private static Quotation CreateTestQuotation()
@@ -121,6 +147,7 @@ public class ConvertQuotationToBookingHandlerTests
 
         var quotation = Quotation.Create(
             customerId: Guid.NewGuid(),
+            branchId: Guid.NewGuid(),
             referenceNumber: "QT-TEST-001",
             currency: "USD",
             mode: TransportMode.Road,
@@ -130,6 +157,8 @@ public class ConvertQuotationToBookingHandlerTests
             lane: lane,
             cargoSpec: cargo);
 
+        typeof(Quotation).GetProperty(nameof(Quotation.Status))!
+            .SetValue(quotation, QuotationStatus.Accepted);
         return quotation;
     }
 }

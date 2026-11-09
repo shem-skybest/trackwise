@@ -130,6 +130,7 @@ internal sealed class UpdateQuotationHandler(
 
             quotation.UpdateDetails(
                 customerId: req.CustomerId,
+                branchId: req.BranchId,
                 currency: req.Currency,
                 mode: req.Mode,
                 freightMode: req.FreightMode,

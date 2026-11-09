@@ -74,6 +74,16 @@
             (click)="complete()"
           />
         }
+
+        @if (isConfirmed() && isColdChain()) {
+          <ui-button
+            icon="truck"
+            intent="primary"
+            label="Make trip"
+            [disabled]="isBusy()"
+            (click)="createTripDialogVisible.set(true)"
+          />
+        }
       </div>
     }
   </div>
@@ -801,3 +811,22 @@
     />
   </ng-template>
 </ui-dialog>
+
+@if (booking(); as b) {
+  @if (isColdChain()) {
+    <app-create-trip-dialog
+      [bookingId]="b.id!"
+      [dropCount]="b.stops?.length ?? 0"
+      [(open)]="createTripDialogVisible"
+      (created)="openTrip($event)"
+    />
+    <!-- <app-repeat-booking-dialog [booking]="b" [(open)]="repeatDialogVisible" />
+    <app-booking-number-dialog [booking]="b" [(open)]="numberDialogVisible" (saved)="load()" />
+    <app-booking-loss-dialog
+      [bookingId]="b.id!"
+      [kind]="lossKind()"
+      [(open)]="lossDialogVisible"
+      (done)="load()"
+    /> -->
+  }
+}

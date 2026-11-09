@@ -29,8 +29,21 @@ internal sealed class GetQuotationByIdHandler(ITenantUnitOfWork tenantUow)
             return Result<QuotationDto>.Fail($"Quotation with ID '{req.Id}' not found.");
         }
 
-        // 2. Fetch Customer name for read model
+        var revisions = await tenantUow.Repository<Quotation>().Query()
+            .Where(candidate => candidate.RevisionGroupId == quotation.RevisionGroupId)
+            .OrderBy(candidate => candidate.RevisionNumber)
+            .Select(candidate => new QuotationRevisionDto(
+                candidate.Id,
+                candidate.ReferenceNumber,
+                candidate.RevisionNumber,
+                candidate.Status,
+                candidate.PreviousRevisionId,
+                candidate.CreatedAt))
+            .ToListAsync(ct);
+
+        // 2. Fetch Customer & Branch names for read model
         var customer = await tenantUow.Repository<Customer>().GetByIdAsync(quotation.CustomerId, ct);
+        var branch = await tenantUow.Repository<Branch>().GetByIdAsync(quotation.BranchId, ct);
 
         // 3. Batch load Location names for route stops safely
         var stops = quotation.Lane?.Stops ?? [];
@@ -95,10 +108,16 @@ internal sealed class GetQuotationByIdHandler(ITenantUnitOfWork tenantUow)
         {
             Id = quotation.Id,
             CustomerId = quotation.CustomerId,
+            BranchId = quotation.BranchId,
             CustomerName = customer?.Name ?? "Unknown Customer",
+            BranchName = branch?.Name ?? "Unknown Branch",
             ReferenceNumber = quotation.ReferenceNumber,
             Currency = quotation.Currency,
             Status = quotation.Status,
+            RevisionGroupId = quotation.RevisionGroupId,
+            RevisionNumber = quotation.RevisionNumber,
+            PreviousRevisionId = quotation.PreviousRevisionId,
+            Revisions = revisions,
             ValidUntil = quotation.ValidUntil,
             Mode = quotation.Mode,
             FreightMode = quotation.FreightMode,

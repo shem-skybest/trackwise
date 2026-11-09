@@ -1028,12 +1028,11 @@ namespace Trackwise.Infrastructure.Persistence.Migrations.Tenant
                         .HasColumnType("uuid")
                         .HasColumnName("pickup_site_id");
 
-                    b.Property<Guid>("QuotationId")
+                    b.Property<Guid?>("QuotationId")
                         .HasColumnType("uuid")
                         .HasColumnName("quotation_id");
 
                     b.Property<string>("QuotationReference")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
                         .HasColumnName("quotation_reference");
@@ -1088,12 +1087,16 @@ namespace Trackwise.Infrastructure.Persistence.Migrations.Tenant
                     b.HasKey("Id")
                         .HasName("pk_bookings");
 
+                    b.HasIndex("BookingNumber")
+                        .IsUnique()
+                        .HasDatabaseName("ix_bookings_booking_number");
+
                     b.HasIndex("CreditCheckStatus")
                         .HasDatabaseName("ix_bookings_credit_check_status");
 
                     b.HasIndex("QuotationId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_bookings_quotation_id");
+                        .HasDatabaseName("ix_bookings_quotation_id")
+                        .HasFilter("\"quotation_id\" IS NOT NULL");
 
                     b.HasIndex("Status")
                         .HasDatabaseName("ix_bookings_status");
@@ -7124,6 +7127,10 @@ namespace Trackwise.Infrastructure.Persistence.Migrations.Tenant
                         .HasColumnType("character varying(450)")
                         .HasColumnName("approved_by");
 
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("branch_id");
+
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
@@ -7181,6 +7188,10 @@ namespace Trackwise.Infrastructure.Persistence.Migrations.Tenant
                         .HasColumnType("character varying(1000)")
                         .HasColumnName("notes");
 
+                    b.Property<Guid?>("PreviousRevisionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("previous_revision_id");
+
                     b.Property<string>("ReferenceNumber")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -7209,6 +7220,14 @@ namespace Trackwise.Infrastructure.Persistence.Migrations.Tenant
                         .HasColumnType("boolean")
                         .HasColumnName("requires_special_approval");
 
+                    b.Property<Guid>("RevisionGroupId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("revision_group_id");
+
+                    b.Property<int>("RevisionNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision_number");
+
                     b.Property<string>("ShipmentType")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -7236,6 +7255,12 @@ namespace Trackwise.Infrastructure.Persistence.Migrations.Tenant
                     b.HasKey("Id")
                         .HasName("pk_quotations");
 
+                    b.HasIndex("BranchId")
+                        .HasDatabaseName("ix_quotations_branch_id");
+
+                    b.HasIndex("PreviousRevisionId")
+                        .HasDatabaseName("ix_quotations_previous_revision_id");
+
                     b.HasIndex("ReferenceNumber")
                         .HasDatabaseName("ix_quotations_reference_number");
 
@@ -7244,6 +7269,10 @@ namespace Trackwise.Infrastructure.Persistence.Migrations.Tenant
 
                     b.HasIndex("CustomerId", "Status")
                         .HasDatabaseName("ix_quotations_customer_id_status");
+
+                    b.HasIndex("RevisionGroupId", "RevisionNumber")
+                        .IsUnique()
+                        .HasDatabaseName("ix_quotations_revision_group_id_revision_number");
 
                     b.ToTable("quotations", (string)null);
                 });
@@ -8483,6 +8512,10 @@ namespace Trackwise.Infrastructure.Persistence.Migrations.Tenant
                         .HasColumnType("character varying(3)")
                         .HasColumnName("currency");
 
+                    b.Property<Guid?>("CustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_id");
+
                     b.Property<string>("DestinationLane")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
@@ -8544,9 +8577,12 @@ namespace Trackwise.Infrastructure.Persistence.Migrations.Tenant
                     b.HasIndex("ContainerTypeId")
                         .HasDatabaseName("ix_tariffs_container_type_id");
 
-                    b.HasIndex("Name", "Mode", "ServiceLevel", "ContractId", "IsActive")
+                    b.HasIndex("CustomerId")
+                        .HasDatabaseName("ix_tariffs_customer_id");
+
+                    b.HasIndex("Name", "Mode", "ServiceLevel", "ContractId", "CustomerId", "IsActive")
                         .IsUnique()
-                        .HasDatabaseName("ix_tariffs_name_mode_service_level_contract_id_is_active");
+                        .HasDatabaseName("ix_tariffs_name_mode_service_level_contract_id_customer_id_is_");
 
                     b.ToTable("tariffs", (string)null);
                 });
@@ -11386,7 +11422,6 @@ namespace Trackwise.Infrastructure.Persistence.Migrations.Tenant
                         .WithMany()
                         .HasForeignKey("QuotationId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
                         .HasConstraintName("fk_bookings_quotation_quotation_id");
 
                     b.OwnsOne("Trackwise.Domain.Primitives.ValueObjects.CargoSpecification", "CargoSpec", b1 =>
@@ -12312,12 +12347,25 @@ namespace Trackwise.Infrastructure.Persistence.Migrations.Tenant
 
             modelBuilder.Entity("Trackwise.Domain.Entities.Quotation", b =>
                 {
+                    b.HasOne("Trackwise.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_quotations_branch_branch_id");
+
                     b.HasOne("Trackwise.Domain.Entities.Customer", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_quotations_customers_customer_id");
+
+                    b.HasOne("Trackwise.Domain.Entities.Quotation", "PreviousRevision")
+                        .WithMany()
+                        .HasForeignKey("PreviousRevisionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_quotations_quotations_previous_revision_id");
 
                     b.OwnsOne("Trackwise.Domain.Primitives.ValueObjects.CargoSpecification", "CargoSpec", b1 =>
                         {
@@ -12473,12 +12521,16 @@ namespace Trackwise.Infrastructure.Persistence.Migrations.Tenant
                                 .HasConstraintName("fk_quotations_quotations_id");
                         });
 
+                    b.Navigation("Branch");
+
                     b.Navigation("CargoSpec");
 
                     b.Navigation("Customer");
 
                     b.Navigation("Lane")
                         .IsRequired();
+
+                    b.Navigation("PreviousRevision");
 
                     b.Navigation("TemperatureSpec");
                 });
@@ -12728,7 +12780,15 @@ namespace Trackwise.Infrastructure.Persistence.Migrations.Tenant
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_tariffs_container_type_container_type_id");
 
+                    b.HasOne("Trackwise.Domain.Entities.Customer", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_tariffs_customers_customer_id");
+
                     b.Navigation("ContainerType");
+
+                    b.Navigation("Customer");
                 });
 
             modelBuilder.Entity("Trackwise.Domain.Entities.TariffHistory", b =>

@@ -29,6 +29,7 @@ import {
 import {
   Alert,
   Grid,
+  PdfViewer,
   Spinner,
   Stack,
   Surface,
@@ -40,7 +41,7 @@ import {
   UiTextareaField,
 } from "@trackwise/shared/ui";
 import { ToastService } from "@/core/services";
-import { PageHeader } from "@/shared/components";
+import { CreateTripDialog, PageHeader } from "@/shared/components";
 import {
   PdfViewerComponent,
   type PdfLoader,
@@ -77,6 +78,7 @@ import {
     Surface,
     PdfViewerComponent,
     AddBookingChargeDialog,
+    CreateTripDialog,
   ],
 })
 export class BookingDetailsComponent implements OnInit {
@@ -123,6 +125,9 @@ export class BookingDetailsComponent implements OnInit {
   protected readonly isConfirmed = computed(() => this.status() === "confirmed");
   protected readonly isInProgress = computed(() => this.status() === "inprogress");
   protected readonly isCancelled = computed(() => this.status() === "cancelled");
+
+  protected readonly createTripDialogVisible = signal(false);
+  protected readonly isColdChain = computed(() => !!this.booking()?.temperature);
 
   protected readonly canCancel = computed(() => this.isDraft() || this.isConfirmed());
   protected readonly canOpenWorkfile = computed(() => this.isConfirmed() || this.isInProgress());
@@ -251,6 +256,10 @@ export class BookingDetailsComponent implements OnInit {
     } finally {
       this.isLoading.set(false);
     }
+  }
+
+  protected openTrip(tripId: string): void {
+    void this.router.navigate(["/trips", tripId]);
   }
 
   // ── Workfile ───────────────────────────────────────────────────────────────

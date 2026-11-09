@@ -154,7 +154,7 @@ public class RepeatColdChainBookingHandlerTests
     public async Task Handle_ForwardingBooking_Fails()
     {
         var quotation = TestQuotations.Accepted(CreateTestQuotation(), "manager");
-        var forwarding = Booking.CreateDraftFromQuotation(quotation);
+        var forwarding = Booking.CreateDraftFromQuotation(quotation, 1);
         bookingRepo.GetByIdAsync(forwarding.Id, Arg.Any<CancellationToken>()).Returns(forwarding);
 
         var command = Repeat(false, Oct5);
@@ -202,6 +202,7 @@ public class RepeatColdChainBookingHandlerTests
 
         var quotation = Quotation.Create(
             customerId: Guid.NewGuid(),
+            branchId: Guid.NewGuid(),
             referenceNumber: "QT-TEST-001",
             currency: "USD",
             mode: TransportMode.Road,

@@ -34,6 +34,7 @@ export class TariffAddComponent {
       effectiveFrom: formValue.effectiveFrom,
       carrierId: formValue.carrierId ?? undefined,
       contractId: formValue.contractId ?? undefined,
+      customerId: formValue.customerId ?? undefined,
     };
 
     try {
@@ -44,7 +45,7 @@ export class TariffAddComponent {
       this.toastService.showSuccess("A new tariff has been created successfully");
 
       await this.router.navigateByUrl("/tariffs");
-    } catch {
+    } catch (error) {
       this.toastService.showError(
         "Failed to create tariff. Please check the information and try again.",
       );

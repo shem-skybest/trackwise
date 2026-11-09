@@ -18,6 +18,22 @@
       <ui-typography variant="body" color="muted">Loading quotation details...</ui-typography>
     </ui-stack>
   } @else if (quotation(); as q) {
+    @if (q.revisions && q.revisions.length > 1) {
+      <ui-surface variant="elevated" [border]="true">
+        <ui-stack direction="row" wrap="true" gap="2" align="center">
+          <ui-typography variant="caption" color="muted">Quotation Versions</ui-typography>
+          @for (revision of q.revisions; track revision.id) {
+            <ui-button
+              [label]="'V' + revision.revisionNumber + ' · ' + revision.referenceNumber"
+              appearance="text"
+              [disabled]="revision.id === q.id"
+              (click)="openRevision(revision.id)"
+            />
+          }
+        </ui-stack>
+      </ui-surface>
+    }
+
     <!-- Special Approval / Escalation Banner -->
     @if (q.requiresSpecialApproval || q.approvalEscalationReason) {
       <ui-alert intent="warning">
@@ -237,6 +253,16 @@
 
     <!-- Action Workflow Controls -->
     <ui-stack direction="row" wrap="true" gap="2" align="stretch">
+      @if (q.status !== "draft" && q.revisionNumber === q.revisions?.length) {
+        <ui-button
+          icon="copy"
+          appearance="outlined"
+          label="Create Revision"
+          [disabled]="isBusy()"
+          (click)="createRevision()"
+        />
+      }
+
       @if (q.status === "draft") {
         <ui-button
           icon="plus"
@@ -336,6 +362,13 @@
           [disabled]="isBusy()"
           (click)="openConvertDialog()"
         />
+        <ui-button
+          icon="copy"
+          appearance="text"
+          label="Create Another Booking"
+          [disabled]="isBusy()"
+          (click)="openRepeatBookingDialog()"
+        />
       }
     </ui-stack>
 
@@ -425,11 +458,20 @@
   </ng-template>
 </ui-dialog>
 
-<!-- Convert to Booking Dialog -->
-<ui-dialog header="Convert to Booking" [(open)]="convertDialogVisible" [modal]="true" width="40rem">
+<!-- Booking creation dialog -->
+<ui-dialog
+  [header]="repeatBooking() ? 'Create Another Booking' : 'Convert to Booking'"
+  [(open)]="convertDialogVisible"
+  [modal]="true"
+  width="40rem"
+>
   <div class="flex flex-col gap-4">
     <p class="text-subtle-foreground">
-      Create a Booking from this quotation. Carrier confirmation and dates can also be added later.
+      {{
+        repeatBooking()
+          ? "Create a separate booking using the accepted quotation's locked prices."
+          : "Create a booking from this quotation. Carrier confirmation and dates can also be added later."
+      }}
     </p>
 
     <ui-form-field label="Container Type" for="convertContainerTypeId">
@@ -467,7 +509,7 @@
     <ui-button appearance="text" label="Cancel" (click)="convertDialogVisible.set(false)" />
     <ui-button
       intent="primary"
-      label="Create Booking"
+      [label]="repeatBooking() ? 'Create Another Booking' : 'Create Booking'"
       icon="calendar"
       [disabled]="isBusy()"
       (click)="confirmConvertToBooking()"

@@ -52,7 +52,7 @@ internal class BookingSeeder(ILogger<BookingSeeder> logger) : SeederBase(logger)
         var acceptedIds = accepted.Select(q => q.Id).ToList();
         var existing = await repo.Query()
             .Include(b => b.Documents)
-            .Where(b => acceptedIds.Contains(b.QuotationId))
+            .Where(b => b.QuotationId.HasValue && acceptedIds.Contains(b.QuotationId.Value))
             .ToListAsync(cancellationToken);
 
         async Task<Booking?> DraftFor(string quotationReference)
@@ -61,9 +61,18 @@ internal class BookingSeeder(ILogger<BookingSeeder> logger) : SeederBase(logger)
             if (quotation is null) return null;
 
             var booking = existing.FirstOrDefault(b => b.QuotationId == quotation.Id);
+
             if (booking is null)
             {
-                booking = Booking.CreateDraftFromQuotation(quotation, paymentTermsDays: 30, customerCreditCheckRequired: false);
+                // No booking exists for this quotation yet (checked above), so this is its first: -01.
+                var sequence = existing.Count(b => b.QuotationId == quotation.Id) + 1;
+
+                booking = Booking.CreateDraftFromQuotation(
+                    quotation,
+                    bookingSequence: sequence,
+                    paymentTermsDays: 30,
+                    customerCreditCheckRequired: false);
+
                 await repo.AddAsync(booking, cancellationToken);
             }
 

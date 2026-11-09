@@ -152,22 +152,35 @@
           </ui-surface>
         </ui-stack>
 
-        <!-- Carrier & Contract -->
+        <!-- Client & Contract -->
         <ui-stack tag="section" gap="3">
           <ui-stack direction="row" gap="2" align="start">
             <ui-icon name="truck" color="secondary" class="mt-1" />
 
             <ui-stack gap="0">
-              <ui-typography variant="overline" color="secondary">Carrier & Contract</ui-typography>
+              <ui-typography variant="overline" color="secondary">Client & Contract</ui-typography>
 
               <ui-typography variant="caption" color="muted">
-                Optional references for carrier-specific pricing.
+                Optionally scope this rate card to one client. Leave blank for general rates.
               </ui-typography>
             </ui-stack>
           </ui-stack>
 
           <ui-surface variant="elevated" [border]="true">
             <ui-stack gap="3">
+              @if (mode() === "create") {
+                <ui-form-field label="Client" for="customer">
+                  <app-search-customer [formField]="form.customer" />
+                </ui-form-field>
+              } @else {
+                <ui-typography variant="body">
+                  Client:
+                  <span class="font-medium">
+                    {{ initial()?.customerName || "General rate card" }}
+                  </span>
+                </ui-typography>
+              }
+
               <!-- Carrier -->
               <!-- Enable SearchCarrier when the component is ready -->
               <!--

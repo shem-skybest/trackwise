@@ -30,7 +30,7 @@ public class PromoteBookingToWorkfileHandlerTests
     public PromoteBookingToWorkfileHandlerTests()
     {
         var quotation = TestQuotations.Accepted(CreateTestQuotation(), "user-1");
-        booking = Booking.CreateDraftFromQuotation(quotation);
+        booking = Booking.CreateDraftFromQuotation(quotation, 1);
         booking.Confirm("user-1");
 
         tenantUow.Repository<Booking>().Returns(bookingRepo);
@@ -69,7 +69,7 @@ public class PromoteBookingToWorkfileHandlerTests
     public async Task PromotingAPendingBooking_Fails()
     {
         var quotation = TestQuotations.Accepted(CreateTestQuotation(), "user-1");
-        var pending = Booking.CreateDraftFromQuotation(quotation);
+        var pending = Booking.CreateDraftFromQuotation(quotation, 1);
         bookingRepo.GetByIdAsync(pending.Id, Arg.Any<CancellationToken>()).Returns(pending);
 
         var command = RegularImport();
@@ -314,6 +314,7 @@ public class PromoteBookingToWorkfileHandlerTests
 
         var quotation = Quotation.Create(
             customerId: Guid.NewGuid(),
+            branchId: Guid.NewGuid(),
             referenceNumber: "QT-TEST-001",
             currency: "USD",
             mode: TransportMode.Road,

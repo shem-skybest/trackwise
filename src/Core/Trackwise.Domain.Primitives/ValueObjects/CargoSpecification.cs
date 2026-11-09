@@ -23,14 +23,14 @@ public record CargoSpecification
         Money declaredCargoValue,
         bool requiresActiveRefrigeration = false)
     {
-        if (string.IsNullOrWhiteSpace(commodity))
-            throw new ArgumentException("Commodity description cannot be empty.", nameof(commodity));
+        //if (string.IsNullOrWhiteSpace(commodity))
+        //    throw new ArgumentException("Commodity description cannot be empty.", nameof(commodity));
 
-        if (totalWeightKg <= 0)
-            throw new ArgumentOutOfRangeException(nameof(totalWeightKg), "Total weight must be greater than zero.");
+        //if (totalWeightKg <= 0)
+        //    throw new ArgumentOutOfRangeException(nameof(totalWeightKg), "Total weight must be greater than zero.");
 
-        if (palletCount < 0)
-            throw new ArgumentOutOfRangeException(nameof(palletCount), "Pallet count cannot be negative.");
+        //if (palletCount < 0)
+        //    throw new ArgumentOutOfRangeException(nameof(palletCount), "Pallet count cannot be negative.");
 
         ArgumentNullException.ThrowIfNull(declaredCargoValue);
 
