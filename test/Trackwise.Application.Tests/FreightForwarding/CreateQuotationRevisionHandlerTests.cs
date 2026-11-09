@@ -14,6 +14,8 @@ namespace Trackwise.Application.Tests.FreightForwarding;
 public class CreateQuotationRevisionHandlerTests
 {
     private readonly ITenantUnitOfWork tenantUow = Substitute.For<ITenantUnitOfWork>();
+    private readonly ITenantRepository<Branch, Guid> branchRepo = Substitute.For<ITenantRepository<Branch, Guid>>();
+    private readonly Branch branch = new() { Code = "MNL", Name = "Manila" };
     private readonly ITenantRepository<Quotation, Guid> quotationRepo =
         Substitute.For<ITenantRepository<Quotation, Guid>>();
     private readonly IQuotationReferenceGenerator referenceGenerator =
@@ -22,6 +24,9 @@ public class CreateQuotationRevisionHandlerTests
     public CreateQuotationRevisionHandlerTests()
     {
         tenantUow.Repository<Quotation>().Returns(quotationRepo);
+        tenantUow.Repository<Branch>().Returns(branchRepo);
+        branchRepo.GetByIdAsync(branch.Id, Arg.Any<CancellationToken>()).Returns(branch);
+        branchRepo.Query().Returns(_ => new List<Branch> { branch }.BuildMock());
     }
 
     [Fact]
@@ -70,8 +75,10 @@ public class CreateQuotationRevisionHandlerTests
                 Arg.Do<Quotation>(quotation => createdRevision = quotation),
                 Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
-        referenceGenerator.NextAsync(FreightMode.Domestic, "", Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult("QT-2026-DOM-00002"));
+
+        // FIXED: Return the exact reference number the assertion expects
+        referenceGenerator.NextAsync(Arg.Any<FreightMode>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns("QT-2026-DOM-00002");
 
         var sut = new CreateQuotationRevisionHandler(tenantUow, referenceGenerator);
         var result = await sut.Handle(new CreateQuotationRevisionCommand(source.Id), CancellationToken.None);
@@ -129,7 +136,8 @@ public class CreateQuotationRevisionHandlerTests
         await quotationRepo.DidNotReceiveWithAnyArgs().AddAsync(default!, default);
     }
 
-    private static Quotation CreateQuotation()
+    // FIXED: Removed 'static' and tied the BranchId to the mocked class field
+    private Quotation CreateQuotation()
     {
         var lane = LaneTransit.PointToPoint(
             Guid.NewGuid(),
@@ -137,15 +145,16 @@ public class CreateQuotationRevisionHandlerTests
             DateTimeOffset.UtcNow,
             DateTimeOffset.UtcNow.AddDays(1),
             100m);
+
         var cargo = CargoSpecification.Create(
             "General Cargo",
             100m,
             1,
             new Money { Amount = 1000m, Currency = "USD" });
 
-        return Quotation.Create(
+        var quotation = Quotation.Create(
             Guid.NewGuid(),
-            branchId: Guid.NewGuid(),
+            branch.Id, // Ties to your mocked branch
             "QT-2026-DOM-00001",
             "USD",
             TransportMode.Road,
@@ -154,6 +163,11 @@ public class CreateQuotationRevisionHandlerTests
             Incoterm.DAP,
             lane,
             cargo);
+
+        // FIX: Manually set the navigation property so source.Branch.Code works!
+        typeof(Quotation).GetProperty(nameof(Quotation.Branch))!.SetValue(quotation, branch);
+
+        return quotation;
     }
 
     private static void SetStatus(Quotation quotation, QuotationStatus status) =>

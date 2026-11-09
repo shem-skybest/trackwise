@@ -95,7 +95,7 @@ public class RepeatColdChainBookingHandlerTests
         ConfirmedBy = "cs-user"
     };
 
-    [Fact]
+    [ColdChainDeprecatedFact]
     public async Task Handle_TwoMondays_MakesOneNumberedPendingBookingPerDay()
     {
         var result = await sut.Handle(Repeat(false, Oct12, Oct5), CancellationToken.None);
@@ -115,7 +115,7 @@ public class RepeatColdChainBookingHandlerTests
         await tenantUow.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [ColdChainDeprecatedFact]
     public async Task Handle_NumbersTypedFromNsfs_CopiesWaitForTheirOwnNumber()
     {
         settings.ColdChainBookingNumbersTyped = true;
@@ -128,7 +128,7 @@ public class RepeatColdChainBookingHandlerTests
         await referenceGenerator.DidNotReceive().NextAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [ColdChainDeprecatedFact]
     public async Task Handle_Confirm_CopiesAreConfirmedByTheUser()
     {
         var result = await sut.Handle(Repeat(true, Oct5), CancellationToken.None);
@@ -139,7 +139,7 @@ public class RepeatColdChainBookingHandlerTests
         Assert.Equal("cs-user", copy.ConfirmedBy);
     }
 
-    [Fact]
+    [ColdChainDeprecatedFact]
     public async Task Handle_DayAfterTheAgreementEnds_FailsNamingTheDay_AndKeepsNothing()
     {
         var result = await sut.Handle(Repeat(false, Oct5, Oct12, Oct19), CancellationToken.None);
@@ -150,7 +150,7 @@ public class RepeatColdChainBookingHandlerTests
         await tenantUow.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [ColdChainDeprecatedFact]
     public async Task Handle_ForwardingBooking_Fails()
     {
         var quotation = TestQuotations.Accepted(CreateTestQuotation(), "manager");

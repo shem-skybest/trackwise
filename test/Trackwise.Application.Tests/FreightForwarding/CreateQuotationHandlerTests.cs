@@ -17,6 +17,7 @@ public class CreateQuotationHandlerTests
 {
     private readonly ITenantUnitOfWork _tenantUow = Substitute.For<ITenantUnitOfWork>();
     private readonly ITenantRepository<Customer, Guid> _customerRepo = Substitute.For<ITenantRepository<Customer, Guid>>();
+    private readonly ITenantRepository<Branch, Guid> _branchRepo = Substitute.For<ITenantRepository<Branch, Guid>>();
     private readonly ITenantRepository<Location, Guid> _locationRepo = Substitute.For<ITenantRepository<Location, Guid>>();
     private readonly ITenantRepository<Quotation, Guid> _quotationRepo = Substitute.For<ITenantRepository<Quotation, Guid>>();
     private readonly IQuotationRatingEngine _ratingEngine = Substitute.For<IQuotationRatingEngine>();
@@ -24,6 +25,7 @@ public class CreateQuotationHandlerTests
     private readonly IFxRateService fxRateService = Substitute.For<IFxRateService>();
 
     private readonly Customer _customer;
+    private readonly Branch _branch;
     private readonly Location _origin;
     private readonly Location _destination;
     private readonly CreateQuotationHandler _sut;
@@ -31,6 +33,8 @@ public class CreateQuotationHandlerTests
     public CreateQuotationHandlerTests()
     {
         _customer = new Customer { Name = "BioPharma Corp" };
+
+        _branch = new Branch { Code = "MNL", Name = "Manila" };
 
         _origin = new Location
         {
@@ -56,12 +60,17 @@ public class CreateQuotationHandlerTests
         _tenantUow.Repository<Location>().Returns(_locationRepo);
         _tenantUow.Repository<Quotation>().Returns(_quotationRepo);
 
+        _tenantUow.Repository<Branch>().Returns(_branchRepo);
+        _branchRepo.GetByIdAsync(_branch.Id, Arg.Any<CancellationToken>()).Returns(_branch);
+        _branchRepo.Query().Returns(_ => new List<Branch> { _branch }.BuildMock());
+
         _customerRepo.GetByIdAsync(_customer.Id, Arg.Any<CancellationToken>()).Returns(_customer);
         _locationRepo.GetByIdAsync(_origin.Id, Arg.Any<CancellationToken>()).Returns(_origin);
         _locationRepo.GetByIdAsync(_destination.Id, Arg.Any<CancellationToken>()).Returns(_destination);
         _locationRepo.Query().Returns(_ => new List<Location> { _origin, _destination }.BuildMock());
         fxRateService.GetRateAsync("USD", "PHP", Arg.Any<CancellationToken>()).Returns(56m);
-        referenceGenerator.NextAsync(FreightMode.Domestic, "", Arg.Any<CancellationToken>()).Returns("QT-DOM-0001");
+        referenceGenerator.NextAsync(FreightMode.Domestic, _branch.Code, Arg.Any<CancellationToken>())
+            .Returns("QT-26-DOMMNL-00001");
 
         _sut = new CreateQuotationHandler(_tenantUow, _ratingEngine, referenceGenerator, fxRateService);
     }
@@ -156,11 +165,26 @@ public class CreateQuotationHandlerTests
         Assert.Contains("surveyed GPS coordinates", result.Error);
     }
 
+    [Fact]
+    public async Task Handle_BranchNotFound_ReturnsFailure()
+    {
+        var command = BuildDefaultCommand();
+        command.BranchId = Guid.NewGuid();
+        _branchRepo.GetByIdAsync(command.BranchId, Arg.Any<CancellationToken>()).Returns((Branch?)null);
+
+        var result = await _sut.Handle(command, CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Branch", result.Error);
+        await _quotationRepo.DidNotReceive().AddAsync(Arg.Any<Quotation>(), Arg.Any<CancellationToken>());
+    }
+
     private CreateQuotationCommand BuildDefaultCommand()
     {
         return new CreateQuotationCommand
         {
             CustomerId = _customer.Id,
+            BranchId = _branch.Id,
             Currency = "USD",
             Mode = TransportMode.Road,
             FreightMode = FreightMode.Domestic,

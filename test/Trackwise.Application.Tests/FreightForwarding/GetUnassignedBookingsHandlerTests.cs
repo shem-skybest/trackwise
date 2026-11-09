@@ -68,7 +68,7 @@ public class GetUnassignedBookingsHandlerTests
 
         var row = Assert.Single(result.Value!);
         Assert.Equal(booking.Id, row.Id);
-        Assert.Equal("BK-2026-0003", row.BookingNumber);
+        Assert.Equal("BK-2026-0003-01", row.BookingNumber);
         Assert.Equal("QT-2026-0003", row.QuotationReference);
         Assert.Equal("HMI", row.CustomerName);
         Assert.Equal("HMI Warehouse", row.OriginName);
@@ -129,7 +129,7 @@ public class GetUnassignedBookingsHandlerTests
 
         var booking = (Booking)Activator.CreateInstance(typeof(Booking), nonPublic: true)!;
 
-        Set(booking, nameof(Booking.BookingNumber), BookingNumbering.FromBookingId(booking.Id));
+        Set(booking, nameof(Booking.BookingNumber), BookingNumbering.FromQuotationReference(quotationReference, 1));
         Set(booking, nameof(Booking.Status), status);
         Set(booking, nameof(Booking.CustomerId), hmi.Id);
         Set(booking, nameof(Booking.Currency), "PHP");
@@ -141,8 +141,6 @@ public class GetUnassignedBookingsHandlerTests
         Set(booking, nameof(Booking.Lane), new LaneTransit(stops, 100m));
         Set(booking, nameof(Booking.CargoSpec), CargoSpecification.Create(
             "Vaccines", 1000m, 2, new Money { Amount = 5000m, Currency = "PHP" }));
-        Set(booking, nameof(Booking.RequestedPickupStart), pickup);
-        Set(booking, nameof(Booking.RequestedDeliveryEnd), pickup.AddHours(6));
 
         bookings.Add(booking);
         return booking;
