@@ -530,7 +530,7 @@
             icon="arrow-left"
             label="Cancel"
             [routerLink]="[
-              quotation()?.id != null ? `/quotations/${quotation()?.id}` : '/quotations',
+              quotation()?.id !== null ? `/quotations/${quotation()?.id}` : '/quotations',
             ]"
             [disabled]="isLoading() || form().submitting()"
           />
