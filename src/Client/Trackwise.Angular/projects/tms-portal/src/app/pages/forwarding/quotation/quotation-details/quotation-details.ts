@@ -1,5 +1,6 @@
 import { DatePipe, DecimalPipe, TitleCasePipe } from "@angular/common";
-import { Component, inject, signal, type OnInit } from "@angular/core";
+import { Component, DestroyRef, inject, signal, type OnInit } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ActivatedRoute, Router } from "@angular/router";
 import {
   acceptQuotation,
@@ -7,6 +8,7 @@ import {
   Api,
   approveQuotation,
   convertQuotationToBooking,
+  createQuotationRevision,
   expireQuotation,
   generateQuotationPdf,
   getQuotationById,
@@ -36,6 +38,7 @@ import {
   UiSelectField,
   UiTextareaField,
 } from "@trackwise/shared/ui";
+import { distinctUntilChanged, map } from "rxjs";
 import { ContainerTypeOptionsService, ToastService } from "@/core/services";
 import { PageHeader } from "@/shared/components";
 import {
@@ -77,6 +80,8 @@ import { QuotationLinesTable } from "../components/quotation-lines-table/quotati
   ],
 })
 export class QuotationDetailsComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+
   private readonly api = inject(Api);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -97,6 +102,7 @@ export class QuotationDetailsComponent implements OnInit {
   protected readonly validityDays = signal<number>(30);
 
   protected readonly convertDialogVisible = signal(false);
+  protected readonly repeatBooking = signal(false);
   protected readonly convertContainerTypeId = signal<string | null>(null);
   protected readonly convertPickupDate = signal<Date | null>(null);
   protected readonly convertDeliveryDate = signal<Date | null>(null);
@@ -109,9 +115,18 @@ export class QuotationDetailsComponent implements OnInit {
   protected readonly isDeletingLine = signal(false);
   protected readonly lineToDelete = signal<QuotationLineDto | null>(null);
 
-  async ngOnInit(): Promise<void> {
+  ngOnInit(): void {
     void this.containerTypes.load();
-    await this.load();
+
+    this.route.paramMap
+      .pipe(
+        map((params) => params.get("id")),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((id) => {
+        if (id) void this.load(id);
+      });
   }
 
   /**
@@ -150,16 +165,14 @@ export class QuotationDetailsComponent implements OnInit {
     }
   }
 
-  private async load(): Promise<void> {
-    const id = this.route.snapshot.paramMap.get("id");
-    if (!id) return;
+  private async load(id?: string): Promise<void> {
+    const quotationId = id ?? this.quotation()?.id ?? this.route.snapshot.paramMap.get("id");
+    if (!quotationId) return;
 
     this.isLoading.set(true);
     try {
-      const result = await this.api.invoke(getQuotationById, { id });
+      const result = await this.api.invoke(getQuotationById, { id: quotationId });
       this.quotation.set(result);
-
-      console.log(this.quotation());
     } catch {
       this.toastService.showError("Failed to load quotation.");
     } finally {
@@ -327,7 +340,44 @@ export class QuotationDetailsComponent implements OnInit {
     }
   }
 
+  protected createRevision(): void {
+    const quotationId = this.quotation()?.id;
+    if (!quotationId) return;
+
+    this.toastService.confirm({
+      header: "Create Quotation Revision",
+      message: "Create a new draft with the same customer, freight mode, route, and charge setup?",
+      accept: async () => {
+        this.isBusy.set(true);
+        try {
+          const revisionId = await this.api.invoke(createQuotationRevision, { id: quotationId });
+          this.toastService.showSuccess("Quotation revision created.");
+          await this.router.navigateByUrl(`/quotations/${revisionId}`);
+        } catch {
+          this.toastService.showError("Failed to create quotation revision.");
+        } finally {
+          this.isBusy.set(false);
+        }
+      },
+    });
+  }
+
+  protected openRevision(id?: string): void {
+    if (!id) return;
+    void this.router.navigateByUrl(`/quotations/${id}`);
+  }
+
   protected openConvertDialog(): void {
+    this.repeatBooking.set(false);
+    this.openBookingDialog();
+  }
+
+  protected openRepeatBookingDialog(): void {
+    this.repeatBooking.set(true);
+    this.openBookingDialog();
+  }
+
+  private openBookingDialog(): void {
     this.convertContainerTypeId.set(null);
     this.convertPickupDate.set(null);
     this.convertDeliveryDate.set(null);
@@ -344,14 +394,19 @@ export class QuotationDetailsComponent implements OnInit {
       requestedPickupDate: this.convertPickupDate()?.toISOString() ?? null,
       requestedDeliveryDate: this.convertDeliveryDate()?.toISOString() ?? null,
       notes: this.convertNotes().trim() || null,
+      repeat: this.repeatBooking(),
     };
 
     this.isBusy.set(true);
     try {
       const bookingId = await this.api.invoke(convertQuotationToBooking, { id: quotationId, body });
       this.convertDialogVisible.set(false);
-      this.toastService.showSuccess("Booking created from this quotation.");
-      await this.router.navigateByUrl(`/forwarding/bookings-executions/${bookingId}`);
+      this.toastService.showSuccess(
+        this.repeatBooking()
+          ? "Another booking was created from this quotation."
+          : "Booking created from this quotation.",
+      );
+      await this.router.navigateByUrl(`/bookings-executions/${bookingId}`);
     } catch {
       this.toastService.showError("Failed to convert quotation to booking.");
     } finally {

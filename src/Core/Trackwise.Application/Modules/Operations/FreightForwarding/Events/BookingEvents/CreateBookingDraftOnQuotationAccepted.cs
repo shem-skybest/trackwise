@@ -21,7 +21,7 @@ public class CreateBookingDraftOnQuotationAccepted(
         var bookingRepo = _tenantUow.Repository<Booking>();
         var quotationRepo = _tenantUow.Repository<Quotation>();
 
-        // Idempotent: one booking per quotation (also enforced by the unique index)
+        // Keep duplicate acceptance events from creating another initial booking.
         var alreadyExists = await bookingRepo.Query()
             .AnyAsync(b => b.QuotationId == e.Id, ct);
         if (alreadyExists) return;
@@ -32,7 +32,10 @@ public class CreateBookingDraftOnQuotationAccepted(
             .FirstOrDefaultAsync(q => q.Id == e.Id, ct)
             ?? throw new InvalidOperationException($"Quotation {e.Id} not found.");
 
-        var booking = Booking.CreateDraftFromQuotation(quotation);
+        var existingCount = await bookingRepo
+            .CountAsync(b => b.QuotationId == quotation.Id, ct);
+
+        var booking = Booking.CreateDraftFromQuotation(quotation, bookingSequence: existingCount + 1);
 
         await bookingRepo.AddAsync(booking, ct);
     }

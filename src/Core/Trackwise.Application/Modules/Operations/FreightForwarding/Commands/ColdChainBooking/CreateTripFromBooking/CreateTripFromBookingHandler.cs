@@ -1,7 +1,6 @@
 using MediatR;
 using Trackwise.Application.Abstractions;
 using Trackwise.Application.Abstractions.Common;
-using Trackwise.Application.Modules.Operations.RateAgreements;
 using Trackwise.Application.Modules.Operations.Trips.Commands;
 using Trackwise.Domain.Entities;
 using Trackwise.Domain.Persistence;
@@ -23,13 +22,15 @@ internal sealed class CreateTripFromBookingHandler(ITenantUnitOfWork tenantUow, 
     private async Task<Result<CreateTripFromBookingResultDto>> CreateAsync(
         CreateTripFromBookingCommand req, CancellationToken ct)
     {
-        var booking = await tenantUow.Repository<Booking>().GetByIdAsync(req.BookingId, ct);
+        var booking = await tenantUow.Repository<Booking>().Query()
+            .Include(b => b.Charges)
+            .SingleOrDefaultAsync(b => b.Id == req.BookingId, ct);
         if (booking is null)
         {
             return Fail($"Booking with ID '{req.BookingId}' not found.");
         }
 
-        if (!booking.IsFromRateAgreement || booking.ServiceDate is not { } serviceDate)
+        if (!booking.IsTemperatureControlled)
         {
             return Fail("Only a Cold Chain booking can be turned into a trip here.");
         }
@@ -39,13 +40,27 @@ internal sealed class CreateTripFromBookingHandler(ITenantUnitOfWork tenantUow, 
             return Fail("Confirm the booking before making its trip.");
         }
 
-        if (booking.PickupSiteId is not { } pickupSiteId)
+        // The route is now managed by the LaneTransit value object.
+        var pickupStop = booking.Lane?.FirstPickup;
+        if (pickupStop is null)
         {
-            return Fail("Set the pickup warehouse on the booking first.");
+            return Fail("The booking does not have a valid pickup stop configured on its lane.");
         }
 
-        var drops = booking.Drops.OrderBy(d => d.SortOrder).ToList();
-        var siteIds = drops.Select(d => d.SiteId).Append(pickupSiteId).Distinct().ToList();
+        var pickupSiteId = pickupStop.LocationId;
+
+        // Treat all subsequent stops in the sequence as drops/deliveries
+        var drops = booking.Lane!.Stops
+            .Where(s => s.Sequence > pickupStop.Sequence)
+            .OrderBy(s => s.Sequence)
+            .ToList();
+
+        if (drops.Count == 0)
+        {
+            return Fail("The booking does not have any delivery stops configured on its lane.");
+        }
+
+        var siteIds = drops.Select(d => d.LocationId).Append(pickupSiteId).Distinct().ToList();
         var sites = await tenantUow.Repository<Location>().Query()
             .Where(l => siteIds.Contains(l.Id))
             .ToDictionaryAsync(l => l.Id, ct);
@@ -53,6 +68,7 @@ internal sealed class CreateTripFromBookingHandler(ITenantUnitOfWork tenantUow, 
         var unplaced = siteIds
             .Select(id => sites.GetValueOrDefault(id))
             .FirstOrDefault(site => site?.Address is null || site.Latitude is null || site.Longitude is null);
+
         if (unplaced is not null || sites.Count != siteIds.Count)
         {
             return Fail(unplaced is null
@@ -66,43 +82,59 @@ internal sealed class CreateTripFromBookingHandler(ITenantUnitOfWork tenantUow, 
             .FirstOrDefaultAsync(ct);
 
         var settings = tenantUow.GetCurrentTenant().Settings;
-        var callTime = booking.CallTime ?? TimeOnly.MinValue;
+
+        // Derive ServiceDate and CallTime from the new RequestedPickupStart (FirstPickup.WindowStart)
+        var serviceDate = booking.RequestedPickupStart.HasValue
+            ? DateOnly.FromDateTime(booking.RequestedPickupStart.Value.UtcDateTime)
+            : DateOnly.FromDateTime(DateTime.UtcNow);
+
+        var callTime = booking.RequestedPickupStart.HasValue
+            ? TimeOnly.FromDateTime(booking.RequestedPickupStart.Value.UtcDateTime)
+            : TimeOnly.MinValue;
+
         var pickup = sites[pickupSiteId];
 
-        var loads = drops.Select(drop =>
+        var bookingTotal = booking.GetTotals().Selling;
+        var amountPerDrop = drops.Count == 0 ? 0m : bookingTotal / drops.Count;
+        var allocatedAmount = 0m;
+
+        var loads = drops.Select((drop, index) =>
         {
-            var site = sites[drop.SiteId];
+            var site = sites[drop.LocationId];
+            var deliveryCost = index == drops.Count - 1
+                ? bookingTotal - allocatedAmount
+                : amountPerDrop;
+            allocatedAmount += deliveryCost;
+
             return new CreateTripLoadCommand
             {
-                Name = booking.ReferenceNumber is { } reference ? $"{reference} - {site.Name}" : site.Name,
+                Name = booking.BookingNumber is { } reference ? $"{reference} - {site.Name}" : site.Name,
                 Type = LoadType.RefrigeratedGoods,
                 OriginAddress = pickup.Address!,
                 OriginLocation = PinOf(pickup),
                 DestinationAddress = site.Address!,
                 DestinationLocation = PinOf(site),
-                // Straight-line metres, as the booking estimate read it: a distance-band card
-                // (PFI's) prices the trip from this.
+                DeliveryCost = deliveryCost,
                 Distance = PinOf(pickup).DistanceTo(PinOf(site)),
                 AssignedDispatcherId = req.DispatcherId,
                 CustomerId = booking.CustomerId,
-                RequestedPickupDate = settings.ToUtc(serviceDate, callTime),
-                RequestedDeliveryDate = site.DefaultCutoffTime is { } cutoff
-                    // A cut-off earlier in the day than the call time is the next morning's.
+                RequestedPickupDate = pickupStop.WindowStart?.UtcDateTime,
+                RequestedDeliveryDate = drop.WindowEnd?.UtcDateTime ?? (site.DefaultCutoffTime is { } cutoff
                     ? settings.ToUtc(cutoff < callTime ? serviceDate.AddDays(1) : serviceDate, cutoff)
-                    : null,
-                Notes = drop.Notes,
-                Commodity = booking.Commodity,
-                PlannedBoxes = drop.PlannedBoxes,
-                PlannedBags = drop.PlannedBags,
+                    : null),
+                Notes = booking.Notes,
+                Commodity = null,
+                PlannedBoxes = null,
+                PlannedBags = null,
                 OriginSiteId = pickupSiteId,
-                DestinationSiteId = drop.SiteId,
+                DestinationSiteId = drop.LocationId,
                 BookingId = booking.Id
             };
         }).ToList();
 
         var created = await sender.Send(new CreateTripCommand
         {
-            Name = $"{booking.ReferenceNumber} {customerName}".Trim(),
+            Name = $"{booking.BookingNumber} {customerName}".Trim(),
             TruckId = req.TruckId,
             DriverId = req.DriverId,
             HelperId = req.HelperId,
@@ -115,45 +147,15 @@ internal sealed class CreateTripFromBookingHandler(ITenantUnitOfWork tenantUow, 
             return Fail(created.Error!);
         }
 
-        //booking.StartExecution();
+        // Replaces the old booking.StartExecution() based on your new lifecycle methods
+        booking.MarkInProgress();
         await tenantUow.SaveChangesAsync(ct);
 
-        return Result<CreateTripFromBookingResultDto>.Ok(await PriceAsync(created.Value, serviceDate, ct));
-    }
-
-    /// <summary>
-    /// Prices the new trip the way "Price from agreement" on the trip page does. A trip that can't
-    /// be priced yet (no truck, no rate for a drop) is still made; the dispatcher prices it later.
-    /// </summary>
-    private async Task<CreateTripFromBookingResultDto> PriceAsync(Guid tripId, DateOnly serviceDate, CancellationToken ct)
-    {
-        var result = new CreateTripFromBookingResultDto { TripId = tripId };
-        var trip = await tenantUow.Repository<Trip>().GetByIdAsync(tripId, ct);
-        if (trip is null)
+        return Result<CreateTripFromBookingResultDto>.Ok(new CreateTripFromBookingResultDto
         {
-            return result;
-        }
-
-        var quoted = await TripRateCalculator.QuoteAsync(tenantUow, trip, serviceDate, ct);
-        if (!quoted.IsSuccess)
-        {
-            result.PricingError = quoted.Error;
-            return result;
-        }
-
-        var (quote, ratedOn, dto) = quoted.Value!;
-        try
-        {
-            trip.ApplyRate(quote, ratedOn, DateTime.UtcNow);
-            await tenantUow.SaveChangesAsync(ct);
-            result.PricedTotal = dto.Total;
-        }
-        catch (InvalidOperationException ex)
-        {
-            result.PricingError = ex.Message;
-        }
-
-        return result;
+            TripId = created.Value,
+            PricedTotal = bookingTotal
+        });
     }
 
     private static GeoPoint PinOf(Location site) => new(site.Longitude!.Value, site.Latitude!.Value);

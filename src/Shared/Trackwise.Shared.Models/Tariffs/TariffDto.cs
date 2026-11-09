@@ -14,6 +14,8 @@ public class TariffDto
     public ServiceLevel ServiceLevel { get; set; }
     public Guid? CarrierId { get; set; }
     public Guid? ContractId { get; set; }
+    public Guid? CustomerId { get; set; }
+    public string? CustomerName { get; set; }
     public string? OriginLane { get; set; }
     public string? DestinationLane { get; set; }
     public Guid? ContainerTypeId { get; set; }
@@ -96,6 +98,7 @@ public class CreateTariffRequest
     public Guid? CarrierId { get; set; }
     public DateOnly EffectiveFrom { get; set; }
     public Guid? ContractId { get; set; }
+    public Guid? CustomerId { get; set; }
     // CreatedById typically comes from the authenticated user context, not the request body
 }
 

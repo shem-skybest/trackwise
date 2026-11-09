@@ -12,11 +12,14 @@ public class QuotationSummaryDto
 {
     public Guid Id { get; set; }
     public Guid CustomerId { get; set; }
+    public Guid BranchId { get; set; }
+    public string BranchName { get; set; } = default!;
     public string ReferenceNumber { get; set; } = default!;
     public string CustomerName { get; set; } = default!;
     public string Currency { get; set; } = default!;
     public QuotationStatus Status { get; set; }
     public int LineCount { get; set; }
+    public int RevisionNumber { get; set; }
     public FreightMode FreightMode { get; set; }
     public decimal TotalSellingAmount { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
@@ -26,10 +29,16 @@ public class QuotationDto
 {
     public Guid Id { get; set; }
     public Guid CustomerId { get; set; }
+    public Guid BranchId { get; set; }
+    public string BranchName { get; set; } = default!;
     public string CustomerName { get; set; } = default!;
     public string ReferenceNumber { get; set; } = default!;
     public string Currency { get; set; } = default!;
     public QuotationStatus Status { get; set; }
+    public Guid RevisionGroupId { get; set; }
+    public int RevisionNumber { get; set; }
+    public Guid? PreviousRevisionId { get; set; }
+    public List<QuotationRevisionDto> Revisions { get; set; } = [];
     public DateTimeOffset? ValidUntil { get; set; }
 
     // Logistics & Transport Attributes
@@ -69,6 +78,14 @@ public class QuotationDto
     public List<QuotationLineDto> Lines { get; set; } = [];
     public string? Notes { get; set; }
 }
+
+public record QuotationRevisionDto(
+    Guid Id,
+    string ReferenceNumber,
+    int RevisionNumber,
+    QuotationStatus Status,
+    Guid? PreviousRevisionId,
+    DateTimeOffset CreatedAt);
 
 public record RouteStopSummaryDto(
     int Sequence,

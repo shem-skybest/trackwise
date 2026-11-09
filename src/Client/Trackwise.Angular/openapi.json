@@ -24166,10 +24166,32 @@
             }
           },
           {
+            "name": "BranchId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "FreightMode",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/FreightMode"
+            }
+          },
+          {
             "name": "Status",
             "in": "query",
             "schema": {
               "$ref": "#/components/schemas/QuotationStatus"
+            }
+          },
+          {
+            "name": "Search",
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           },
           {
@@ -24294,6 +24316,88 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/quotations/{id}/revisions": {
+      "post": {
+        "tags": [
+          "Quotation"
+        ],
+        "operationId": "CreateQuotationRevision",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -27649,6 +27753,14 @@
           },
           {
             "name": "ContractId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "CustomerId",
             "in": "query",
             "schema": {
               "type": "string",
@@ -36845,7 +36957,8 @@
           },
           "quotationId": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "nullable": true
           },
           "quotationReference": {
             "type": "string",
@@ -37228,7 +37341,8 @@
           },
           "quotationId": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "nullable": true
           },
           "quotationReference": {
             "type": "string",
@@ -39001,6 +39115,9 @@
           "notes": {
             "type": "string",
             "nullable": true
+          },
+          "repeat": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -40897,6 +41014,10 @@
             "type": "string",
             "format": "uuid"
           },
+          "branchId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "currency": {
             "type": "string",
             "nullable": true
@@ -41119,6 +41240,11 @@
             "format": "date"
           },
           "contractId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "customerId": {
             "type": "string",
             "format": "uuid",
             "nullable": true
@@ -50499,6 +50625,14 @@
             "type": "string",
             "format": "uuid"
           },
+          "branchId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "branchName": {
+            "type": "string",
+            "nullable": true
+          },
           "customerName": {
             "type": "string",
             "nullable": true
@@ -50513,6 +50647,26 @@
           },
           "status": {
             "$ref": "#/components/schemas/QuotationStatus"
+          },
+          "revisionGroupId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revisionNumber": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "previousRevisionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "revisions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuotationRevisionDto"
+            },
+            "nullable": true
           },
           "validUntil": {
             "type": "string",
@@ -50700,6 +50854,36 @@
         },
         "additionalProperties": false
       },
+      "QuotationRevisionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "referenceNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "revisionNumber": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "status": {
+            "$ref": "#/components/schemas/QuotationStatus"
+          },
+          "previousRevisionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
       "QuotationStatus": {
         "enum": [
           "draft",
@@ -50724,6 +50908,14 @@
             "type": "string",
             "format": "uuid"
           },
+          "branchId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "branchName": {
+            "type": "string",
+            "nullable": true
+          },
           "referenceNumber": {
             "type": "string",
             "nullable": true
@@ -50740,6 +50932,10 @@
             "$ref": "#/components/schemas/QuotationStatus"
           },
           "lineCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "revisionNumber": {
             "type": "integer",
             "format": "int32"
           },
@@ -53111,6 +53307,15 @@
           "contractId": {
             "type": "string",
             "format": "uuid",
+            "nullable": true
+          },
+          "customerId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "customerName": {
+            "type": "string",
             "nullable": true
           },
           "originLane": {

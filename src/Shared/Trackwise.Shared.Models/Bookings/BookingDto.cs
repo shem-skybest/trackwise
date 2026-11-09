@@ -23,8 +23,8 @@ public class BookingDto
     public string? Notes { get; set; }
 
     // Quotation link
-    public Guid QuotationId { get; set; }
-    public string QuotationReference { get; set; } = default!;
+    public Guid? QuotationId { get; set; }
+    public string? QuotationReference { get; set; }
 
     // Logistics snapshot
     public TransportMode Mode { get; set; }
@@ -96,8 +96,8 @@ public class BookingSummaryDto
     public Guid CustomerId { get; set; }
     public string CustomerName { get; set; } = default!;
     public string? CustomerReference { get; set; }
-    public Guid QuotationId { get; set; }
-    public string QuotationReference { get; set; } = default!;
+    public Guid? QuotationId { get; set; }
+    public string? QuotationReference { get; set; }
     public string Currency { get; set; } = default!;
 
     public TransportMode Mode { get; set; }
@@ -210,6 +210,7 @@ public class ConvertQuotationToBookingRequest
     public DateTime? RequestedPickupDate { get; set; }
     public DateTime? RequestedDeliveryDate { get; set; }
     public string? Notes { get; set; }
+    public bool Repeat { get; set; }
 }
 
 /// <summary>

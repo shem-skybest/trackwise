@@ -13,8 +13,6 @@ internal sealed class BookingConfiguration : IEntityTypeConfiguration<Booking>
         builder.HasKey(x => x.Id);
 
         // ── Header ───────────────────────────────────────────────────────────
-        // BookingNumber is derived from the quotation reference (BK-2026-00042),
-        // so it is a plain string, NOT a database identity column.
         builder.Property(x => x.BookingNumber)
             .HasMaxLength(50)
             .IsRequired();
@@ -33,7 +31,7 @@ internal sealed class BookingConfiguration : IEntityTypeConfiguration<Booking>
         // ── Quotation link ───────────────────────────────────────────────────
         builder.Property(x => x.QuotationReference)
             .HasMaxLength(50)
-            .IsRequired();
+            .IsRequired(false);
 
         // Must reference the Quotation navigation. Configuring HasOne<Quotation>() without it makes EF
         // create a SECOND relationship for the nav, with a shadow FK (quotation_id1) that is never set.
@@ -42,9 +40,8 @@ internal sealed class BookingConfiguration : IEntityTypeConfiguration<Booking>
             .HasForeignKey(x => x.QuotationId)
             .OnDelete(DeleteBehavior.Restrict); // a Booking must not silently lose its originating Quotation
 
-        // One Booking per Quotation - conversion is a one-way, one-time transition.
         builder.HasIndex(x => x.QuotationId)
-            .IsUnique();
+            .HasFilter("\"quotation_id\" IS NOT NULL");
 
         builder.HasOne(x => x.Customer)
             .WithMany()
@@ -111,6 +108,7 @@ internal sealed class BookingConfiguration : IEntityTypeConfiguration<Booking>
 
         // ── Query indexes ────────────────────────────────────────────────────
         builder.HasIndex(x => new { x.CustomerId, x.Status });
+        builder.HasIndex(x => x.BookingNumber).IsUnique();
         builder.HasIndex(x => x.Status);
         builder.HasIndex(x => x.CreditCheckStatus);
     }

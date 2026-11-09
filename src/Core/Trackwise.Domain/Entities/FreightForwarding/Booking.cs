@@ -10,25 +10,45 @@ namespace Trackwise.Domain.Entities;
 // ── Booking number ───────────────────────────────────────────────────────────
 
 /// <summary>
-/// Derives the booking number from the quotation reference so the two documents are
-/// visibly linked: QT-2026-00042 -> BK-2026-00042. One booking per quotation, so the
-/// result is unique whenever the quotation reference is unique (per tenant).
+/// Generates an independent booking reference. The quotation reference is stored separately
+/// so multiple bookings can retain traceability to the same accepted quotation.
 /// </summary>
 public static class BookingNumbering
 {
     public const string Prefix = "BK";
+    private const string QuotationPrefix = "QT-";
+    private const int SequenceWidth = 2;
 
-    public static string FromQuotationReference(string quotationReference)
+    /// <summary>
+    /// Derives a booking number from its quotation reference:
+    /// QT-26-DOMMAIN-001 + 1 => BK-26-DOMMAIN-001-01.
+    /// </summary>
+    public static string FromQuotationReference(string quotationReference, int bookingSequence)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(quotationReference);
+        ArgumentOutOfRangeException.ThrowIfLessThan(bookingSequence, 1);
 
         var reference = quotationReference.Trim().ToUpperInvariant();
 
-        // Swap the leading alphabetic prefix (QT-, QUO-, Q-...) for BK-
-        var match = System.Text.RegularExpressions.Regex.Match(reference, @"^[A-Z]+-");
-        return match.Success
-            ? Prefix + "-" + reference[match.Length..]
-            : Prefix + "-" + reference;   // no recognizable prefix: BK-<reference>
+        if (!reference.StartsWith(QuotationPrefix, StringComparison.Ordinal))
+            throw new ArgumentException(
+                $"Quotation reference '{quotationReference}' must start with '{QuotationPrefix}'.",
+                nameof(quotationReference));
+
+        var body = reference[QuotationPrefix.Length..];
+        return $"{Prefix}-{body}-{bookingSequence.ToString($"D{SequenceWidth}")}";
+    }
+
+    /// <summary>
+    /// Fallback for bookings with no originating quotation (e.g. legacy rate-agreement bookings).
+    /// Quotation-derived bookings must use <see cref="FromQuotationReference"/>.
+    /// </summary>
+    public static string FromBookingId(Guid bookingId)
+    {
+        if (bookingId == Guid.Empty)
+            throw new ArgumentException("Booking ID is required.", nameof(bookingId));
+
+        return $"{Prefix}-{bookingId:N}".ToUpperInvariant();
     }
 }
 
@@ -48,10 +68,10 @@ public partial class Booking : AuditableEntity, ITenantEntity
     public string? CustomerReference { get; private set; }   // customer PO / shipper ref
     public string? Notes { get; private set; }
 
-    // Traceability to the quotation (unique index in EF config)
-    public Guid QuotationId { get; private set; }
-    public virtual Quotation Quotation { get; set; }
-    public string QuotationReference { get; private set; } = default!;
+    // Traceability to the originating quotation, when the booking was quoted.
+    public Guid? QuotationId { get; private set; }
+    public virtual Quotation? Quotation { get; set; }
+    public string? QuotationReference { get; private set; }
 
     // Logistics context (snapshotted from quotation, editable while Draft)
     public TransportMode Mode { get; private set; }
@@ -105,17 +125,23 @@ public partial class Booking : AuditableEntity, ITenantEntity
     /// </summary>
     public static Booking CreateDraftFromQuotation(
         Quotation quotation,
+        int bookingSequence,
         int paymentTermsDays = 30,
-        bool customerCreditCheckRequired = false)
+        bool customerCreditCheckRequired = false,
+        DateTime? requestedPickupDate = null,
+        DateTime? requestedDeliveryDate = null,
+        string? notes = null)
     {
         ArgumentNullException.ThrowIfNull(quotation);
 
         if (quotation.Status != QuotationStatus.Accepted)
             throw new InvalidOperationException("A booking can only be created from an Accepted quotation.");
 
+        var bookingId = Guid.NewGuid();
         var booking = new Booking
         {
-            BookingNumber = BookingNumbering.FromQuotationReference(quotation.ReferenceNumber),
+            Id = bookingId,
+            BookingNumber = BookingNumbering.FromQuotationReference(quotation.ReferenceNumber, bookingSequence),
             Status = BookingStatus.Draft,
             CustomerId = quotation.CustomerId,
             Currency = quotation.Currency,
@@ -125,7 +151,7 @@ public partial class Booking : AuditableEntity, ITenantEntity
             FreightMode = quotation.FreightMode,
             ShipmentType = quotation.ShipmentType,
             Incoterm = quotation.Incoterm,
-            Lane = quotation.Lane,
+            Lane = ApplyRequestedDates(quotation.Lane, requestedPickupDate, requestedDeliveryDate),
             CargoSpec = quotation.CargoSpec,
             DeclaredCargoValuePhp = quotation.DeclaredCargoValuePhp,
             TemperatureSpec = quotation.TemperatureSpec,
@@ -133,7 +159,7 @@ public partial class Booking : AuditableEntity, ITenantEntity
             RequiresCustomsBrokerage = quotation.RequiresCustomsBrokerage,
             PaymentTermsDays = paymentTermsDays,
             CreditCheckStatus = customerCreditCheckRequired ? CreditCheckStatus.Pending : CreditCheckStatus.NotRequired,
-            Notes = quotation.Notes
+            Notes = notes ?? quotation.Notes
         };
 
         foreach (var line in quotation.Lines)
@@ -143,6 +169,32 @@ public partial class Booking : AuditableEntity, ITenantEntity
 
         booking.DomainEvents.Add(new BookingDraftCreated(booking.Id, quotation.Id, quotation.CustomerId));
         return booking;
+    }
+
+    private static LaneTransit ApplyRequestedDates(
+        LaneTransit lane,
+        DateTime? requestedPickupDate,
+        DateTime? requestedDeliveryDate)
+    {
+        if (requestedPickupDate is null && requestedDeliveryDate is null)
+            return lane;
+
+        var pickupStart = requestedPickupDate.HasValue
+            ? new DateTimeOffset(requestedPickupDate.Value.ToUniversalTime())
+            : (DateTimeOffset?)null;
+        var deliveryEnd = requestedDeliveryDate.HasValue
+            ? new DateTimeOffset(requestedDeliveryDate.Value.ToUniversalTime())
+            : (DateTimeOffset?)null;
+
+        var stops = lane.Stops.Select(stop => RouteStop.Create(
+            stop.Sequence,
+            stop.LocationId,
+            stop.Type,
+            stop.Type == StopType.Pickup && pickupStart.HasValue ? pickupStart : stop.WindowStart,
+            stop.Type == StopType.Dropoff && deliveryEnd.HasValue ? deliveryEnd : stop.WindowEnd,
+            stop.Instructions));
+
+        return new LaneTransit(stops, lane.TotalDistanceKm);
     }
 
     // ── Header / cargo edits (Draft only) ────────────────────────────────────
@@ -394,8 +446,7 @@ public partial class Booking : AuditableEntity, ITenantEntity
     {
         var blockers = new List<string>();
 
-        // A Cold Chain booking is priced by its rate agreement, not by charge lines.
-        if (_charges.Count == 0 && !IsFromRateAgreement)
+        if (_charges.Count == 0)
             blockers.Add("Booking has no charges.");
 
         if (CreditCheckStatus is CreditCheckStatus.Pending)
@@ -679,7 +730,7 @@ public record BookingChargeAdded(Guid Id, Guid ChargeId) : IDomainEvent;
 public record BookingChargeUpdated(Guid Id, Guid ChargeId) : IDomainEvent;
 public record BookingChargeRemoved(Guid Id, Guid ChargeId) : IDomainEvent;
 public record BookingDocumentVerified(Guid Id, Guid DocumentId) : IDomainEvent;
-public record BookingConfirmed(Guid Id, Guid CustomerId, Guid QuotationId, string BookingNumber) : IDomainEvent;
+public record BookingConfirmed(Guid Id, Guid CustomerId, Guid? QuotationId, string BookingNumber) : IDomainEvent;
 public record BookingStarted(Guid Id) : IDomainEvent;
 public record BookingCompleted(Guid Id, Guid CustomerId) : IDomainEvent;
 public record BookingCancelled(Guid Id, string Reason, bool WasConfirmed) : IDomainEvent;

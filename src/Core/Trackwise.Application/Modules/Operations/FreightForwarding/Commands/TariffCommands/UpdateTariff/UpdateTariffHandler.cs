@@ -22,9 +22,17 @@ internal sealed class UpdateTariffHandler(ITenantUnitOfWork tenantUow)
 
         if (!string.IsNullOrWhiteSpace(req.Name))
         {
-            var duplicate = await tenantUow.Repository<Tariff>()
-                .Query()
-                .AnyAsync(i => i.Id != req.Id && i.Name == req.Name, ct);
+            var mode = req.Mode ?? tariff.Mode;
+            var serviceLevel = req.ServiceLevel ?? tariff.ServiceLevel;
+            var contractId = req.ContractId ?? tariff.ContractId;
+            var duplicate = await tenantUow.Repository<Tariff>().Query()
+                .AnyAsync(i => i.Id != req.Id &&
+                               i.Name == req.Name &&
+                               i.Mode == mode &&
+                               i.ServiceLevel == serviceLevel &&
+                               i.ContractId == contractId &&
+                               i.CustomerId == tariff.CustomerId &&
+                               i.IsActive == tariff.IsActive, ct);
 
             if (duplicate)
             {

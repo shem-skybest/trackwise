@@ -11,4 +11,5 @@ public class ConvertQuotationToBookingCommand : ICommand<Result<Guid>>
     public DateTime? RequestedPickupDate { get; set; }
     public DateTime? RequestedDeliveryDate { get; set; }
     public string? Notes { get; set; }
+    public bool Repeat { get; set; }
 }

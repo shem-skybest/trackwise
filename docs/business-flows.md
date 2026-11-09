@@ -203,14 +203,17 @@ flowchart TD
         QQ{"Approved?"}
         QR["Rejected<br/>reason required"]
         QA["Approved"]
+        QREV["New draft revision<br/>same customer, freight mode, route"]
         TAR --> QD
         QD --> QQ
         QQ -->|"no"| QR
         QQ -->|"yes"| QA
+        QA -.->|"rates or charges change"| QREV
+        QREV -->|"copied charges, editable prices"| QD
     end
 
     subgraph BOOKING["Booking"]
-        BP["Convert to booking<br/>one booking per quotation<br/>Pending"]
+        BP["Accept creates initial booking<br/>repeat action can create more<br/>Pending"]
         BC["Confirmed<br/>carrier reference"]
         BE["In execution"]
         BCO["Completed"]
@@ -258,6 +261,11 @@ Sources: `Quotation.cs`, `Booking.cs`, `LoadService.CreateLoadsAsync`, `Workfile
 `WorkfileStatusMachine`. Known gaps: loads can be tied to a booking through the API but there is no
 screen for it; workfiles have no charges yet, so "forward to Accounting" moves the file without any
 amounts; Accounting has no way to send a file back.
+
+Quotation revisions preserve the original customer's price snapshot and create a new draft with the
+same customer, freight mode, and ordered route. Charge lines are copied without their issued price
+snapshots so the new draft can be repriced or have charges replaced; only the latest non-draft
+revision can be revised.
 
 ## 4. Trucking
 

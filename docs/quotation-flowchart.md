@@ -34,6 +34,7 @@ flowchart TD
     C_GET["GET /quotations<br/>GetQuotationsQuery<br/>[Permission.Quotation.View]"]
     C_GET1["GET /quotations/{id}<br/>GetQuotationByIdQuery<br/>[Permission.Quotation.View]"]
     C_CREATE["POST /quotations<br/>CreateQuotationCommand<br/>[Permission.Quotation.Manage]"]
+    C_REV["POST /quotations/{id}/revisions<br/>CreateQuotationRevisionCommand<br/>[Permission.Quotation.Manage]"]
     C_UPDATE["PUT /quotations/{id}<br/>UpdateQuotationCommand<br/>[Permission.Quotation.Manage]"]
     C_ADDL["POST /quotations/{id}/lines<br/>AddQuotationLineCommand<br/>[Permission.Quotation.Manage]"]
     C_REML["DELETE /quotations/{id}/lines/{lineId}<br/>[Permission.Quotation.Manage]"]
@@ -51,6 +52,7 @@ flowchart TD
   subgraph HANDLERS ["3. Application Handlers — MediatR (internal sealed)"]
     direction TB
     H_CREATE["CreateQuotationHandler<br/>customer+location validation, route resolver,<br/>Haversine distance, FX→PHP, Quotation.Create<br/>+ ratingEngine.AutoPriceAsync"]
+    H_REV["CreateQuotationRevisionHandler<br/>latest non-draft only; copies same customer,<br/>freight mode, route and charge setup into new draft"]
     H_UPDATE["UpdateQuotationHandler<br/>Draft-only; ClearLines → UpdateDetails<br/>→ AutoPriceAsync"]
     H_ADDL["AddQuotationLineHandler<br/>Draft-only; tariff active & mode match;<br/>percentage base validation; AddLine"]
     H_REML["RemoveQuotationLineHandler<br/>Draft-only; RemoveLine"]
@@ -69,6 +71,7 @@ flowchart TD
   subgraph DOMAIN ["4. Domain Aggregate — Quotation (Quotation.cs)"]
     direction TB
     D_DRAFT["DRAFT<br/>Editable: UpdateDetails / AddLine / RemoveLine / ClearLines<br/>EvaluateApprovalRequirements() each mutation"]
+    D_REV["Revision family<br/>immutable customer + freight mode + route<br/>copied lines can be repriced or replaced"]
     D_PEND["PENDING_APPROVAL<br/>RequiresSpecialApproval flag + reason<br/>escalation banner shown in UI"]
     D_APVD["APPROVED<br/>ApprovedBy / ApprovedAt set"]
     D_ISS["ISSUED<br/>SnapshotPrices() locks buying+selling<br/>IssuedAt + ValidUntil = now + validityDays"]
@@ -89,6 +92,7 @@ flowchart TD
   %% ===== WIRING: UI → Controller
   EMIT -->|"POST /quotations"| C_CREATE
   ADD -->|"POST /quotations"| C_CREATE
+  DET -->|"Create Revision"| C_REV
   EDIT -->|"PUT /quotations/{id}"| C_UPDATE
   DET -.->|"GET /quotations/{id}"| C_GET1
   DET -.->|"GET /quotations"| C_GET
@@ -106,6 +110,7 @@ flowchart TD
 
   %% ===== WIRING: Controller → Handlers
   C_CREATE --> H_CREATE
+  C_REV --> H_REV
   C_UPDATE --> H_UPDATE
   C_ADDL --> H_ADDL
   C_REML --> H_REML
@@ -121,6 +126,8 @@ flowchart TD
 
   %% ===== WIRING: Handlers → Domain
   H_CREATE -->|"Quotation.Create()<br/>→ Draft"| D_DRAFT
+  H_REV -->|"CreateRevision()<br/>new draft + copied charge setup"| D_REV
+  D_REV --> D_DRAFT
   H_UPDATE -->|"ClearLines + UpdateDetails"| D_DRAFT
   H_ADDL -->|"AddLine"| D_DRAFT
   H_REML -->|"RemoveLine"| D_DRAFT
@@ -148,6 +155,8 @@ flowchart TD
   D_ACPT -->|"QuotationAccepted"| P_EV
   D_REJ -->|"QuotationRejected"| P_EV
   P_UOW -->|"ReferenceNumber"| P_IDX
+
+  H_REV -.->|"PreviousRevisionId / RevisionGroupId"| P_UOW
 
   %% ===== STYLE / STATE MACHINE LEGEND
   classDef draft fill:#f1f5f9,stroke:#94a3b8,color:#1e293b
@@ -178,6 +187,7 @@ flowchart TD
 - **Approve accepts both Draft and PendingApproval** (supports escalated quotes and direct draft review).
 - **Issue snapshots prices** — `SnapshotPrices()` locks buying/selling per line so tariff drift after issue can't change the offer.
 - **Accept validates `ValidUntil`** — if past expiry it flips to `Expired` and throws, so the client sees a failed call rather than a stale acceptance.
+- **Repeat bookings** — acceptance creates the initial draft booking; the accepted quotation's explicit repeat action creates another draft with a distinct booking number and the quotation's locked price snapshots.
 - **AutoDeclined is a dead state** — it exists in the enum and the UI badge mapping, but no handler transitions into it; nothing reaches it from the backend.
 - **Currency lock in Draft** — `UpdateDetails` refuses a currency change while priced lines exist; `UpdateQuotationHandler` calls `ClearLines()` first, then reprices via the rating engine.
 - **Multi-stop routing**: `routingMode` (point-to-point vs multi-stop) is derived from stop types; `handleFreightModeChange` auto-populates presets (currency, incoterm, mode, shipment type) per freight mode; `handleTransportModeChange` auto-corrects shipment type to valid options for the selected transport mode.

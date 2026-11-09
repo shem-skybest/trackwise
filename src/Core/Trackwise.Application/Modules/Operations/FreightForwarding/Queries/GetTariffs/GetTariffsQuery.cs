@@ -16,6 +16,7 @@ public class GetTariffsQuery : IQuery<PagedResult<TariffDto>>
     public ServiceLevel? ServiceLevel { get; set; }
     public Guid? CarrierId { get; set; }
     public Guid? ContractId { get; set; }
+    public Guid? CustomerId { get; set; }
     public string? OriginLane { get; set; }
     public string? DestinationLane { get; set; }
     public DateOnly? EffectiveOn { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow.Date);

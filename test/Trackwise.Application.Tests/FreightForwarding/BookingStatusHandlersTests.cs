@@ -40,6 +40,7 @@ public class BookingStatusHandlersTests
 
         var quotation = Quotation.Create(
             customerId: Guid.NewGuid(),
+            branchId: Guid.NewGuid(),
             referenceNumber: "QT-TEST-BKG-001",
             currency: "USD",
             mode: TransportMode.Road,
@@ -50,7 +51,7 @@ public class BookingStatusHandlersTests
             cargoSpec: cargo);
 
         TestQuotations.Accepted(quotation);
-        booking = Booking.CreateDraftFromQuotation(quotation);
+        booking = Booking.CreateDraftFromQuotation(quotation, 1);
 
         tenantUow.Repository<Booking>().Returns(bookingRepo);
         bookingRepo.GetByIdAsync(booking.Id, Arg.Any<CancellationToken>()).Returns(booking);

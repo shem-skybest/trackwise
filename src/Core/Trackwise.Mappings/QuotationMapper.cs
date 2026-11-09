@@ -20,10 +20,12 @@ public static partial class QuotationMapper
     [MapperIgnoreSource(nameof(Quotation.CargoSpec))]
     // Target fields resolved asynchronously or computed via overloads
     [MapperIgnoreTarget(nameof(QuotationDto.CustomerName))]
+    [MapperIgnoreTarget(nameof(QuotationDto.BranchName))]
     [MapperIgnoreTarget(nameof(QuotationDto.Stops))]
     [MapperIgnoreTarget(nameof(QuotationDto.Lines))]
     [MapperIgnoreTarget(nameof(QuotationDto.TotalBuyingAmount))]
     [MapperIgnoreTarget(nameof(QuotationDto.TotalSellingAmount))]
+    [MapperIgnoreTarget(nameof(QuotationDto.Revisions))]
     // Flatten Lane properties
     [MapProperty("Lane.TotalDistanceKm", nameof(QuotationDto.TotalDistanceKm))]
     // Flatten CargoSpec properties
@@ -56,6 +58,7 @@ public static partial class QuotationMapper
     [MapperIgnoreSource(nameof(Quotation.RejectionReason))]
     [MapperIgnoreSource(nameof(Quotation.ApprovalEscalationReason))]
     [MapperIgnoreTarget(nameof(QuotationSummaryDto.CustomerName))]
+    [MapperIgnoreTarget(nameof(QuotationSummaryDto.BranchName))]
     [MapperIgnoreTarget(nameof(QuotationSummaryDto.ReferenceNumber))]
     [MapperIgnoreTarget(nameof(QuotationSummaryDto.LineCount))]
     [MapperIgnoreTarget(nameof(QuotationSummaryDto.TotalSellingAmount))]
@@ -90,11 +93,13 @@ public static partial class QuotationMapper
     public static QuotationDto ToDto(
         this Quotation entity,
         string customerName,
+        string branchName,
         List<QuotationLineDto> lines,
         List<RouteStopSummaryDto>? stops = null)
     {
         var dto = entity.ToDto();
         dto.CustomerName = customerName;
+        dto.BranchName = branchName;
         dto.ReferenceNumber = entity.ReferenceNumber;
         dto.Lines = lines;
         dto.Stops = stops ?? [];
@@ -109,11 +114,13 @@ public static partial class QuotationMapper
     public static QuotationSummaryDto ToSummaryDto(
         this Quotation entity,
         string customerName,
+        string branchName,
         int lineCount,
         decimal totalSellingAmount)
     {
         var dto = entity.ToSummaryDto();
         dto.CustomerName = customerName;
+        dto.BranchName = branchName;
         dto.ReferenceNumber = entity.ReferenceNumber;
         dto.LineCount = lineCount;
         dto.FreightMode = entity.FreightMode;

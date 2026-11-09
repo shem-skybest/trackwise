@@ -2,7 +2,7 @@ import { Component, effect, inject, input, output, signal } from "@angular/core"
 import { form, FormField, FormRoot, maxLength, required } from "@angular/forms/signals";
 import { RouterLink } from "@angular/router";
 import { freightModeOptions, serviceLevelOptions } from "@trackwise/shared/api/enums";
-import type { FreightMode, ServiceLevel } from "@trackwise/shared/api/generated";
+import type { CustomerDto, FreightMode, ServiceLevel } from "@trackwise/shared/api/generated";
 import {
   Alert,
   Grid,
@@ -19,6 +19,7 @@ import {
   ValidatedForm,
 } from "@trackwise/shared/ui";
 import { ContainerTypeOptionsService, ToastService } from "@/core/services";
+import { SearchCustomer } from "@/shared/components/search";
 
 export interface TariffFormValue {
   name: string;
@@ -32,6 +33,8 @@ export interface TariffFormValue {
   carrierId?: string | null;
   carrier?: unknown | null;
   contractId?: string | null;
+  customerId?: string | null;
+  customerName?: string | null;
 }
 
 interface TariffFormModel {
@@ -45,6 +48,7 @@ interface TariffFormModel {
   effectiveFrom: Date | null;
   carrier: unknown | null;
   contractId: string;
+  customer: CustomerDto | null;
 }
 
 const EMPTY: TariffFormModel = {
@@ -58,6 +62,7 @@ const EMPTY: TariffFormModel = {
   effectiveFrom: null,
   carrier: null,
   contractId: "",
+  customer: null,
 };
 
 @Component({
@@ -70,6 +75,7 @@ const EMPTY: TariffFormModel = {
     Grid,
     Icon,
     RouterLink,
+    SearchCustomer,
     Spinner,
     Stack,
     Surface,
@@ -184,6 +190,8 @@ export class TariffForm {
       carrierId: this.getCarrierId(value.carrier),
       carrier: value.carrier,
       contractId: value.contractId.trim() || null,
+      customerId: value.customer?.id ?? null,
+      customerName: value.customer?.name ?? null,
     };
   }
 
@@ -231,6 +239,10 @@ export class TariffForm {
       carrier: src.carrier !== undefined ? src.carrier : value.carrier,
 
       contractId: src.contractId ?? value.contractId,
+
+      customer: src.customerId
+        ? ({ id: src.customerId, name: src.customerName ?? "" } as CustomerDto)
+        : value.customer,
     }));
   }
 

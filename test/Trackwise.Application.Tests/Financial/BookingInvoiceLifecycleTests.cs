@@ -67,6 +67,7 @@ public sealed class BookingInvoiceLifecycleTests
             false);
         var quotation = Quotation.Create(
             Guid.NewGuid(),
+            branchId: Guid.NewGuid(),
             "QT-TEST-BILL-001",
             "USD",
             TransportMode.Road,
@@ -99,6 +100,6 @@ public sealed class BookingInvoiceLifecycleTests
         quotation.Approve("billing-test");
         quotation.Issue(TimeSpan.FromDays(30));
         quotation.Accept();
-        return Booking.CreateDraftFromQuotation(quotation);
+        return Booking.CreateDraftFromQuotation(quotation, 1);
     }
 }

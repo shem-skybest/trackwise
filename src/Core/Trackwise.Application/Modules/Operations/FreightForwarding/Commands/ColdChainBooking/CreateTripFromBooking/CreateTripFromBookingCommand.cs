@@ -5,8 +5,8 @@ namespace Trackwise.Application.Modules.Operations.FreightForwarding.Commands;
 
 /// <summary>
 /// Turns a confirmed Cold Chain booking into a trip: one load per planned drop, from the pickup
-/// warehouse, on the service date, then prices the trip from the client's agreement. The booking
-/// moves to InExecution.
+/// warehouse, on the service date, then carries the booking's selling total onto the trip. The
+/// booking moves to InExecution.
 /// </summary>
 public class CreateTripFromBookingCommand : ICommand<Result<CreateTripFromBookingResultDto>>
 {

@@ -60,8 +60,11 @@ public partial class Booking
     public static Booking CreateFromRateAgreement(
         RateAgreement agreement, string? referenceNumber, ColdChainBookingPlan plan)
     {
+        var bookingId = Guid.NewGuid();
         var booking = new Booking
         {
+            Id = bookingId,
+            BookingNumber = BookingNumbering.FromBookingId(bookingId),
             CustomerId = agreement.CustomerId,
             ReferenceNumber = referenceNumber,
             Status = BookingStatus.Draft

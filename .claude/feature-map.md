@@ -79,7 +79,7 @@ This file answers _where_. For _how it works_, follow the deep dive: **AI dispat
   endpoint. `GET /loads?userId=` also matches trips the user drives or rescues (Past Loads, the
   proximity watcher)
 - **Driver push follows the trip, not the truck**: `Trips/Events/TripDriverPushHandler` pushes
-  "Aug 29: Clearwater Catch, Inc., 4 drops" to `Trip.Driver` on dispatch, a driver change on a dispatched
+  "Aug 29: Superb Catch, Inc., 4 drops" to `Trip.Driver` on dispatch, a driver change on a dispatched
   trip (`TripDriverChangedEvent`, both drivers) and cancelling a dispatched / in-transit trip
   (`TripCancelledEvent`). The old load-assigned push skips loads on a trip, and the trip-assigned
   push skips draft trips
@@ -874,6 +874,9 @@ drive+ferry route for the small port network Skybest's branches sit on (Luzon/Ce
 -Applications: `Application/Modules/operations/FreightForwarding`
 -API/UI: `Trackwise.Api/TariffController`
 
+- Effective-dated versions can be client-scoped; quotation rating prefers a matching client tariff
+  before contract-scoped and general tariffs.
+
 ### Rate agreements (Cold Chain truck-trip pricing)
 
 A client's contracted truck-trip rates for a period - what each Monday quotation board held. Kept
@@ -902,7 +905,7 @@ truck size, with fuel on top.
   costliest drop's line (+ fuel) and `ExtraDropCharge` per other distinct drop, and **writes those
   amounts onto the drop loads' `DeliveryCost`**, so `Trip.CalcTotalRevenue` stays the trip price.
   Re-pricing overwrites them. The trip keeps a snapshot (`RateAgreementId`, base/fuel/extra, `RatedOn`).
-- Rows are **destinations**; the origin is assumed to be the client's usual warehouse (PFI's km
+- Rows are **destinations**; the origin is assumed to be the client's usual warehouse (GNI's km
   bands read the load's route distance). Place matching is `RatePricer.NormalizePlace`; a town line
   beats a province line.
 - Application: `Modules/Operations/RateAgreements/` (commands, queries, `TripRateCalculator`,
@@ -913,10 +916,10 @@ truck size, with fuel on top.
 - UI: `tms-portal/pages/rate-agreements/` (list + diesel price card, details, add/edit with the rate
   grid editor), `pages/trips/components/trip-rate-card`
 - Seed: `RateAgreementSeeder` from `SeedData/ph-rate-agreements.json`, built by
-  `Documents\monday-export\scripts\rates.py` from ten clients' quotation boards (Eastlink has none).
+  `Documents\monday-export\scripts\rates.py` from ten clients' quotation boards (Grandlink has none).
   Monday revisions list only changed rows, so rows a revision omits are **carried over** and named
   in its Notes. Monday keeps only the rate table, so each client's terms come from its latest
-  quotation PDF (`TERMS` in the script); Bayview, Clearwater and Northwind have none on file. Clearwater's
+  quotation PDF (`TERMS` in the script); Frabelle, Superb and Yokka have none on file. Superb's
   "Additional ₱300" is the July 2022 rate increase, not an extra-drop charge.
 - Tests: `Trackwise.Application.Tests/Pricing/`
 
@@ -929,7 +932,7 @@ truck size, with fuel on top.
 ### Quotation
 
 -Domain: `Entities/Freightforwarding/Quotation.cs`, `QuotationLine.cs`
--Applications: `Application/Modules/operations/FreightForwarding`
+-Applications: `Application/Modules/operations/FreightForwarding` (`CreateQuotationRevision` creates a new draft in the same revision family, preserving the customer, freight mode, route, and charge setup)
 -API/UI: `Trackwise.Api/QuotationController`, `tms-portal/pages/forwarding/quotation/`
 
 ### Booking
@@ -940,7 +943,9 @@ Status: `Pending -> Confirmed -> InExecution -> Completed`, with `Cancelled` rea
 (`Load.BookingId`, nullable for pre-existing Loads) - enforced in `LoadService.CreateLoadsAsync`,
 not the DB.
 
-- Domain: `Entities/Freightforwarding/Booking.cs` (links back to `Quotation`, one Booking per Quotation)
+- Domain: `Entities/Freightforwarding/Booking.cs` (links back to `Quotation`; acceptance creates the
+  initial Booking, and an accepted quotation can explicitly create additional bookings with distinct
+  booking numbers and copied price snapshots)
 - Application: `Application/Modules/Operations/FreightForwarding/Commands/` (`ConvertQuotationToBooking`, `ConfirmBooking`, `StartBookingExecution`, `CompleteBooking`, `CancelBooking`), `Queries/` (`GetBookingById`, `GetBookings`)
 - API/UI: `BookingController.cs` (`/bookings`), `QuotationController.ConvertToBooking` (`POST /quotations/{id}/convert-to-booking`), `tms-portal/pages/forwarding/booking/`
 
@@ -969,7 +974,7 @@ bills in batches per client billing period, roadmap #11).
   `Modules/Operations/RateAgreements/`) prices a plan with `RatePricer`, the agreement and diesel
   price of the service date (`RateAgreementLookup`, shared with `TripRateCalculator`), and the
   straight-line km from the pickup warehouse to each drop. The trip made from the booking passes the
-  same km as each load's `Distance`, so a distance-band card (PFI) prices the trip as estimated.
+  same km as each load's `Distance`, so a distance-band card (GNI) prices the trip as estimated.
 - `CreateTripFromBooking` builds one load per drop and sends a `CreateTripCommand` (crew from the day's
   crew plan), then prices the trip, all in one transaction; the booking goes to InExecution. The
   trip completing completes the booking (`TripCompletedHandler`); cancelling it puts the booking back

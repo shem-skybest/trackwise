@@ -29,6 +29,8 @@
         <tr>
           <th uiSortHeader="Name">Tariff</th>
 
+          <th uiSortHeader="CustomerName">Client</th>
+
           <th uiSortHeader="Mode">Freight Mode</th>
 
           <th uiSortHeader="OriginLane">Origin Lane</th>
@@ -75,6 +77,13 @@
                 {{ tariff.id }}
               </span>
             </div>
+          </td>
+
+          <!-- Client -->
+          <td>
+            <span class="text-muted-foreground">
+              {{ tariff.customerName || "General" }}
+            </span>
           </td>
 
           <!-- Freight Mode -->

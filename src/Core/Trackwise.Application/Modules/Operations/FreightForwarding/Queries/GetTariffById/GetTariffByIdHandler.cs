@@ -27,6 +27,8 @@ internal sealed class GetTariffByIdHandler(ITenantUnitOfWork tenantUow)
                 ServiceLevel = t.ServiceLevel,
                 CarrierId = t.CarrierId,
                 ContractId = t.ContractId,
+                CustomerId = t.CustomerId,
+                CustomerName = t.Customer == null ? null : t.Customer.Name,
                 OriginLane = t.OriginLane,
                 DestinationLane = t.DestinationLane,
                 ContainerTypeId = t.ContainerTypeId,

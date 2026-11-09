@@ -22,6 +22,7 @@ internal sealed class QuotationRatingEngine(
 
         // 1. Base Line-Haul / Freight Charge
         var baseRate = await rateResolver.ResolveRateAsync(
+            customerId: quotation.CustomerId,
             contractId: customerContractId,
             chargeCode: CodeLineHaul,
             mode: freightMode,
@@ -48,6 +49,7 @@ internal sealed class QuotationRatingEngine(
         if (quotation.Lane.IntermediateDropCount > 0)
         {
             var stopOffRate = await rateResolver.ResolveRateAsync(
+                customerId: quotation.CustomerId,
                 contractId: customerContractId,
                 chargeCode: CodeStopOff,
                 mode: freightMode,
@@ -75,6 +77,7 @@ internal sealed class QuotationRatingEngine(
             if (quotation.TemperatureSpec!.Zone != TemperatureZone.Ambient)
             {
                 var precoolRate = await rateResolver.ResolveRateAsync(
+                    customerId: quotation.CustomerId,
                     contractId: customerContractId,
                     chargeCode: CodePreCooling,
                     mode: freightMode,
@@ -99,6 +102,7 @@ internal sealed class QuotationRatingEngine(
             if (quotation.TemperatureSpec.RequiresContinuousTelematics)
             {
                 var telematicsRate = await rateResolver.ResolveRateAsync(
+                    customerId: quotation.CustomerId,
                     contractId: customerContractId,
                     chargeCode: CodeTelematics,
                     mode: freightMode,

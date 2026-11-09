@@ -19,6 +19,15 @@ internal sealed class QuotationConfiguration : IEntityTypeConfiguration<Quotatio
         builder.Property(x => x.CustomerId)
             .IsRequired();
 
+        builder.Property(x => x.BranchId)
+            .IsRequired();
+
+        builder.HasOne(x => x.Branch)
+            .WithMany()
+            .HasForeignKey(x => x.BranchId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.Property(x => x.ReferenceNumber)
             .HasMaxLength(50)
             .IsRequired();
@@ -29,6 +38,17 @@ internal sealed class QuotationConfiguration : IEntityTypeConfiguration<Quotatio
 
         builder.Property(x => x.Status)
             .IsRequired();
+
+        builder.Property(x => x.RevisionGroupId)
+            .IsRequired();
+
+        builder.Property(x => x.RevisionNumber)
+            .IsRequired();
+
+        builder.HasOne(x => x.PreviousRevision)
+            .WithMany()
+            .HasForeignKey(x => x.PreviousRevisionId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // Operational & Trade Modes
         builder.Property(x => x.Mode)
@@ -175,6 +195,9 @@ internal sealed class QuotationConfiguration : IEntityTypeConfiguration<Quotatio
         builder.HasIndex(x => x.ReferenceNumber);
         builder.HasIndex(x => new { x.CustomerId, x.Status });
         builder.HasIndex(x => x.Status);
+        builder.HasIndex(x => new { x.RevisionGroupId, x.RevisionNumber })
+            .IsUnique();
+        builder.HasIndex(x => x.PreviousRevisionId);
         builder.Property(x => x.DeclaredCargoValuePhp)
             .HasPrecision(18, 2);
     }

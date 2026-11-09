@@ -24,14 +24,16 @@ internal sealed class GetUnassignedBookingsHandler(ITenantUnitOfWork tenantUow)
         // Making the trip moves a booking to InProgress and cancelling the trip moves it back, so a
         // Confirmed booking is exactly one with no trip. Drafts are excluded: their documents or
         // credit check are still open, so they are not ready to plan.
-        // Lane/CargoSpec are JSON columns on the booking row, so no Include is needed.
-        var bookings = await tenantUow.Repository<Booking>().Query().AsNoTracking()
-            .Where(b => b.Status == BookingStatus.Confirmed
-                && b.RequestedPickupStart >= dayStart
+        // RequestedPickupStart is computed from Lane, which is stored as JSON and is not mapped as a
+        // scalar property. Keep the status predicate in SQL, then evaluate the computed date in memory.
+        var bookings = (await tenantUow.Repository<Booking>().Query().AsNoTracking()
+            .Where(b => b.Status == BookingStatus.Confirmed)
+            .ToListAsync(ct))
+            .Where(b => b.RequestedPickupStart >= dayStart
                 && b.RequestedPickupStart < dayEnd)
             .OrderBy(b => b.RequestedPickupStart)
             .ThenBy(b => b.BookingNumber)
-            .ToListAsync(ct);
+            .ToList();
 
         if (bookings.Count == 0)
             return Result<List<UnAssignedBookingDto>>.Ok([]);

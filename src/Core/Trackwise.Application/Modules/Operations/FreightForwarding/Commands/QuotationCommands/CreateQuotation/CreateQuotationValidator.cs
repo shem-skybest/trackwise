@@ -12,6 +12,10 @@ public class CreateQuotationValidator : AbstractValidator<CreateQuotationCommand
             .NotEmpty()
             .WithMessage("Customer is required.");
 
+        RuleFor(x => x.BranchId)
+            .NotEmpty()
+            .WithMessage("Branch is required.");
+
         RuleFor(x => x.Currency)
             .NotEmpty()
             .Length(3)
@@ -31,6 +35,13 @@ public class CreateQuotationValidator : AbstractValidator<CreateQuotationCommand
         {
             RuleFor(x => x.Cargo!)
                 .SetValidator(new CargoSpecificationDtoValidator());
+        });
+
+        When(x => x.Cargo?.RequiresActiveRefrigeration == true, () =>
+        {
+            RuleFor(x => x.TemperatureSpec)
+                .NotNull()
+                .WithMessage("Temperature specifications are required when active refrigeration is selected.");
         });
     }
 

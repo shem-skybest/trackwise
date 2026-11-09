@@ -24,10 +24,10 @@ public class GetUnassignedBookingsHandlerTests
     private static readonly TimeSpan BusinessOffset = TimeSpan.FromHours(8);
 
     private readonly ITenantUnitOfWork tenantUow = Substitute.For<ITenantUnitOfWork>();
-    private readonly Location warehouse = Site("HFI Warehouse");
+    private readonly Location warehouse = Site("HMI Warehouse");
     private readonly Location fairview = Site("SM Fairview");
     private readonly Location novaliches = Site("SM Novaliches");
-    private readonly Customer hfi = new() { Name = "HFI" };
+    private readonly Customer hmi = new() { Name = "HMI" };
     private readonly List<Booking> bookings = [];
     private readonly GetUnassignedBookingsHandler sut;
 
@@ -35,7 +35,7 @@ public class GetUnassignedBookingsHandlerTests
     {
         Stub<Booking>(() => bookings);
         Stub<Location>(() => [warehouse, fairview, novaliches]);
-        Stub<Customer>(() => [hfi]);
+        Stub<Customer>(() => [hmi]);
 
         sut = new GetUnassignedBookingsHandler(tenantUow);
     }
@@ -68,10 +68,10 @@ public class GetUnassignedBookingsHandlerTests
 
         var row = Assert.Single(result.Value!);
         Assert.Equal(booking.Id, row.Id);
-        Assert.Equal("BK-2026-0003", row.BookingNumber);
+        Assert.Equal("BK-2026-0003-01", row.BookingNumber);
         Assert.Equal("QT-2026-0003", row.QuotationReference);
-        Assert.Equal("HFI", row.CustomerName);
-        Assert.Equal("HFI Warehouse", row.OriginName);
+        Assert.Equal("HMI", row.CustomerName);
+        Assert.Equal("HMI Warehouse", row.OriginName);
         Assert.Equal("SM Novaliches", row.DestinationName);
         Assert.Equal(["SM Fairview", "SM Novaliches"], row.DropNames);
         Assert.Equal(3, row.StopCount);
@@ -129,9 +129,9 @@ public class GetUnassignedBookingsHandlerTests
 
         var booking = (Booking)Activator.CreateInstance(typeof(Booking), nonPublic: true)!;
 
-        Set(booking, nameof(Booking.BookingNumber), BookingNumbering.FromQuotationReference(quotationReference));
+        Set(booking, nameof(Booking.BookingNumber), BookingNumbering.FromQuotationReference(quotationReference, 1));
         Set(booking, nameof(Booking.Status), status);
-        Set(booking, nameof(Booking.CustomerId), hfi.Id);
+        Set(booking, nameof(Booking.CustomerId), hmi.Id);
         Set(booking, nameof(Booking.Currency), "PHP");
         Set(booking, nameof(Booking.QuotationId), Guid.NewGuid());
         Set(booking, nameof(Booking.QuotationReference), quotationReference);

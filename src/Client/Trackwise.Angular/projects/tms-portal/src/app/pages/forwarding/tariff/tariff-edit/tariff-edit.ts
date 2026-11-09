@@ -38,6 +38,8 @@ export class TariffEditComponent implements OnInit {
           effectiveFrom: tariff.effectiveFrom ?? "",
           carrierId: tariff.carrierId ?? null,
           contractId: tariff.contractId ?? null,
+          customerId: tariff.customerId ?? null,
+          customerName: tariff.customerName ?? null,
         }
       : null;
   });

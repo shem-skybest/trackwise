@@ -15,9 +15,15 @@ public class Quotation : AuditableEntity, ITenantEntity
 
     public Guid CustomerId { get; private set; }
     public virtual Customer Customer { get; private set; }
+    public Guid BranchId { get; private set; }
+    public virtual Branch Branch { get; private set; }
     public string ReferenceNumber { get; private set; } = default!;
     public string Currency { get; private set; } = default!;
     public QuotationStatus Status { get; private set; }
+    public Guid RevisionGroupId { get; private set; }
+    public int RevisionNumber { get; private set; }
+    public Guid? PreviousRevisionId { get; private set; }
+    public virtual Quotation? PreviousRevision { get; private set; }
     public DateTimeOffset? ValidUntil { get; private set; }
     public string? Notes { get; private set; }
 
@@ -60,6 +66,7 @@ public class Quotation : AuditableEntity, ITenantEntity
 
     public static Quotation Create(
         Guid customerId,
+        Guid branchId,
         string referenceNumber,
         string currency,
         TransportMode mode,
@@ -77,13 +84,17 @@ public class Quotation : AuditableEntity, ITenantEntity
         ArgumentException.ThrowIfNullOrWhiteSpace(referenceNumber);
         ArgumentException.ThrowIfNullOrWhiteSpace(currency);
         ArgumentNullException.ThrowIfNull(lane);
+        ValidateTemperatureRequirements(cargoSpec, tempSpec);
 
         var quotation = new Quotation
         {
             CustomerId = customerId,
+            BranchId = branchId,
             ReferenceNumber = referenceNumber.Trim(),
             Currency = currency.Trim().ToUpperInvariant(),
             Status = QuotationStatus.Draft,
+            RevisionGroupId = Guid.Empty,
+            RevisionNumber = 1,
             Mode = mode,
             FreightMode = freightMode,
             ShipmentType = shipmentType,
@@ -97,9 +108,76 @@ public class Quotation : AuditableEntity, ITenantEntity
             Notes = notes
         };
 
+        quotation.RevisionGroupId = quotation.Id;
         quotation.EvaluateApprovalRequirements();
         quotation.DomainEvents.Add(new QuotationCreated(quotation.Id, customerId));
         return quotation;
+    }
+
+    public Quotation CreateRevision(string referenceNumber, int revisionNumber)
+    {
+        if (Status == QuotationStatus.Draft)
+            throw new InvalidOperationException("A draft quotation can be edited directly and cannot be revised.");
+
+        if (revisionNumber <= RevisionNumber)
+            throw new ArgumentOutOfRangeException(nameof(revisionNumber), "A revision number must be greater than the current revision.");
+
+        var lane = new LaneTransit(
+            Lane.Stops.Select(stop => RouteStop.Create(
+                stop.Sequence,
+                stop.LocationId,
+                stop.Type,
+                stop.WindowStart,
+                stop.WindowEnd,
+                stop.Instructions)),
+            Lane.TotalDistanceKm);
+        var cargoSpec = CargoSpec is null
+            ? null
+            : CargoSpecification.Create(
+                CargoSpec.Commodity,
+                CargoSpec.TotalWeightKg,
+                CargoSpec.PalletCount,
+                new Money
+                {
+                    Amount = CargoSpec.DeclaredCargoValue.Amount,
+                    Currency = CargoSpec.DeclaredCargoValue.Currency
+                },
+                CargoSpec.RequiresActiveRefrigeration);
+        var temperatureSpec = TemperatureSpec is null
+            ? null
+            : TemperatureControl.Create(
+                TemperatureSpec.Zone,
+                TemperatureSpec.SetpointCelsius,
+                TemperatureSpec.AllowableVarianceCelsius,
+                TemperatureSpec.Compliance,
+                TemperatureSpec.RequiresContinuousTelematics);
+
+        var revision = Create(
+            CustomerId,
+            BranchId,
+            referenceNumber,
+            Currency,
+            Mode,
+            FreightMode,
+            ShipmentType,
+            Incoterm,
+            lane,
+            cargoSpec,
+            temperatureSpec,
+            IsHazardous,
+            RequiresCustomsBrokerage,
+            Notes,
+            DeclaredCargoValuePhp);
+
+        revision.RevisionGroupId = RevisionGroupId;
+        revision.RevisionNumber = revisionNumber;
+        revision.PreviousRevisionId = Id;
+
+        foreach (var line in _lines)
+            revision._lines.Add(line.CopyTo(revision.Id, revision.Currency));
+
+        revision.EvaluateApprovalRequirements();
+        return revision;
     }
 
     /// <summary>
@@ -108,6 +186,7 @@ public class Quotation : AuditableEntity, ITenantEntity
     /// </summary>
     public void UpdateDetails(
         Guid customerId,
+        Guid branchId,
         string currency,
         TransportMode mode,
         FreightMode freightMode,
@@ -126,6 +205,7 @@ public class Quotation : AuditableEntity, ITenantEntity
 
         ArgumentException.ThrowIfNullOrWhiteSpace(currency);
         ArgumentNullException.ThrowIfNull(lane);
+        ValidateTemperatureRequirements(cargoSpec, tempSpec);
 
         var newCurrency = currency.Trim().ToUpperInvariant();
 
@@ -136,8 +216,17 @@ public class Quotation : AuditableEntity, ITenantEntity
 
         // Resolve before mutating so a failure leaves the aggregate untouched.
         //var cargoValuePhp = ResolveCargoValuePhp(cargoSpec, declaredCargoValuePhp);
+        if (RevisionNumber > 1 &&
+            (customerId != CustomerId ||
+             freightMode != FreightMode ||
+             !HasSameRoute(Lane, lane)))
+        {
+            throw new InvalidOperationException(
+                "A quotation revision must keep the same customer, freight mode, and route. Create a new quotation to change them.");
+        }
 
         CustomerId = customerId;
+        BranchId = branchId;
         Currency = newCurrency;
         Mode = mode;
         FreightMode = freightMode;
@@ -189,6 +278,29 @@ public class Quotation : AuditableEntity, ITenantEntity
         throw new ArgumentException(
             $"Cargo value is declared in {declared.Currency}; supply declaredCargoValueUsd (converted by the application layer).",
             nameof(phpValue));
+    }
+
+    private static void ValidateTemperatureRequirements(
+        CargoSpecification? cargoSpec,
+        TemperatureControl? temperatureSpec)
+    {
+        if (cargoSpec?.RequiresActiveRefrigeration == true && temperatureSpec is null)
+        {
+            throw new InvalidOperationException(
+                "Temperature specifications are required when active refrigeration is selected.");
+        }
+    }
+
+    private static bool HasSameRoute(LaneTransit current, LaneTransit updated)
+    {
+        var currentStops = current.Stops
+            .OrderBy(stop => stop.Sequence)
+            .Select(stop => (stop.Sequence, stop.LocationId, stop.Type));
+        var updatedStops = updated.Stops
+            .OrderBy(stop => stop.Sequence)
+            .Select(stop => (stop.Sequence, stop.LocationId, stop.Type));
+
+        return currentStops.SequenceEqual(updatedStops);
     }
 
     /// <summary>Refresh the USD equivalent (e.g. after an FX update) and re-run approval rules.</summary>

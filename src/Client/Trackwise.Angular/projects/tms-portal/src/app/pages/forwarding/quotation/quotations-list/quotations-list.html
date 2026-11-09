@@ -1,6 +1,83 @@
 <div class="animate-in fade-in space-y-4">
   <ui-page-header title="Quotations" addRoute="/quotations/add" addTooltip="Add a new quotation" />
 
+  <!-- Filter Panel -->
+  <ui-card class="mb-4">
+    <ui-stack direction="row" align="center" justify="between" class="mb-4">
+      <ui-typography variant="h6" color="primary" weight="semibold">Filters</ui-typography>
+      <ui-stack direction="row" align="center" gap="2">
+        @if (activeFilterCount() > 0) {
+          <ui-typography variant="body-sm" color="muted">
+            {{ activeFilterCount() }} active
+          </ui-typography>
+        }
+        <ui-button
+          type="button"
+          appearance="text"
+          size="sm"
+          label="Clear All"
+          icon="x"
+          (click)="clearFilters()"
+          [disabled]="activeFilterCount() === 0"
+        />
+      </ui-stack>
+    </ui-stack>
+
+    <ui-grid container spacing="4">
+      <ui-grid [size]="{ xs: 12, md: 6, lg: 4 }">
+        <ui-form-field label="Search" for="search">
+          <ui-text-field
+            id="search"
+            [formField]="filterForm.search"
+            placeholder="Reference or customer…"
+          />
+        </ui-form-field>
+      </ui-grid>
+
+      <ui-grid [size]="{ xs: 12, md: 6, lg: 4 }">
+        <ui-form-field label="Customer">
+          <app-search-customer [formField]="filterForm.customer" />
+        </ui-form-field>
+      </ui-grid>
+
+      <ui-grid [size]="{ xs: 12, md: 6, lg: 4 }">
+        <ui-form-field label="Branch" for="branchFilter">
+          <ui-select-field
+            id="branchFilter"
+            [formField]="filterForm.branchId"
+            [options]="branchOptions()"
+            optionLabel="label"
+            optionValue="value"
+          />
+        </ui-form-field>
+      </ui-grid>
+
+      <ui-grid [size]="{ xs: 12, md: 6, lg: 4 }">
+        <ui-form-field label="Freight Mode" for="freightModeFilter">
+          <ui-select-field
+            id="freightModeFilter"
+            [formField]="filterForm.freightMode"
+            [options]="freightModeOptions"
+            optionLabel="label"
+            optionValue="value"
+          />
+        </ui-form-field>
+      </ui-grid>
+
+      <ui-grid [size]="{ xs: 12, md: 6, lg: 4 }">
+        <ui-form-field label="Status" for="statusFilter">
+          <ui-select-field
+            id="statusFilter"
+            [formField]="filterForm.status"
+            [options]="statusOptions"
+            optionLabel="label"
+            optionValue="value"
+          />
+        </ui-form-field>
+      </ui-grid>
+    </ui-grid>
+  </ui-card>
+
   <app-quotations-table
     [data]="store.data()"
     [isLoading]="store.isLoading()"

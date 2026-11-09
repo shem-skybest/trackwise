@@ -17,8 +17,28 @@ internal sealed class GetQuotationsHandler(ITenantUnitOfWork tenantUow)
         if (req.CustomerId.HasValue)
             query = query.Where(q => q.CustomerId == req.CustomerId.Value);
 
+        if (req.BranchId.HasValue)
+            query = query.Where(q => q.BranchId == req.BranchId.Value);
+
+        if (req.FreightMode.HasValue)
+            query = query.Where(q => q.FreightMode == req.FreightMode.Value);
+
         if (req.Status.HasValue)
             query = query.Where(q => q.Status == req.Status.Value);
+
+        if (!string.IsNullOrWhiteSpace(req.Search))
+        {
+            var term = $"%{req.Search.Trim()}%";
+
+            // Customer name isn't on Quotation, so match it through a subquery
+            var matchingCustomerIds = tenantUow.Repository<Customer>().Query()
+                .Where(c => EF.Functions.Like(c.Name, term))
+                .Select(c => c.Id);
+
+            query = query.Where(q =>
+                EF.Functions.Like(q.ReferenceNumber, term) ||
+                matchingCustomerIds.Contains(q.CustomerId));
+        }
 
         var totalItems = await query.CountAsync(ct);
 
@@ -39,12 +59,19 @@ internal sealed class GetQuotationsHandler(ITenantUnitOfWork tenantUow)
             .Select(c => new { c.Id, c.Name })
             .ToDictionaryAsync(c => c.Id, c => c.Name, ct);
 
+        var branchIds = quotations.Select(q => q.BranchId).Distinct().ToList();
+        var branchNames = await tenantUow.Repository<Branch>().Query()
+            .Where(b => branchIds.Contains(b.Id))
+            .Select(b => new { b.Id, b.Name })
+            .ToDictionaryAsync(b => b.Id, b => b.Name, ct);
+
         var dtos = quotations
             .Select(q =>
             {
                 var totalSelling = q.Lines.Sum(l => l.Price().Selling.Amount);
                 var customerName = customerNames.GetValueOrDefault(q.CustomerId, "Unknown");
-                return q.ToSummaryDto(customerName, q.Lines.Count, totalSelling);
+                var branchName = branchNames.GetValueOrDefault(q.BranchId, "Unknown Branch");
+                return q.ToSummaryDto(customerName, branchName, q.Lines.Count, totalSelling);
             })
             .ToList();
 

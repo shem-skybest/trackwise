@@ -14,6 +14,8 @@ public class Tariff : AuditableEntity, ITenantEntity
     public ServiceLevel ServiceLevel { get; private set; }
     public Guid? CarrierId { get; private set; }
     public Guid? ContractId { get; private set; }                // optional customer contract
+    public Guid? CustomerId { get; private set; }
+    public virtual Customer? Customer { get; private set; }
     public string? OriginLane { get; private set; }              // ZIP / port UN/LOCODE
     public string? DestinationLane { get; private set; }
     public Guid? ContainerTypeId { get; private set; }         // master container-type list
@@ -45,7 +47,8 @@ public class Tariff : AuditableEntity, ITenantEntity
         Guid? containerTypeId,
         Guid? carrierId,
         DateOnly effectiveFrom,
-        Guid? contractId)
+        Guid? contractId,
+        Guid? customerId = null)
     {
         var t = new Tariff
         {
@@ -58,6 +61,7 @@ public class Tariff : AuditableEntity, ITenantEntity
             ContainerTypeId = containerTypeId,
             CarrierId = carrierId,
             ContractId = contractId,
+            CustomerId = customerId,
             EffectiveFrom = effectiveFrom,
             Version = 1,
             IsActive = true
@@ -75,6 +79,7 @@ public class Tariff : AuditableEntity, ITenantEntity
             ServiceLevel = source.ServiceLevel,
             CarrierId = source.CarrierId,
             ContractId = source.ContractId,
+            CustomerId = source.CustomerId,
             OriginLane = source.OriginLane,
             DestinationLane = source.DestinationLane,
             ContainerTypeId = source.ContainerTypeId,

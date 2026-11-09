@@ -72,6 +72,20 @@ public class QuotationLine : AuditableEntity, ITenantEntity
         return line;
     }
 
+    internal QuotationLine CopyTo(Guid quotationId, string quotationCurrency) =>
+        Create(
+            quotationId,
+            quotationCurrency,
+            TariffRateId,
+            Category,
+            ServiceType,
+            Quantity,
+            MarkupType,
+            MarkupValue,
+            FxRate,
+            Notes,
+            BaseAmount);
+
     internal static QuotationLine Create(
         Guid quotationId,
         string quotationCurrency,
