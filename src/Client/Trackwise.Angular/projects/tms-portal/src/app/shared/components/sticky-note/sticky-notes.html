@@ -68,18 +68,19 @@
           "
           tabindex="0"
           (click)="edit(note)"
-          (keydown.enter)="edit(note)"
+          (keydown.enter)="onRowEnter($event, note)"
         >
           <div class="flex items-start gap-2">
             @if (canReorder()) {
-              <span
+              <button
+                type="button"
                 cdkDragHandle
-                class="mt-0.5 cursor-grab touch-none text-amber-700/70 select-none"
+                class="cursor-grab touch-none text-neutral-500 select-none"
                 aria-label="Drag to reorder"
                 (click)="$event.stopPropagation()"
               >
                 ⠿
-              </span>
+              </button>
             }
 
             <div class="min-w-0 flex-1">

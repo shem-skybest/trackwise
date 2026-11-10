@@ -164,6 +164,10 @@ export class StickyNotes {
     this.draft.update((d) => (d ? { ...d, ...patch } : d));
   }
 
+  protected onRowEnter(event: Event, note: NoteSummaryDto): void {
+    if (event.target !== event.currentTarget) return;
+    void this.edit(note);
+  }
   /**
    * Fires for every close path (Cancel, X, Escape, after save). Clearing the draft here rather than
    * in `closeEditor` keeps the content on screen during the dialog's close animation.
