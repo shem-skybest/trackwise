@@ -20,19 +20,36 @@
     [style.max-width]="panelMaxWidth()"
     [style.height]="panelHeight()"
     [style.max-height]="panelMaxHeight()"
-    [style.margin]="fullScreen() ? '0' : null"
+    [style.gap]="compact() ? '0' : null"
+    [style.position]="placement() === 'bottom-right' && !fullScreen() ? 'fixed' : null"
+    [style.right.px]="
+      placement() === 'bottom-right' && !fullScreen() ? placementInset().right : null
+    "
+    [style.bottom.px]="
+      placement() === 'bottom-right' && !fullScreen() ? placementInset().bottom : null
+    "
+    [style.top]="placement() === 'bottom-right' && !fullScreen() ? 'auto' : null"
+    [style.left]="placement() === 'bottom-right' && !fullScreen() ? 'auto' : null"
+    [style.animation]="placement() === 'bottom-right' ? 'none' : null"
+    [style.margin]="fullScreen() || placement() === 'bottom-right' ? '0' : null"
     [class.ui-dialog-fullscreen]="fullScreen()"
     [class.!rounded-none]="fullScreen()"
     class="max-h-[calc(100vh-2rem)]"
     cdkDrag
     cdkDragBoundary=".cdk-overlay-container"
+    [cdkDragFreeDragPosition]="dragPosition()"
+    (cdkDragStarted)="onDragStarted()"
     [cdkDragDisabled]="fullScreen() || !draggable()"
   >
     <!--
       `cursor` is an inline style, not a class: HlmDialogHeader drives its own class list through
       spartan's `classes()` manager, which rewrites className and would drop a `[class.x]` set here.
     -->
-    <hlm-dialog-header cdkDragHandle [style.cursor]="draggable() ? 'move' : null">
+    <hlm-dialog-header
+      cdkDragHandle
+      [style.cursor]="draggable() ? 'move' : null"
+      [style.padding]="compact() ? '0.5rem 2.5rem 0.5rem 0.75rem' : null"
+    >
       @if (headerTpl(); as tpl) {
         <ng-container *ngTemplateOutlet="tpl" />
       } @else {
@@ -42,7 +59,13 @@
 
     <!-- min-h-0 lets this grid row actually shrink, which is what allows it to scroll instead of
          pushing the footer out of the viewport on a tall dialog. -->
-    <div data-slot="dialog-body" class="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+    <div
+      data-slot="dialog-body"
+      class="min-h-0 flex-1 overflow-y-auto"
+      [class.p-4]="!compact()"
+      [class.sm:p-6]="!compact()"
+      [class.p-3]="compact()"
+    >
       <ng-content />
       @if (contentTpl(); as tpl) {
         <ng-container *ngTemplateOutlet="tpl" />
@@ -50,7 +73,7 @@
     </div>
 
     @if (footerTpl(); as tpl) {
-      <hlm-dialog-footer>
+      <hlm-dialog-footer [style.padding]="compact() ? '0.5rem 0.75rem' : null">
         <ng-container *ngTemplateOutlet="tpl" />
       </hlm-dialog-footer>
     }

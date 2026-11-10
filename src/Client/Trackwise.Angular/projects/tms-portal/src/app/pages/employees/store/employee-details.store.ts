@@ -1,5 +1,6 @@
 import { computed, inject } from "@angular/core";
 import { patchState, signalStore, withComputed, withMethods, withState } from "@ngrx/signals";
+import { Permission } from "@trackwise/shared";
 import {
   Api,
   deleteEmployeeMasterData,
@@ -10,6 +11,7 @@ import {
   type EmployeeDto as EmployeeMasterDataDto,
   type LoadDto,
 } from "@trackwise/shared/api";
+import { PermissionService } from "@/core/auth";
 
 /**
  * The API's answer when the dependency probe or the live-login guard stops a delete - see
@@ -57,7 +59,7 @@ export const EmployeeDetailsStore = signalStore(
       documentsCount,
     };
   }),
-  withMethods((store, api = inject(Api)) => ({
+  withMethods((store, api = inject(Api), permissions = inject(PermissionService)) => ({
     reset() {
       patchState(store, initialState);
     },
@@ -68,11 +70,15 @@ export const EmployeeDetailsStore = signalStore(
       try {
         const [employee, loadsResponse, documentsResponse] = await Promise.all([
           api.invoke(getEmployeeById, { userId: employeeId }),
-          api.invoke(getLoads, {
-            UserId: employeeId,
-            PageSize: 10,
-            OrderBy: "-DeliveryDate",
-          }),
+          // Roles without loads (HR, Admin Staff) still open the person; a 403 here used to fail
+          // the whole page as "Employee not found".
+          permissions.hasPermission(Permission.Load.View)
+            ? api.invoke(getLoads, {
+                UserId: employeeId,
+                PageSize: 10,
+                OrderBy: "-DeliveryDate",
+              })
+            : Promise.resolve(null),
           api.invoke(getDocuments, {
             OwnerId: employeeId,
             OwnerType: "employee",
@@ -108,7 +114,7 @@ export const EmployeeDetailsStore = signalStore(
 
     async refreshLoads() {
       const employeeId = store.employeeId();
-      if (!employeeId) return;
+      if (!employeeId || !permissions.hasPermission(Permission.Load.View)) return;
 
       try {
         const loadsResponse = await api.invoke(getLoads, {

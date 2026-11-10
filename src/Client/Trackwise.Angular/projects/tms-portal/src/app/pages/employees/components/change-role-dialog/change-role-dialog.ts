@@ -1,7 +1,17 @@
-import { Component, inject, input, model, output, signal } from "@angular/core";
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  model,
+  output,
+  signal,
+  untracked,
+} from "@angular/core";
 import { form, FormField, FormRoot, required } from "@angular/forms/signals";
 import { UiSelectField } from "@trackwise/shared";
-import { type RoleDto } from "@trackwise/shared/api";
+import { Api, assignEmployeeRole, type RoleDto } from "@trackwise/shared/api";
 import { Spinner, UiButton, UiDialog } from "@trackwise/shared/ui";
 import { ToastService } from "@/core/services";
 import { UserService } from "../../services";
@@ -14,6 +24,7 @@ const EMPTY = { role: "" };
   imports: [FormField, FormRoot, Spinner, UiButton, UiDialog, UiSelectField],
 })
 export class ChangeRoleDialog {
+  private readonly api = inject(Api);
   private readonly userService = inject(UserService);
   private readonly toastService = inject(ToastService);
 
@@ -22,8 +33,12 @@ export class ChangeRoleDialog {
   public readonly visible = model<boolean>(false);
   public readonly roleChanged = output<void>();
 
-  protected readonly roles = signal<RoleDto[]>([]);
+  private readonly assignableRoles = signal<RoleDto[]>([]);
   protected readonly isLoading = signal(false);
+
+  protected readonly roles = computed(() =>
+    this.assignableRoles().filter((role) => role.name !== this.currentRole()?.name),
+  );
 
   protected readonly model = signal({ ...EMPTY });
 
@@ -38,15 +53,21 @@ export class ChangeRoleDialog {
     },
     {
       submission: {
-        // TODO: `PUT /employees/{userId}` (role assignment) was removed when EmployeeController
-        // was trimmed to read-only for the Master Data promotion (2026-09-18) - there is currently
-        // no backend endpoint for this. Stubbed rather than left calling a function that no longer
-        // exists, so the rest of the app can build; role assignment needs a new home (back on
-        // EmployeeController, or elsewhere) before this dialog can work again.
         action: async () => {
-          this.toastService.showError(
-            "Role changes are temporarily unavailable - the backend endpoint was removed.",
-          );
+          try {
+            await this.api.invoke(assignEmployeeRole, {
+              userId: this.userId(),
+              body: { employeeId: this.userId(), roleName: this.model().role },
+            });
+            const label = this.roles().find((r) => r.name === this.model().role)?.displayName;
+            this.toastService.showSuccess(
+              `Role changed to ${label}. It applies the next time they sign in.`,
+            );
+            this.roleChanged.emit();
+            this.close();
+          } catch {
+            // The global error interceptor already shows the server's reason.
+          }
           return undefined;
         },
         onInvalid: () => {
@@ -57,30 +78,24 @@ export class ChangeRoleDialog {
   );
 
   constructor() {
-    this.fetchRoles();
+    effect(() => {
+      if (this.visible()) {
+        untracked(() => this.fetchRoles());
+      }
+    });
   }
 
   close(): void {
     this.visible.set(false);
-    this.clearSelectedRole();
-  }
-
-  clearSelectedRole(): void {
     this.model.set({ ...EMPTY });
   }
 
-  async removeRole(): Promise<void> {
-    // See the submit action above - same removed backend endpoint.
-    this.toastService.showError(
-      "Role changes are temporarily unavailable - the backend endpoint was removed.",
-    );
-  }
-
   private fetchRoles(): void {
-    this.userService.fetchRoles().subscribe((roles) => {
-      if (roles) {
-        this.roles.set(roles);
-      }
+    this.isLoading.set(true);
+    this.userService.fetchRoles().subscribe({
+      next: (roles) => this.assignableRoles.set(roles),
+      complete: () => this.isLoading.set(false),
+      error: () => this.isLoading.set(false),
     });
   }
 }

@@ -146,6 +146,11 @@ services:
     command: ["--exit"]
     env_file:
       - .env
+    # The real-records seed files (ph.json, ph-fleet.json, ...) are gitignored, so the image built in CI
+    # has none of them. They live on the VPS in ./seed-data and replace the image's SeedData folder, so
+    # that folder must also hold ifta-tax-rates.json. Without it, Production seeds no staff, crew, fleet or clients.
+    volumes:
+      - ./seed-data:/app/SeedData:ro
     environment:
       DOTNET_ENVIRONMENT: "Production"
       # Tenants[] in the migrator's appsettings.json point at localhost; these override them.

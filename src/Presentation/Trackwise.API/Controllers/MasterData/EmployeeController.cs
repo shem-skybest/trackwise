@@ -98,7 +98,8 @@ public class EmployeeController(IMediator mediator) : ControllerBase
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [Authorize(Policy = Permission.MasterData.Manage)]
+    // HR keeps employee records without holding rights over the rest of master data.
+    [Authorize(Policy = $"{Permission.MasterData.Manage}|{Permission.Employee.Manage}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateEmployeeCommand request, CancellationToken ct)
     {
         request.Id = id;

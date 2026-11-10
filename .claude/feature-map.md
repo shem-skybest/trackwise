@@ -217,6 +217,19 @@ unit's status (`TruckDayStatus`) and its driver plus up to two helpers.
 - Application: `Modules/IdentityAccess/Employees/Commands/`, `Modules/IdentityAccess/Employees/Queries/`
 - API/UI: `EmployeeController.cs`, `DriverController.cs`, `tms-portal/pages/employees/`
 - Set password: `Commands/SetEmployeePassword/` (`PUT /employees/{userId}/password`, `Permission.Employee.Manage`; same tenant only, never self/platform admins, Owner only by Super Admin/Admin), `employees/components/set-password-dialog/`. Exists because drivers sit on placeholder `@crew.skybest.local` emails and prod seeds them passwordless
+- Change role: `Modules/IdentityAccess/Roles/Commands/AssignEmployeeRole/` (`PUT /employees/{userId}/role`, `Permission.Employee.Manage`), `employees/components/change-role-dialog/`. Create/update/invite paths go through the same guard
+
+### Roles & permissions
+
+One job-based role per person (17 built-in: Owner, Executive, System Admin, Ops Manager, Cold Chain Manager, Forwarding Supervisor, CS + Dispatch, Liaison Officer, Fleet Supervisor, Marketing (+ Manager), Accounting (+ Manager), HR, Admin Staff, Driver / Helper, Customer) plus roles copied in Settings (`tenant.custom_*`). Job title stays a label.
+
+- Defaults: `Shared.Identity/Roles/TenantRoles.cs` (keys + names; the first five keys are matched by name elsewhere, don't rename), `Shared.Identity/Policies/TenantRolePermissions.cs` (bundles; `Catalog` = Owner's bundle = what the editor offers)
+- Domain: `Entities/Role/TenantRole.cs` (`IsCustomized` - migrator stops re-syncing an edited role), `TenantRoleClaim.cs`, `TenantRoleChangeLog.cs` (audit; also tells `StaffSeeder` who was placed by hand)
+- Guardrails: `Modules/IdentityAccess/Roles/Services/TenantRoleAccess.cs` - no granting/removing what you don't hold, no editing your own role or moving yourself, Owner locked, can't move someone whose role outranks yours. `TenantRolePermissionWriter` writes claims + log for edit/copy/reset
+- Application: `Modules/IdentityAccess/Roles/Commands/` (UpdateTenantRolePermissions, CreateTenantRole = copy, DeleteTenantRole = custom + empty only, ResetTenantRole = built-in only), `Queries/` (GetTenantRoles with `canEdit`/`canAssign`, GetPermissionCatalog + `PermissionCatalogLabels.cs`, GetTenantRoleChangeLog)
+- API/UI: `RoleController.cs` (writes `Permission.TenantRole.Manage`), `tms-portal/pages/settings/roles-settings/` + `settings/components/copy-role-dialog/`, `role-history-card/`
+- Cache: `IUserPermissionService.InvalidateTenant` after any change, so edits apply without waiting 5 min. The JWT `role` claim (labels, driver nav) refreshes only on next sign-in
+- TMS login is open to any `tenant.*` role except Customer (`isTenantStaffRole`); what shows is per-route `data.permission`
 
 ### Time entries
 

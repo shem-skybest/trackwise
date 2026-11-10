@@ -56,15 +56,8 @@ public static partial class InvitationMapper
     /// <summary>
     /// Gets the display name for a tenant role.
     /// </summary>
-    public static string GetRoleDisplayName(string? role) => role switch
-    {
-        TenantRoles.Owner => "Owner",
-        TenantRoles.Manager => "Manager",
-        TenantRoles.Dispatcher => "Dispatcher",
-        TenantRoles.Driver => "Driver",
-        TenantRoles.Customer => "Customer",
-        _ => role ?? string.Empty
-    };
+    public static string GetRoleDisplayName(string? role) =>
+        role is null ? string.Empty : TenantRoles.GetDisplayName(role) ?? role;
 
     /// <summary>
     /// Gets the display name for an app-level role, sourced from <see cref="AppRoles.GetValues"/>.

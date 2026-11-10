@@ -1,3 +1,4 @@
+using Trackwise.Application.Modules.IdentityAccess.Roles.Services;
 using Trackwise.Application.Modules.MasterData.Commands;
 using Trackwise.Domain.Entities;
 using Trackwise.Domain.Persistence;
@@ -40,7 +41,7 @@ public class UpdateEmployeeHandlerTests
         roleRepo.GetAsync(Arg.Any<System.Linq.Expressions.Expression<Func<TenantRole, bool>>>(),
             Arg.Any<CancellationToken>()).Returns((TenantRole?)null);
 
-        return (new UpdateEmployeeHandler(tenantUow), tenantUow);
+        return (new UpdateEmployeeHandler(tenantUow, Substitute.For<ITenantRoleAccess>()), tenantUow);
     }
 
     [Fact]

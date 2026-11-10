@@ -1,5 +1,7 @@
 <ui-page-header title="Employee Details">
-  <ui-button appearance="outlined" icon="pencil" label="Edit" (click)="openEditDialog()" />
+  <ui-permission-guard [permissions]="[Permission.MasterData.Manage, Permission.Employee.Manage]">
+    <ui-button appearance="outlined" icon="pencil" label="Edit" (click)="openEditDialog()" />
+  </ui-permission-guard>
   <ui-permission-guard [permissions]="Permission.Employee.Manage">
     <ui-button
       appearance="outlined"

@@ -6,3 +6,5 @@ export * from "./stripe-connect-card/stripe-connect-card";
 export * from "./subscription-card/subscription-card";
 export * from "./tenant-tax-rates-card/tenant-tax-rates-card";
 export * from "./booking-numbering-card/booking-numbering-card";
+export * from "./copy-role-dialog/copy-role-dialog";
+export * from "./role-history-card/role-history-card";

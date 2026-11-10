@@ -1,8 +1,9 @@
+using Microsoft.AspNetCore.Identity;
 using Trackwise.DbMigrator.Regions;
 using Trackwise.Domain.Entities;
+using Trackwise.Domain.Entities.Note;
 using Trackwise.Domain.Persistence;
 using Trackwise.Domain.Primitives.Enums;
-using Microsoft.AspNetCore.Identity;
 
 namespace Trackwise.DbMigrator.Models;
 
@@ -263,6 +264,12 @@ public class SeederContext
         set => SharedState[nameof(CreatedBookings)] = value!;
     }
 
+    public IList<Note>? CreatedNotes
+    {
+        get => SharedState.TryGetValue(nameof(CreatedNotes), out var val) ? (IList<Note>)val : null;
+        set => SharedState[nameof(CreatedNotes)] = value!;
+    }
+
     /// <summary>
     /// Resets per-tenant shared state between tenant iterations.
     /// </summary>
@@ -286,5 +293,6 @@ public class SeederContext
         SharedState.Remove(nameof(CreatedBusinessPartners));
         SharedState.Remove(nameof(CreatedQuotations));
         SharedState.Remove(nameof(CreatedBookings));
+        SharedState.Remove(nameof(CreatedNotes));
     }
 }

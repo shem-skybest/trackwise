@@ -71,13 +71,15 @@
         <ui-icon name="users" class="mr-2" />
         Crew
       </ui-tab>
-      <ui-tab value="bookings">
-        <ui-icon name="clipboard" class="mr-2" />
-        Bookings without a trip
-        @if (unassignedCount()) {
-          <ui-count-badge class="ml-2" [value]="unassignedCount()" severity="warn" />
-        }
-      </ui-tab>
+      @if (canSeeBookings) {
+        <ui-tab value="bookings">
+          <ui-icon name="clipboard" class="mr-2" />
+          Bookings without a trip
+          @if (unassignedCount()) {
+            <ui-count-badge class="ml-2" [value]="unassignedCount()" severity="warn" />
+          }
+        </ui-tab>
+      }
     </ui-tab-list>
 
     <ui-tab-panels>
@@ -177,7 +179,7 @@
       </ui-tab-panel>
 
       <ui-tab-panel value="bookings">
-        @if (isoDate(); as day) {
+        @if (canSeeBookings && isoDate(); as day) {
           <app-unassigned-bookings-panel
             [date]="day"
             [reloadKey]="refreshVersion()"

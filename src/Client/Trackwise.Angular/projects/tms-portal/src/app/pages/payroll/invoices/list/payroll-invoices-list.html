@@ -130,7 +130,7 @@
         <ng-template #header>
           <tr>
             <th style="width: 3rem">
-              @if (hasSelectableInvoices()) {
+              @if (canApprovePayroll && hasSelectableInvoices()) {
                 <ui-table-header-checkbox />
               }
             </th>
@@ -147,7 +147,7 @@
         <ng-template #body let-invoice>
           <tr>
             <td>
-              @if (invoice.status === "pending_approval") {
+              @if (canApprovePayroll && invoice.status === "pending_approval") {
                 <ui-table-checkbox [value]="invoice" />
               }
             </td>
@@ -179,7 +179,7 @@
                   uiTooltipPosition="bottom"
                   [routerLink]="['/payroll/invoices', invoice.id]"
                 />
-                @if (invoice.status === "pending_approval") {
+                @if (canApprovePayroll && invoice.status === "pending_approval") {
                   <ui-button
                     intent="success"
                     appearance="text"
@@ -201,7 +201,7 @@
                     (click)="openRejectDialog(invoice)"
                   />
                 }
-                @if (invoice.status === "draft") {
+                @if (canManagePayroll && invoice.status === "draft") {
                   <ui-button
                     appearance="text"
                     ariaLabel="Edit"

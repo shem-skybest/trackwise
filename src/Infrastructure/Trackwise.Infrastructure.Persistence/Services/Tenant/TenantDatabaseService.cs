@@ -101,6 +101,14 @@ internal partial class TenantDatabaseService(
 
             if (existingRole != null)
             {
+                existingRole.DisplayName = tenantRole.DisplayName;
+
+                // A role someone edited in Settings keeps their edit; Owner always holds the catalog.
+                if (existingRole.IsCustomized && existingRole.Name != TenantRoles.Owner)
+                {
+                    continue;
+                }
+
                 // existingRole is tracked, so the change tracker handles claim add/remove.
                 // Don't call Update(): client-generated keys make it mark new claims as
                 // Modified, issuing UPDATEs for non-existent rows (DbUpdateConcurrencyException).
@@ -110,9 +118,7 @@ internal partial class TenantDatabaseService(
             else
             {
                 // Add new role and its claims
-                var basicPermissions = TenantRolePermissions.GetBasicPermissions();
-                var rolePermissions = TenantRolePermissions.GetPermissionsForRole(role.Name);
-                AddRolePermissions(role, basicPermissions.Concat(rolePermissions).Distinct());
+                AddRolePermissions(role, TenantRolePermissions.GetDefaultsForRole(role.Name));
 
                 context.Set<TenantRole>().Add(role);
                 logger.LogInformation("Added tenant role '{Role}'", role.Name);
@@ -124,10 +130,7 @@ internal partial class TenantDatabaseService(
 
     private Task SyncRolePermissionsAsync(TenantRole role)
     {
-        var requiredPermissions = TenantRolePermissions.GetPermissionsForRole(role.Name)
-            .Concat(TenantRolePermissions.GetBasicPermissions())
-            .Distinct()
-            .ToList();
+        var requiredPermissions = TenantRolePermissions.GetDefaultsForRole(role.Name);
 
         // Add missing permissions
         foreach (var permission in requiredPermissions)

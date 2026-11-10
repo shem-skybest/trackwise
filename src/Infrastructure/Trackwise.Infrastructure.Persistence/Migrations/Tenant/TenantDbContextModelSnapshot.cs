@@ -6533,6 +6533,67 @@ namespace Trackwise.Infrastructure.Persistence.Migrations.Tenant
                     b.ToTable("negotiation_messages", (string)null);
                 });
 
+            modelBuilder.Entity("Trackwise.Domain.Entities.Note.Note", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("content");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("created_by");
+
+                    b.Property<int>("DisplayOrder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("display_order");
+
+                    b.Property<bool>("IsPinned")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_pinned");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)")
+                        .HasColumnName("title");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id")
+                        .HasName("pk_notes");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_notes_created_at");
+
+                    b.HasIndex("IsPinned", "DisplayOrder")
+                        .HasDatabaseName("ix_notes_is_pinned_display_order");
+
+                    b.ToTable("notes", (string)null);
+                });
+
             modelBuilder.Entity("Trackwise.Domain.Entities.Notification", b =>
                 {
                     b.Property<Guid>("Id")
@@ -8818,6 +8879,10 @@ namespace Trackwise.Infrastructure.Persistence.Migrations.Tenant
                         .HasColumnType("text")
                         .HasColumnName("display_name");
 
+                    b.Property<bool>("IsCustomized")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_customized");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text")
@@ -8832,6 +8897,73 @@ namespace Trackwise.Infrastructure.Persistence.Migrations.Tenant
                         .HasName("pk_tenant_roles");
 
                     b.ToTable("tenant_roles", (string)null);
+                });
+
+            modelBuilder.Entity("Trackwise.Domain.Entities.TenantRoleChangeLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ChangeType")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("change_type");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("changed_at");
+
+                    b.Property<Guid?>("ChangedById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("changed_by_id");
+
+                    b.Property<string>("ChangedByName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("changed_by_name");
+
+                    b.Property<Guid?>("EmployeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employee_id");
+
+                    b.Property<string>("EmployeeName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("employee_name");
+
+                    b.Property<string>("Permission")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("permission");
+
+                    b.Property<string>("PreviousRoleName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("previous_role_name");
+
+                    b.Property<string>("RoleDisplayName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("role_display_name");
+
+                    b.Property<string>("RoleName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("role_name");
+
+                    b.HasKey("Id")
+                        .HasName("pk_tenant_role_change_logs");
+
+                    b.HasIndex("ChangedAt")
+                        .HasDatabaseName("ix_tenant_role_change_logs_changed_at");
+
+                    b.HasIndex("EmployeeId")
+                        .HasDatabaseName("ix_tenant_role_change_logs_employee_id");
+
+                    b.ToTable("tenant_role_change_logs", (string)null);
                 });
 
             modelBuilder.Entity("Trackwise.Domain.Entities.TenantRoleClaim", b =>

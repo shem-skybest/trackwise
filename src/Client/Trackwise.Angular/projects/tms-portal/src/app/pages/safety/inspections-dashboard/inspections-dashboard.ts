@@ -1,6 +1,7 @@
 import { DatePipe } from "@angular/common";
 import { Component, inject, signal, type OnInit } from "@angular/core";
 import { Router } from "@angular/router";
+import { Permission } from "@trackwise/shared";
 import {
   Api,
   getDvirReports,
@@ -21,6 +22,7 @@ import {
   UiDataTable,
   type UiBadgeIntent,
 } from "@trackwise/shared/ui";
+import { PermissionService } from "@/core/auth";
 import {
   incidentKindLabel,
   incidentSeverityIntent,
@@ -38,6 +40,10 @@ import { PageHeader } from "@/shared/components";
 export class InspectionsDashboardPage implements OnInit {
   private readonly router = inject(Router);
   private readonly api = inject(Api);
+  private readonly permissions = inject(PermissionService);
+
+  protected readonly canViewDvirs = this.permissions.hasPermission(Permission.Dvir.View);
+  private readonly canReviewDvirs = this.permissions.hasPermission(Permission.Dvir.Review);
 
   protected readonly isLoading = signal(true);
 
@@ -64,8 +70,10 @@ export class InspectionsDashboardPage implements OnInit {
     this.isLoading.set(true);
     try {
       const [pendingDvirs, dvirs, incidents, openIncidents, conditionReports] = await Promise.all([
-        this.api.invoke(getPendingDvirReviews, {}),
-        this.api.invoke(getDvirReports, { PageSize: 5, OrderBy: "-InspectionDate" }),
+        this.canReviewDvirs ? this.api.invoke(getPendingDvirReviews, {}) : Promise.resolve(null),
+        this.canViewDvirs
+          ? this.api.invoke(getDvirReports, { PageSize: 5, OrderBy: "-InspectionDate" })
+          : Promise.resolve(null),
         this.api.invoke(getIncidents, { PageSize: 5, OrderBy: "-OccurredAt" }),
         this.api.invoke(getIncidents, { Status: "open", PageSize: 1 }),
         this.api.invoke(getInspections, {}),

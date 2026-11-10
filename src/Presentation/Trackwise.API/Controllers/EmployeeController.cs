@@ -7,6 +7,7 @@ using Trackwise.Application.Modules.IdentityAccess.Employees.Commands;
 using Trackwise.Application.Modules.IdentityAccess.Employees.Queries;
 using Trackwise.Application.Modules.Financial.Payroll.Commands;
 using Trackwise.Application.Modules.Financial.Payroll.Queries;
+using Trackwise.Application.Modules.IdentityAccess.Roles.Commands;
 
 namespace Trackwise.API.Controllers;
 
@@ -49,6 +50,21 @@ public class EmployeeController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> SetPassword(Guid userId, [FromBody] SetEmployeePasswordCommand request)
     {
         request.UserId = userId;
+        var result = await mediator.Send(request);
+        return result.IsSuccess ? NoContent() : BadRequest(ErrorResponse.FromResult(result));
+    }
+
+    /// <summary>
+    /// Moves the person to another role. Separate from the master-data edit on purpose: assigning
+    /// access is HR's call (<c>Employee.Manage</c>), editing reference data is a steward's.
+    /// </summary>
+    [HttpPut("{userId:guid}/role", Name = "AssignEmployeeRole")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [Authorize(Policy = Permission.Employee.Manage)]
+    public async Task<IActionResult> AssignRole(Guid userId, [FromBody] AssignEmployeeRoleCommand request)
+    {
+        request.EmployeeId = userId;
         var result = await mediator.Send(request);
         return result.IsSuccess ? NoContent() : BadRequest(ErrorResponse.FromResult(result));
     }

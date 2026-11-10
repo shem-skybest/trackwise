@@ -1,59 +1,27 @@
 import { inject, Injectable } from "@angular/core";
-import { UserRole } from "@trackwise/shared";
-import {
-  Api,
-  getTenantRoles,
-  getUsers,
-  type RoleDto,
-  type RoleDtoPagedResponse,
-  type UserDto,
-} from "@trackwise/shared/api";
+import { Api, getTenantRoles, getUsers, type RoleDto, type UserDto } from "@trackwise/shared/api";
 import { from, map, Observable } from "rxjs";
-import { AuthService } from "@/core/auth";
 
 @Injectable({ providedIn: "root" })
 export class UserService {
   private readonly api = inject(Api);
-
-  private userRole?: string | null;
-
-  constructor() {
-    const authService = inject(AuthService);
-
-    const user = authService.getUserData();
-    this.userRole = user?.role;
-  }
 
   searchUser(searchQuery: string): Observable<UserDto[] | undefined> {
     const users$ = from(this.api.invoke(getUsers, { Search: searchQuery }));
     return users$.pipe(map((i) => i.items ?? undefined));
   }
 
+  /**
+   * The roles the signed-in user may put someone in. The API decides (`canAssign`: no handing out
+   * a role with permissions you don't hold) and re-checks on save; this only trims the list.
+   */
   fetchRoles(): Observable<RoleDto[]> {
-    const dummyRole: RoleDto = { name: "", displayName: " " };
-    const roles$ = from(this.api.invoke(getTenantRoles, {}));
-
-    return roles$.pipe(
-      map((result: RoleDtoPagedResponse) => {
-        if (result.items) {
-          const roles = [...result.items];
-          const roleNames = roles.map((i: RoleDto) => i.name);
-
-          if (this.userRole === UserRole.Owner) {
-            const ownerIndex = roleNames.indexOf(UserRole.Owner);
-            if (ownerIndex >= 0) roles.splice(ownerIndex, 1);
-          } else if (this.userRole === UserRole.Manager) {
-            const ownerIndex = roleNames.indexOf(UserRole.Owner);
-            if (ownerIndex >= 0) roles.splice(ownerIndex, 1);
-            const managerIndex = roles.map((i: RoleDto) => i.name).indexOf(UserRole.Manager);
-            if (managerIndex >= 0) roles.splice(managerIndex, 1);
-          }
-
-          return [dummyRole, ...roles];
-        }
-
-        return [dummyRole];
-      }),
+    return from(this.api.invoke(getTenantRoles, { Page: 1, PageSize: 100 })).pipe(
+      map((result) =>
+        (result.items ?? [])
+          .filter((role) => role.canAssign)
+          .sort((a, b) => (a.displayName ?? "").localeCompare(b.displayName ?? "")),
+      ),
     );
   }
 }

@@ -6,6 +6,7 @@ import {
   Component,
   computed,
   contentChild,
+  DestroyRef,
   effect,
   inject,
   input,
@@ -66,6 +67,7 @@ const MIN_RESIZE_HEIGHT = 140;
     // On `document`: the panel is portalled into the CDK overlay container, outside this component's
     // DOM, so a host-scoped keydown would never see the event.
     "(document:keydown.escape)": "onEscape()",
+    "(document:pointerdown)": "onOutsidePointerDown($event)",
   },
 })
 export class UiDialog {
@@ -101,6 +103,24 @@ export class UiDialog {
 
   /** Drives the backdrop. */
   public readonly modal = input(true, { transform: booleanAttribute });
+
+  /** `bottom-right` pushes the panel into the corner on open; the user can still drag it away. */
+  public readonly placement = input<"center" | "bottom-right">("center");
+
+  /** Gap in px from the viewport edges when `placement="bottom-right"`. */
+  public readonly placementInset = input<{ right: number; bottom: number }>({
+    right: 16,
+    bottom: 16,
+  });
+
+  protected readonly dragPosition = signal<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  public readonly compact = input(false, { transform: booleanAttribute });
+
+  public readonly closeOnOutsideClick = input(false, { transform: booleanAttribute });
+
+  private userMoved = false;
+  private placementObserver?: ResizeObserver;
 
   /**
    * Two events, not brain's single `stateChanged`: that fires on both transitions, so folding them
@@ -146,6 +166,9 @@ export class UiDialog {
 
   protected readonly panelMaxHeight = computed(() => (this.fullScreen() ? "100dvh" : undefined));
 
+  /** False between the overlay centring the panel and us moving it to the corner. */
+  protected readonly placed = signal(true);
+
   protected readonly state = computed(
     () => (this.open() ? "open" : "closed") satisfies BrnDialogState,
   );
@@ -169,21 +192,68 @@ export class UiDialog {
       this.document.head.appendChild(style);
       onCleanup(() => style.remove());
     });
+
+    inject(DestroyRef).onDestroy(() => this.placementObserver?.disconnect());
   }
 
   /** Brain fires this on both transitions; split it back into the two events call sites expect. */
   protected onStateChanged(state: BrnDialogState): void {
     if (state === "open") {
+      this.dragPosition.set({ x: 0, y: 0 });
       this.opened.emit();
       return;
     }
 
-    // A close can originate inside the overlay (the X, Escape), not only from the caller flipping
-    // `open`, so push the state back out before announcing it - that is what makes `[(open)]` work.
+    this.dragPosition.set({ x: 0, y: 0 });
     this.resizedWidth.set(null);
     this.resizedHeight.set(null);
     this.open.set(false);
     this.closed.emit();
+  }
+
+  protected onDragStarted(): void {
+    this.userMoved = true;
+  }
+
+  protected onOutsidePointerDown(event: PointerEvent): void {
+    if (!this.open() || !this.closable() || !this.closeOnOutsideClick()) return;
+
+    const panel = this.document.getElementById(this.panelId);
+    const target = event.target as Element | null;
+    if (!panel || !target?.isConnected || panel.contains(target)) return;
+    if (target.closest("[data-ui-dialog-ignore]")) return;
+    if (!isTopmostOverlay(panel)) return;
+
+    this.open.set(false);
+  }
+
+  /** The portal renders a tick after `stateChanged`, so poll a few frames for the panel. */
+  private placeWhenReady(attempt = 0): void {
+    const panel = this.document.getElementById(this.panelId);
+    if (!panel) {
+      if (attempt < 10) {
+        requestAnimationFrame(() => this.placeWhenReady(attempt + 1));
+      } else {
+        this.placed.set(true); // never leave it invisible
+      }
+      return;
+    }
+
+    const apply = () => {
+      if (this.userMoved) return;
+      const root = this.document.documentElement;
+      const { right, bottom } = this.placementInset();
+
+      const x = (root.clientWidth - panel.offsetWidth) / 2 - right;
+      const y = (root.clientHeight - panel.offsetHeight) / 2 - bottom;
+      this.dragPosition.set({ x: Math.max(0, x), y: Math.max(0, y) });
+      this.placed.set(true);
+    };
+
+    apply();
+    this.placementObserver?.disconnect();
+    this.placementObserver = new ResizeObserver(apply);
+    this.placementObserver.observe(panel);
   }
 
   /**

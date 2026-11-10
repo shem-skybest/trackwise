@@ -19,7 +19,7 @@ export const payrollRoutes: Routes = [
     canActivate: [authGuard],
     data: {
       breadcrumb: "Payroll Invoices",
-      permission: Permission.Invoice.View,
+      permission: Permission.Payroll.View,
     },
   },
   {
@@ -29,7 +29,7 @@ export const payrollRoutes: Routes = [
     canActivate: [authGuard],
     data: {
       breadcrumb: "Add Payroll Invoice",
-      permission: Permission.Payroll.View,
+      permission: Permission.Payroll.Manage,
     },
   },
   {
@@ -49,7 +49,7 @@ export const payrollRoutes: Routes = [
     canActivate: [authGuard],
     data: {
       breadcrumb: "Edit Payroll Invoice",
-      permission: Permission.Payroll.View,
+      permission: Permission.Payroll.Manage,
     },
   },
   {

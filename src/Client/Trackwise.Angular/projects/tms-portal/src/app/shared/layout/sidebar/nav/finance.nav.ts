@@ -22,7 +22,7 @@ export const financeNav: NavSection = {
           id: "payroll-invoices",
           label: "Invoices",
           route: "/payroll/invoices",
-          permission: Permission.Invoice.View,
+          permission: Permission.Payroll.View,
         },
         {
           id: "payroll-timesheets",
