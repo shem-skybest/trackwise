@@ -1,5 +1,5 @@
 <ui-dialog
-  header="Update Employee's Role"
+  header="Change role"
   [(open)]="visible"
   [modal]="true"
   [resizable]="true"
@@ -9,42 +9,32 @@
     <ui-spinner />
   }
 
-  <p>
-    Are you sure that you want to change employee's role?
+  <p class="mb-3">
+    Currently:
+    <strong>{{ currentRole()?.displayName || "No role" }}</strong>
     <br />
-    If you want to remove role from employee then select
-    <strong>Remove Role</strong>
-    .
+    <span class="text-muted-foreground text-sm">
+      You can only pick roles that have no permissions beyond your own.
+    </span>
   </p>
 
   <form [formRoot]="form">
     <div class="mb-3">
-      <label for="role" class="form-label">Select Role</label>
+      <label for="role" class="form-label">New role</label>
       <ui-select-field
         [formField]="form.role"
         appendTo="body"
         [options]="roles()"
         optionValue="name"
         optionLabel="displayName"
-        [showClear]="true"
-        (cleared)="clearSelectedRole()"
       />
     </div>
-    <div class="flex gap-2">
-      <ui-button
-        type="submit"
-        icon="pencil"
-        label="Change Role"
-        [loading]="form().submitting()"
-        [disabled]="isLoading()"
-      />
-      <ui-button
-        type="button"
-        icon="trash"
-        label="Remove Role"
-        [disabled]="isLoading() || form().submitting()"
-        (click)="removeRole()"
-      />
-    </div>
+    <ui-button
+      type="submit"
+      icon="pencil"
+      label="Change role"
+      [loading]="form().submitting()"
+      [disabled]="isLoading()"
+    />
   </form>
 </ui-dialog>

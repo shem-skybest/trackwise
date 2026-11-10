@@ -12,6 +12,7 @@ using Trackwise.Shared.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Trackwise.Application.Abstractions.CurrentUser;
+using Trackwise.Application.Modules.IdentityAccess.Roles.Services;
 
 namespace Trackwise.Application.Modules.IdentityAccess.Invitations.Commands;
 
@@ -22,7 +23,8 @@ internal sealed class CreateInvitationHandler(
     IEmailSender emailSender,
     IEmailTemplateService emailTemplateService,
     ICurrentUserService currentUserService,
-    IOptions<IdentityServerOptions> identityServerOptions)
+    IOptions<IdentityServerOptions> identityServerOptions,
+    ITenantRoleAccess roleAccess)
     : IAppRequestHandler<CreateInvitationCommand, Result<InvitationDto>>
 {
     public async Task<Result<InvitationDto>> Handle(CreateInvitationCommand req, CancellationToken ct)
@@ -51,6 +53,21 @@ internal sealed class CreateInvitationHandler(
             if (!canAssignOwner)
             {
                 return Result<InvitationDto>.Fail("Only Super Admins and Admins can invite Owner users.");
+            }
+        }
+
+        if (req.Type == InvitationType.Employee)
+        {
+            var role = await tenantUow.Repository<TenantRole>().GetAsync(r => r.Name == req.TenantRole, ct);
+            if (role is null)
+            {
+                return Result<InvitationDto>.Fail($"Could not find role '{req.TenantRole}'");
+            }
+
+            // Inviting someone into a role is assigning it, so it obeys the same rules.
+            if (await roleAccess.CanAssignAsync(null, role, ct) is { IsSuccess: false } refused)
+            {
+                return Result<InvitationDto>.Fail(refused.Error!);
             }
         }
 

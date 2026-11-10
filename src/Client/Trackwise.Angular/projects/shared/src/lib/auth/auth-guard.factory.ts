@@ -13,6 +13,11 @@ import { AuthService } from "./auth.service";
 export interface RoleGuardOptions {
   /** When set, only these roles may pass; any other role is redirected as unauthorized. */
   allowedRoles?: UserRole[];
+  /**
+   * Predicate form of {@link allowedRoles}, for a portal that admits a whole family of roles -
+   * including ones created at runtime that no enum lists. Checked alongside `allowedRoles`.
+   */
+  allowRole?: (role: string) => boolean;
   /** Where to send an unauthenticated user. */
   unauthenticatedRedirect: string;
   /** Where to send an authenticated-but-forbidden user. Defaults to `/unauthorized`. */
@@ -48,11 +53,15 @@ export function createRoleGuard(options: RoleGuardOptions): CanActivateFn {
           return router.parseUrl(options.unauthenticatedRedirect);
         }
 
+        const userRole = auth.getUserData()?.role;
         if (options.allowedRoles) {
-          const userRole = auth.getUserData()?.role;
           if (!userRole || !options.allowedRoles.includes(userRole as UserRole)) {
             return router.parseUrl(unauthorizedRedirect);
           }
+        }
+
+        if (options.allowRole && (!userRole || !options.allowRole(userRole))) {
+          return router.parseUrl(unauthorizedRedirect);
         }
 
         if (options.checkRoutePermission !== false) {

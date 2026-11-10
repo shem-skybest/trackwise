@@ -18,6 +18,13 @@ public class TenantRole : Entity, ITenantEntity
     public string? DisplayName { get; set; }
     public string NormalizedName { get; set; }
 
+    /// <summary>
+    /// Set once someone edits this role's permissions in the app. From then on the migrator leaves
+    /// its permissions alone instead of re-syncing them to the code defaults, which would silently
+    /// undo the edit. Cleared by "reset to defaults".
+    /// </summary>
+    public bool IsCustomized { get; set; }
+
     public virtual List<Employee> Employees { get; } = new();
     public virtual HashSet<TenantRoleClaim> Claims { get; } = new(new TenantRoleClaimComparer());
 }

@@ -1,6 +1,7 @@
 using Trackwise.Application.Abstractions;
 using Trackwise.Application.Abstractions.Modules.MasterData;
 using Trackwise.Application.Abstractions.Notifications;
+using Trackwise.Application.Modules.IdentityAccess.Roles.Services;
 using Trackwise.Domain.Entities;
 using Trackwise.Domain.Persistence;
 using Trackwise.Mappings;
@@ -12,7 +13,8 @@ internal sealed class CreateEmployeeHandler(
     IMasterUnitOfWork masterUow,
     ITenantUnitOfWork tenantUow,
     IMasterDataCodeGenerator codes,
-    INotificationService notificationService)
+    INotificationService notificationService,
+    ITenantRoleAccess roleAccess)
     : IAppRequestHandler<CreateEmployeeCommand, Result<EmployeeDto>>
 {
     public async Task<Result<EmployeeDto>> Handle(CreateEmployeeCommand req, CancellationToken ct)
@@ -42,6 +44,11 @@ internal sealed class CreateEmployeeHandler(
         }
 
         var tenantRole = await tenantUow.Repository<TenantRole>().GetAsync(i => i.Name == req.Role, ct);
+        if (tenantRole is not null && await roleAccess.CanAssignAsync(null, tenantRole, ct) is { IsSuccess: false } refused)
+        {
+            return Result<EmployeeDto>.Fail(refused.Error!);
+        }
+
         var tenant = tenantUow.GetCurrentTenant();
 
         user.Tenant = tenant;
@@ -55,6 +62,10 @@ internal sealed class CreateEmployeeHandler(
         }
 
         await tenantUow.Repository<Employee>().AddAsync(employee, ct);
+        if (tenantRole is not null)
+        {
+            await roleAccess.LogAssignmentAsync(employee, null, tenantRole, ct);
+        }
         masterUow.Repository<User>().Update(user);
 
         await masterUow.SaveChangesAsync(ct);

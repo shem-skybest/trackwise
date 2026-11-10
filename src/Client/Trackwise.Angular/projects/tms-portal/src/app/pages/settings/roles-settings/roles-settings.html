@@ -1,0 +1,145 @@
+<ui-page-header
+  title="Roles & permissions"
+  subtitle="Each person has one role. A role decides which screens they see and what they can change."
+  [centered]="true"
+/>
+
+<ui-container maxWidth="xl">
+  @if (isLoading()) {
+    <ui-stack align="center" justify="center" class="py-12">
+      <ui-spinner />
+    </ui-stack>
+  } @else {
+    <div class="grid gap-4 lg:grid-cols-[18rem_1fr]">
+      <ui-card header="Roles">
+        <ui-stack gap="1">
+          @for (role of roles(); track role.name) {
+            <button
+              type="button"
+              class="hover:bg-muted flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-left"
+              [class.bg-muted]="role.name === selectedName()"
+              (click)="select(role.name!)"
+            >
+              <span class="min-w-0">
+                <span class="block truncate font-medium">{{ role.displayName }}</span>
+                <span class="text-muted-foreground block text-xs">
+                  {{ role.employeeCount }} {{ role.employeeCount === 1 ? "person" : "people" }}
+                  @if (isMine(role)) {
+                    · your role
+                  }
+                </span>
+              </span>
+              @if (!role.isBuiltIn) {
+                <ui-badge value="Custom" severity="info" size="sm" />
+              } @else if (role.isCustomized) {
+                <ui-badge value="Edited" severity="warn" size="sm" />
+              }
+            </button>
+          }
+        </ui-stack>
+        <ui-button
+          class="mt-4 block"
+          label="Copy a role"
+          icon="copy"
+          appearance="outlined"
+          [block]="true"
+          (click)="copyDialogOpen.set(true)"
+        />
+      </ui-card>
+
+      @if (selected(); as role) {
+        <ui-card>
+          <ui-stack direction="row" justify="between" align="center" class="mb-4 flex-wrap gap-2">
+            <div>
+              <ui-typography variant="h3">{{ role.displayName }}</ui-typography>
+              <ui-typography variant="body" color="muted">
+                {{ draft().size }} permissions · {{ role.employeeCount }}
+                {{ role.employeeCount === 1 ? "person" : "people" }}
+              </ui-typography>
+            </div>
+            <ui-stack direction="row" gap="2" class="flex-wrap">
+              @if (role.canEdit && role.isBuiltIn && role.isCustomized) {
+                <ui-button
+                  label="Reset to defaults"
+                  icon="refresh-cw"
+                  appearance="outlined"
+                  intent="secondary"
+                  [disabled]="isSaving()"
+                  (click)="reset()"
+                />
+              }
+              @if (role.canEdit && !role.isBuiltIn) {
+                <ui-button
+                  label="Delete"
+                  icon="trash"
+                  appearance="outlined"
+                  intent="danger"
+                  [disabled]="isSaving() || (role.employeeCount ?? 0) > 0"
+                  (click)="remove()"
+                />
+              }
+              @if (role.canEdit) {
+                <ui-button
+                  label="Discard"
+                  appearance="text"
+                  intent="secondary"
+                  [disabled]="!isDirty() || isSaving()"
+                  (click)="discard()"
+                />
+                <ui-button
+                  label="Save"
+                  icon="check"
+                  [loading]="isSaving()"
+                  [disabled]="!isDirty()"
+                  (click)="save()"
+                />
+              }
+            </ui-stack>
+          </ui-stack>
+
+          @if (readOnlyReason(); as reason) {
+            <ui-alert intent="info" class="mb-4 block">{{ reason }}</ui-alert>
+          } @else {
+            <ui-typography variant="body" color="muted" class="mb-4">
+              Greyed-out boxes are permissions you don't have yourself, so you can't give or take
+              them away. Changes reach everyone in this role as soon as you save.
+            </ui-typography>
+          }
+
+          @for (section of sections(); track section.name) {
+            <section class="border-border mb-5 border-t pt-4">
+              <ui-typography variant="h4" class="mb-3">{{ section.name }}</ui-typography>
+              <div class="grid gap-3 md:grid-cols-2">
+                @for (group of section.groups; track group.module) {
+                  <div class="bg-subtle rounded-md p-3">
+                    <div class="mb-2 font-medium">{{ group.label }}</div>
+                    <div class="flex flex-wrap gap-x-4 gap-y-2">
+                      @for (permission of group.permissions; track permission.name) {
+                        <ui-checkbox-field
+                          [inputId]="permission.name!"
+                          [label]="permission.label!"
+                          [value]="isChecked(permission.name!)"
+                          [disabled]="isLocked(permission.name!, permission.isBasic ?? false)"
+                          (valueChange)="toggle(permission.name!, $event)"
+                        />
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            </section>
+          }
+        </ui-card>
+      }
+    </div>
+
+    <app-role-history-card class="mt-4 block" [version]="historyVersion()" />
+  }
+</ui-container>
+
+<app-copy-role-dialog
+  [(visible)]="copyDialogOpen"
+  [roles]="roles()"
+  [defaultSource]="selectedName()"
+  (copied)="onRoleCopied($event)"
+/>

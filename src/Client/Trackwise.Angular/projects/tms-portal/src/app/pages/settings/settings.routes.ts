@@ -42,6 +42,11 @@ export const settingsRoutes: Routes = [
         },
       },
       {
+        path: "roles",
+        loadComponent: () => import("./roles-settings/roles-settings").then((m) => m.RolesSettings),
+        data: { breadcrumb: "Roles & permissions", permission: Permission.TenantRole.Manage },
+      },
+      {
         path: "features",
         loadComponent: () =>
           import("./feature-settings/feature-settings").then((m) => m.FeatureSettingsComponent),

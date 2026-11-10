@@ -41,6 +41,11 @@ internal class StaffSeeder(ILogger<StaffSeeder> logger, IHostEnvironment environ
         var employeeRepository = context.TenantUnitOfWork.Repository<Employee>();
         var codes = context.ServiceProvider.GetRequiredService<IMasterDataCodeGenerator>();
         var created = 0;
+        var reassigned = 0;
+        var handPlaced = (await context.TenantUnitOfWork.Repository<TenantRoleChangeLog>()
+                .GetListAsync(l => l.ChangeType == TenantRoleChangeType.EmployeeAssigned && l.EmployeeId != null, cancellationToken))
+            .Select(l => l.EmployeeId!.Value)
+            .ToHashSet();
 
         foreach (var staff in context.GetSeedStaff())
         {
@@ -58,6 +63,15 @@ internal class StaffSeeder(ILogger<StaffSeeder> logger, IHostEnvironment environ
                 // Backfills rosters seeded before employees had a job title; never overwrites one
                 // someone has since edited in the app.
                 existing.JobTitle ??= staff.Title;
+
+                // The roster's role wins only until someone places the person in the app: an
+                // EmployeeAssigned row means HR or an admin chose their role, and that choice stands.
+                if (existing.RoleId != role.Id && !handPlaced.Contains(existing.Id))
+                {
+                    existing.RoleId = role.Id;
+                    reassigned++;
+                }
+
                 continue;
             }
 
@@ -77,6 +91,11 @@ internal class StaffSeeder(ILogger<StaffSeeder> logger, IHostEnvironment environ
 
         await context.TenantUnitOfWork.SaveChangesAsync(cancellationToken);
         await context.MasterUnitOfWork.SaveChangesAsync(cancellationToken);
+        if (reassigned > 0)
+        {
+            logger.LogInformation("Moved {Count} staff to the role their job title maps to", reassigned);
+        }
+
         LogCompleted(created);
     }
 

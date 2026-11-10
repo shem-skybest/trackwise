@@ -77,4 +77,32 @@ public class UserPermissionServiceTests
         Assert.True(await sut.HasPermissionAsync(userId, tenantId, "Permission.Dispatch.Manage"));
         Assert.False(await sut.HasPermissionAsync(userId, tenantId, "Permission.Invoice.Manage"));
     }
+
+    /// <summary>A role edit must reach everyone in the tenant now, not after the cache expires.</summary>
+    [Fact]
+    public async Task InvalidateTenant_AfterCaching_ResolvesAgain()
+    {
+        SetPermissions("Permission.Dispatch.Manage");
+        await sut.GetPermissionsAsync(userId, tenantId);
+
+        SetPermissions("Permission.Load.View");
+        sut.InvalidateTenant(tenantId);
+        var after = await sut.GetPermissionsAsync(userId, tenantId);
+
+        Assert.Contains("Permission.Load.View", after);
+        Assert.DoesNotContain("Permission.Dispatch.Manage", after);
+    }
+
+    [Fact]
+    public async Task InvalidateTenant_OtherTenant_KeepsCache()
+    {
+        SetPermissions("Permission.Dispatch.Manage");
+        await sut.GetPermissionsAsync(userId, tenantId);
+
+        sut.InvalidateTenant(Guid.NewGuid());
+        await sut.GetPermissionsAsync(userId, tenantId);
+
+        await mediator.Received(1).Send(
+            Arg.Any<GetCurrentUserPermissionsQuery>(), Arg.Any<CancellationToken>());
+    }
 }

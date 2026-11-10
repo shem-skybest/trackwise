@@ -36,6 +36,13 @@ export const systemNav: NavSection = {
           menuHidden: true,
         },
         {
+          id: "settings-roles",
+          label: "Roles & permissions",
+          route: "/settings/roles",
+          permission: Permission.TenantRole.Manage,
+          menuHidden: true,
+        },
+        {
           id: "settings-features",
           label: "Features",
           route: "/settings/features",

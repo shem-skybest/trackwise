@@ -10,6 +10,8 @@ export const mainNav: NavSection = {
       label: "Home",
       icon: "house",
       route: "/home",
+      // Same gate as the page: roles without loads (HR, Admin Staff) land elsewhere instead.
+      permission: Permission.Load.View,
     },
     {
       id: "messages",
