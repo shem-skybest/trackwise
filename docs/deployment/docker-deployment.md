@@ -1,6 +1,6 @@
 # Docker Compose Deployment
 
-TrackWise deploys as a set of containers defined by a hand-maintained Docker Compose file under [`deploy/`](https://github.com/shem-skybest/skybest-logistics-corporation/tree/main/deploy). The host runs plain `docker compose`; nginx (on the host) terminates TLS and reverse-proxies each subdomain to a loopback-bound container port.
+TrackWise deploys as a set of containers defined by a hand-maintained Docker Compose file under [`deploy/`](https://github.com/skybest-logistics-corporation/trackwise/tree/main/deploy). The host runs plain `docker compose`; nginx (on the host) terminates TLS and reverse-proxies each subdomain to a loopback-bound container port.
 
 ## Layout
 
@@ -19,7 +19,7 @@ The main stack contains `postgres`, `identity-server`, `api`, `admin-portal`, `t
 
 ## Automated deployment (recommended)
 
-Deployment is handled by the [`deploy.yml`](https://github.com/shem-skybest/skybest-logistics-corporation/blob/main/.github/workflows/deploy.yml) GitHub Actions workflow. Pushing to the `prod` branch (or running it manually) will:
+Deployment is handled by the [`deploy.yml`](https://github.com/skybest-logistics-corporation/trackwise/blob/main/.github/workflows/deploy.yml) GitHub Actions workflow. Pushing to the `prod` branch (or running it manually) will:
 
 1. Build and push all seven images to GHCR (the six services plus `dbmigrator`).
 2. Copy `deploy/docker-compose.yml` to `~/deploy/trackwise/` on the VPS.
@@ -41,7 +41,7 @@ cp /path/to/repo/deploy/.env.example .env
 nano .env   # fill in production values (see Environment Variables)
 ```
 
-`GITHUB_REPOSITORY` and `IMAGE_TAG` are appended automatically by CI; for a manual run, either export them or rely on the compose defaults (`shem-skybest/skybest-logistics-corporation` + `latest`).
+`GITHUB_REPOSITORY` and `IMAGE_TAG` are appended automatically by CI; for a manual run, either export them or rely on the compose defaults (`skybest-logistics-corporation/trackwise` + `latest`).
 
 ### 2. Log in to GHCR and start
 
