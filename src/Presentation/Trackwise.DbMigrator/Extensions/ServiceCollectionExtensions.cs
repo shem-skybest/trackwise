@@ -81,6 +81,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISeeder, BookingSeeder>();
         services.AddScoped<ISeeder, WorkfileSeeder>();
 
+        // note seeder
+        services.AddScoped<ISeeder, NoteSeeder>();
+
         return services;
     }
 }
