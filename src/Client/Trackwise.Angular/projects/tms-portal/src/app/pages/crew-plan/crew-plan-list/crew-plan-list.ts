@@ -1,5 +1,5 @@
 import { Component, computed, effect, inject, signal } from "@angular/core";
-import { getApiErrorMessage, PageHeader } from "@trackwise/shared";
+import { getApiErrorMessage, PageHeader, Permission } from "@trackwise/shared";
 import {
   Api,
   copyCrewPlan,
@@ -31,6 +31,7 @@ import {
   UiTabsImports,
   type UiBadgeIntent,
 } from "@trackwise/shared/ui";
+import { PermissionService } from "@/core/auth";
 import { dateToIso } from "@/shared/utils";
 import { CrewAssignmentDialog } from "../components/crew-assignment-dialog/crew-assignment-dialog";
 import { CrewDayPanel } from "../components/crew-day-panel/crew-day-panel";
@@ -91,6 +92,9 @@ const STATUS_INTENT: Record<TruckDayStatus, UiBadgeIntent> = {
 export class CrewPlanList {
   private readonly api = inject(Api);
   private readonly toast = inject(ToastService);
+  protected readonly canSeeBookings = inject(PermissionService).hasPermission(
+    Permission.Booking.View,
+  );
 
   protected readonly typeOptions: { label: string; value: TruckType | null }[] = [
     { label: "All trucks", value: null },

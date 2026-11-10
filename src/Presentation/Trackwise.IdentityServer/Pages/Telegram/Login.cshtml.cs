@@ -132,8 +132,9 @@ public class Login(
         return roleName switch
         {
             TenantRoles.Driver => TelegramChatRole.Driver,
-            TenantRoles.Owner or TenantRoles.Manager or TenantRoles.Dispatcher => TelegramChatRole.Dispatcher,
-            _ => null
+            null or TenantRoles.Customer => null,
+            // Every office role, built-in or created in Settings, talks to Telegram as the office side.
+            _ => TelegramChatRole.Dispatcher
         };
     }
 }

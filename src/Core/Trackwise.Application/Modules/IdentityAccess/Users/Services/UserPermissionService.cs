@@ -12,7 +12,8 @@ internal sealed class UserPermissionService(IMediator mediator, IMemoryCache cac
     public async Task<IReadOnlySet<string>> GetPermissionsAsync(
         Guid userId, Guid? tenantId, CancellationToken ct = default)
     {
-        var cacheKey = $"permissions:{userId}:{tenantId?.ToString() ?? "no-tenant"}";
+        var tenantKey = tenantId?.ToString() ?? "no-tenant";
+        var cacheKey = $"permissions:{tenantKey}:{GetGeneration(tenantKey)}:{userId}";
         if (cache.TryGetValue(cacheKey, out HashSet<string>? cached) && cached is not null)
             return cached;
 
@@ -28,6 +29,19 @@ internal sealed class UserPermissionService(IMediator mediator, IMemoryCache cac
         cache.Set(cacheKey, permissions, CacheExpiry);
         return permissions;
     }
+
+    public void InvalidateTenant(Guid tenantId)
+    {
+        var tenantKey = tenantId.ToString();
+        cache.Set(GenerationKey(tenantKey), GetGeneration(tenantKey) + 1);
+    }
+
+    // Bumping the tenant's generation orphans every cached entry for it at once - IMemoryCache has
+    // no prefix eviction - and the orphans age out on their own expiry.
+    private long GetGeneration(string tenantKey) =>
+        cache.TryGetValue(GenerationKey(tenantKey), out long generation) ? generation : 0;
+
+    private static string GenerationKey(string tenantKey) => $"permissions-generation:{tenantKey}";
 
     public async Task<bool> HasPermissionAsync(
         Guid userId, Guid? tenantId, string permission, CancellationToken ct = default) =>

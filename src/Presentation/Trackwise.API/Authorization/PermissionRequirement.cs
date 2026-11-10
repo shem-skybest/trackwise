@@ -2,12 +2,14 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Trackwise.API.Authorization;
 
-internal class PermissionRequirement : IAuthorizationRequirement
+/// <summary>
+/// Met when the user holds any one of <see cref="Permissions"/>. A policy name joins alternatives
+/// with <see cref="AnyOfSeparator"/>, e.g. <c>Permission.MasterData.Manage|Permission.Employee.Manage</c>.
+/// </summary>
+internal class PermissionRequirement(string policyName) : IAuthorizationRequirement
 {
-    public PermissionRequirement(string permission)
-    {
-        Permission = permission;
-    }
+    public const char AnyOfSeparator = '|';
 
-    public string Permission { get; }
+    public IReadOnlyList<string> Permissions { get; } =
+        policyName.Split(AnyOfSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 }

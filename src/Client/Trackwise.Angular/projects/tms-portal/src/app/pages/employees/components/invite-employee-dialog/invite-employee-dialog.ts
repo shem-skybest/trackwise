@@ -100,25 +100,16 @@ export class InviteEmployeeDialog {
 
   private async fetchRoles(): Promise<void> {
     try {
-      const result = await this.api.invoke(getTenantRoles, {});
+      const result = await this.api.invoke(getTenantRoles, { Page: 1, PageSize: 100 });
       if (result.items) {
-        let roles = [...result.items];
-
-        // Filter out Customer role - customers are invited via customer dialog
-        roles = roles.filter((r) => r.name !== UserRole.Customer);
-
-        // Owner role can only be assigned by SuperAdmin/Admin
-        const canAssignOwner =
+        // Customers are invited from the customer page; Owner only by platform admins (the API
+        // refuses it otherwise); and nobody hands out a role stronger than their own (canAssign).
+        const isPlatformAdmin =
           this.userRole === UserRole.AppSuperAdmin || this.userRole === UserRole.AppAdmin;
-
-        if (!canAssignOwner) {
-          roles = roles.filter((r) => r.name !== UserRole.Owner);
-        }
-
-        // Managers cannot assign Manager role
-        if (this.userRole === UserRole.Manager) {
-          roles = roles.filter((r) => r.name !== UserRole.Manager);
-        }
+        const roles = result.items
+          .filter((r) => r.name !== UserRole.Customer)
+          .filter((r) => isPlatformAdmin || (r.canAssign && r.name !== UserRole.Owner))
+          .sort((a, b) => (a.displayName ?? "").localeCompare(b.displayName ?? ""));
 
         this.roles.set(roles);
       }

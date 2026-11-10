@@ -27,9 +27,13 @@ internal class PermissionHandler(IServiceProvider serviceProvider)
         using var scope = serviceProvider.CreateScope();
         var userPermissions = scope.ServiceProvider.GetRequiredService<IUserPermissionService>();
 
-        if (await userPermissions.HasPermissionAsync(userId, tenantId, requirement.Permission))
+        foreach (var permission in requirement.Permissions)
         {
-            context.Succeed(requirement);
+            if (await userPermissions.HasPermissionAsync(userId, tenantId, permission))
+            {
+                context.Succeed(requirement);
+                return;
+            }
         }
     }
 }

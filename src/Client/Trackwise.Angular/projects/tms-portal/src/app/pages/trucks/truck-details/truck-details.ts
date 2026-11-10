@@ -1,10 +1,11 @@
 import { CommonModule } from "@angular/common";
 import { Component, computed, inject, input, signal, type OnInit } from "@angular/core";
 import { RouterLink } from "@angular/router";
+import { Permission } from "@trackwise/shared";
 import {
   Api,
   getDocuments,
-  getTruckById,
+  getTruckMasterDataById,
   type DailyGrossesDto,
   type DocumentDto,
   type DocumentType,
@@ -14,7 +15,7 @@ import {
 import { truckOwnershipOptions } from "@trackwise/shared/api/enums";
 import type { TruckGeolocationDto } from "@trackwise/shared/api/models";
 import { AddressPipe, CurrencyFormatPipe, DistanceUnitPipe } from "@trackwise/shared/pipes";
-import { LocalizationService } from "@trackwise/shared/services";
+import { LocalizationService, PermissionService } from "@trackwise/shared/services";
 import {
   Card,
   CountBadge,
@@ -93,6 +94,14 @@ import {
 export class TruckDetailsComponent implements OnInit {
   private readonly api = inject(Api);
   private readonly localizationService = inject(LocalizationService, { optional: true });
+  private readonly permissions = inject(PermissionService);
+
+  protected readonly canViewLoads = this.permissions.hasPermission(Permission.Load.View);
+  protected readonly canViewPapers = this.permissions.hasPermission(Permission.Truck.View);
+  protected readonly canViewMaintenance = this.permissions.hasPermission(
+    Permission.Maintenance.View,
+  );
+  protected readonly canViewAnalytics = this.permissions.hasPermission(Permission.Stat.View);
 
   protected readonly id = input<string>();
 
@@ -155,7 +164,7 @@ export class TruckDetailsComponent implements OnInit {
 
     this.isLoading.set(true);
 
-    const truck = await this.api.invoke(getTruckById, { truckOrDriverId: id });
+    const truck = await this.api.invoke(getTruckMasterDataById, { id });
     if (truck) {
       this.truck.set(truck);
 

@@ -1,4 +1,5 @@
 using Trackwise.Application.Abstractions;
+using Trackwise.Application.Modules.IdentityAccess.Roles.Services;
 using Trackwise.Domain.Entities;
 using Trackwise.Domain.Persistence;
 using Trackwise.Domain.Primitives.Enums;
@@ -6,7 +7,7 @@ using Trackwise.Shared.Models;
 
 namespace Trackwise.Application.Modules.MasterData.Commands;
 
-internal sealed class UpdateEmployeeHandler(ITenantUnitOfWork tenantUow)
+internal sealed class UpdateEmployeeHandler(ITenantUnitOfWork tenantUow, ITenantRoleAccess roleAccess)
     : IAppRequestHandler<UpdateEmployeeCommand, Result>
 {
     public async Task<Result> Handle(UpdateEmployeeCommand req, CancellationToken ct)
@@ -43,10 +44,20 @@ internal sealed class UpdateEmployeeHandler(ITenantUnitOfWork tenantUow)
             employee.JobTitle = string.IsNullOrWhiteSpace(req.JobTitle) ? null : req.JobTitle.Trim();
         }
 
+        // A role change here obeys the same guardrails as the dedicated assign endpoint - otherwise
+        // this edit form would be a way around them for anyone holding MasterData.Manage.
         var tenantRole = await tenantUow.Repository<TenantRole>().GetAsync(i => i.Name == req.Role, ct);
+        var roleChanged = tenantRole is not null && tenantRole.Id != employee.RoleId;
 
-        if (tenantRole is not null)
+        if (roleChanged)
         {
+            var check = await roleAccess.CanAssignAsync(employee, tenantRole!, ct);
+            if (!check.IsSuccess)
+            {
+                return check;
+            }
+
+            await roleAccess.LogAssignmentAsync(employee, employee.Role, tenantRole!, ct);
             employee.Role = tenantRole;
         }
 
@@ -80,6 +91,11 @@ internal sealed class UpdateEmployeeHandler(ITenantUnitOfWork tenantUow)
         }
 
         await tenantUow.SaveChangesAsync(ct);
+        if (roleChanged)
+        {
+            roleAccess.InvalidatePermissionCache();
+        }
+
         return Result.Ok();
     }
 }

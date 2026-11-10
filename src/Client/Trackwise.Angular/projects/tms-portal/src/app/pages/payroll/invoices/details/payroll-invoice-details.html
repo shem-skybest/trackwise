@@ -203,13 +203,15 @@
               (click)="downloadPayStub()"
             />
 
-            <a [routerLink]="['/payroll/invoices', invoice()!.id, 'edit']" class="no-underline">
-              <ui-button appearance="outlined" block icon="pencil" label="Edit" />
-            </a>
+            @if (canManagePayroll) {
+              <a [routerLink]="['/payroll/invoices', invoice()!.id, 'edit']" class="no-underline">
+                <ui-button appearance="outlined" block icon="pencil" label="Edit" />
+              </a>
 
-            <a [routerLink]="['/payroll/employee', invoice()!.employee?.id]" class="no-underline">
-              <ui-button appearance="outlined" block icon="user" label="View Employee Payrolls" />
-            </a>
+              <a [routerLink]="['/payroll/employee', invoice()!.employee?.id]" class="no-underline">
+                <ui-button appearance="outlined" block icon="user" label="View Employee Payrolls" />
+              </a>
+            }
 
             <a routerLink="/payroll/invoices" class="no-underline">
               <ui-button appearance="outlined" block icon="arrow-left" label="Back to List" />

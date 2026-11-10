@@ -9,7 +9,7 @@ import {
   min,
   required,
 } from "@angular/forms/signals";
-import { DRIVING_ROLES, regionAllowedCountries, UserRole } from "@trackwise/shared";
+import { DRIVING_ROLES, Permission, regionAllowedCountries } from "@trackwise/shared";
 import {
   Api,
   getBranches,
@@ -37,7 +37,7 @@ import {
   UiTextField,
   UiToggleField,
 } from "@trackwise/shared/ui";
-import { AuthService } from "@/core/auth";
+import { AuthService, PermissionService } from "@/core/auth";
 import { ToastService } from "@/core/services";
 import { TenantService } from "@/core/services/tenant.service";
 import {
@@ -105,6 +105,7 @@ const RECORD_IN_USE = "MASTER_DATA_RECORD_IN_USE";
 export class EmployeeEditDialog {
   private readonly api = inject(Api);
   private readonly authService = inject(AuthService);
+  private readonly permissionService = inject(PermissionService);
   private readonly tenantService = inject(TenantService);
   private readonly toastService = inject(ToastService);
 
@@ -281,33 +282,14 @@ export class EmployeeEditDialog {
     });
   }
 
+  /**
+   * Shows the Change button to anyone who manages employees, except on their own record. Which
+   * roles they may pick, and whether they may move this person at all, the API decides.
+   */
   private evaluateCanChangeRole(emp: EmployeeMasterDataDto): void {
-    const user = this.authService.getUserData();
-    const userRole = user?.role;
-    const employeeRole = emp.role?.name;
-
-    if (!userRole) {
-      this.canChangeRole.set(false);
-      return;
-    }
-
-    if (!employeeRole) {
-      this.canChangeRole.set(true);
-      return;
-    }
-
-    if (userRole === UserRole.AppSuperAdmin || userRole === UserRole.AppAdmin) {
-      this.canChangeRole.set(true);
-    } else if (userRole === UserRole.Owner && employeeRole !== UserRole.Owner) {
-      this.canChangeRole.set(true);
-    } else if (
-      userRole === UserRole.Manager &&
-      employeeRole !== UserRole.Owner &&
-      employeeRole !== UserRole.Manager
-    ) {
-      this.canChangeRole.set(true);
-    } else {
-      this.canChangeRole.set(false);
-    }
+    const isSelf = emp.id === this.authService.getUserData()?.id;
+    this.canChangeRole.set(
+      !isSelf && this.permissionService.hasPermission(Permission.Employee.Manage),
+    );
   }
 }

@@ -49,9 +49,7 @@ internal class TenantRoleSeeder(ILogger<TenantRoleSeeder> logger) : SeederBase(l
             if (existingRole is null)
             {
                 var role = new TenantRole(tenantRole.Value) { DisplayName = tenantRole.DisplayName };
-                var permissions = TenantRolePermissions.GetBasicPermissions()
-                    .Concat(TenantRolePermissions.GetPermissionsForRole(role.Name))
-                    .Distinct();
+                var permissions = TenantRolePermissions.GetDefaultsForRole(role.Name);
 
                 foreach (var permission in permissions)
                 {
@@ -64,14 +62,19 @@ internal class TenantRoleSeeder(ILogger<TenantRoleSeeder> logger) : SeederBase(l
                 continue;
             }
 
+            existingRole.DisplayName = tenantRole.DisplayName;
+
+            // A role someone edited in Settings keeps their edit; Owner always holds the catalog.
+            if (existingRole.IsCustomized && existingRole.Name != TenantRoles.Owner)
+            {
+                continue;
+            }
+
             var existingClaims = await dbContext.Set<TenantRoleClaim>()
                 .Where(c => c.RoleId == existingRole.Id)
                 .ToListAsync(ct);
 
-            var requiredPermissions = TenantRolePermissions.GetPermissionsForRole(existingRole.Name)
-                .Concat(TenantRolePermissions.GetBasicPermissions())
-                .Distinct()
-                .ToList();
+            var requiredPermissions = TenantRolePermissions.GetDefaultsForRole(existingRole.Name);
 
             var added = 0;
             var removed = 0;

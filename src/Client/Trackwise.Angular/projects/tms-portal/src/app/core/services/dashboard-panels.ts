@@ -135,6 +135,7 @@ export const DEFAULT_PANELS: DashboardPanelConfig[] = [
     rows: 5,
     minItemCols: 4,
     minItemRows: 2,
+    permission: Permission.Truck.View,
     mode: "fleet",
     fillsParent: true,
   },

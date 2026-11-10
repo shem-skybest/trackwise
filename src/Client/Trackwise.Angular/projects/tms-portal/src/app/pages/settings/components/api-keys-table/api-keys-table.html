@@ -3,9 +3,11 @@
     <ui-spinner />
   </div>
 } @else {
-  <div class="mb-4 flex justify-end">
-    <ui-button label="Create API Key" icon="plus" (click)="openCreateDialog()" />
-  </div>
+  @if (canManageKeys) {
+    <div class="mb-4 flex justify-end">
+      <ui-button label="Create API Key" icon="plus" (click)="openCreateDialog()" />
+    </div>
+  }
 
   @if (apiKeys().length > 0) {
     <ui-data-table [value]="apiKeys()" [tableStyle]="{ 'min-width': '50rem' }">
@@ -33,15 +35,17 @@
             }
           </td>
           <td>
-            <ui-button
-              intent="danger"
-              appearance="text"
-              ariaLabel="Revoke key"
-              icon="trash"
-              [rounded]="true"
-              uiTooltip="Revoke key"
-              (click)="confirmRevoke(key)"
-            />
+            @if (canManageKeys) {
+              <ui-button
+                intent="danger"
+                appearance="text"
+                ariaLabel="Revoke key"
+                icon="trash"
+                [rounded]="true"
+                uiTooltip="Revoke key"
+                (click)="confirmRevoke(key)"
+              />
+            }
           </td>
         </tr>
       </ng-template>

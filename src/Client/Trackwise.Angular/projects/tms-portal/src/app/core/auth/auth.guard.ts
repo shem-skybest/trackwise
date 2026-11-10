@@ -1,28 +1,27 @@
 import { inject } from "@angular/core";
 import { Router } from "@angular/router";
-import { UserRole } from "@trackwise/shared";
+import { isTenantStaffRole } from "@trackwise/shared";
 import { createRoleGuard } from "@trackwise/shared/auth";
 import { TenantService } from "../services";
 
-// Only tenant roles can access TMS Portal (NOT app roles). After role and route-permission
-// checks pass, the extra check enforces an active subscription.
+const subscriptionCheck = () =>
+  inject(TenantService).isSubscriptionActive()
+    ? true
+    : inject(Router).parseUrl("/unauthorized?reason=subscription");
+
+// Any company staff role can open the TMS Portal - built-in or created in Settings - but not app
+// roles or portal customers. What each person then sees is decided by `data.permission` per route,
+// which `createRoleGuard` checks automatically.
 export const authGuard = createRoleGuard({
-  allowedRoles: [UserRole.Owner, UserRole.Manager, UserRole.Dispatcher, UserRole.Driver],
+  allowRole: isTenantStaffRole,
   unauthenticatedRedirect: "/unauthorized",
-  extraCheck: () =>
-    inject(TenantService).isSubscriptionActive()
-      ? true
-      : inject(Router).parseUrl("/unauthorized?reason=subscription"),
+  extraCheck: subscriptionCheck,
 });
 
-// Tenant administration. Mirrors what the API authorizes: Owner holds every settings permission,
-// Manager only Payment.*/Accounting.*, Dispatcher and Driver none. Per-tab `data.permission` does
-// the rest - `createRoleGuard` checks it automatically.
+// Tenant administration. Every tab carries its own `data.permission` (Tenant.View, Payment.View,
+// TenantRole.Manage...), so the role check is the same as the portal's and the tabs do the rest.
 export const settingsGuard = createRoleGuard({
-  allowedRoles: [UserRole.Owner, UserRole.Manager],
+  allowRole: isTenantStaffRole,
   unauthenticatedRedirect: "/unauthorized",
-  extraCheck: () =>
-    inject(TenantService).isSubscriptionActive()
-      ? true
-      : inject(Router).parseUrl("/unauthorized?reason=subscription"),
+  extraCheck: subscriptionCheck,
 });

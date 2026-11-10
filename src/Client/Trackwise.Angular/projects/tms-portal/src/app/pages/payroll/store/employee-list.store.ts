@@ -1,11 +1,11 @@
-import { formatSortField, getInvoices, type InvoiceDto } from "@trackwise/shared/api";
+import { formatSortField, getPayrollInvoices, type InvoiceDto } from "@trackwise/shared/api";
 import { createListStore } from "@trackwise/shared/stores";
 
 /**
  * Store for the employee payroll invoices list page.
  * Requires EmployeeId to be set via setFilters before loading.
  */
-export const EmployeePayrollListStore = createListStore<InvoiceDto>(getInvoices, {
+export const EmployeePayrollListStore = createListStore<InvoiceDto>(getPayrollInvoices, {
   defaultSortField: "-CreatedAt",
   defaultPageSize: 10,
   buildParams: (state) => {
@@ -15,7 +15,6 @@ export const EmployeePayrollListStore = createListStore<InvoiceDto>(getInvoices,
       Page: state.page,
       PageSize: state.pageSize,
       OrderBy: orderBy,
-      InvoiceType: "payroll",
       EmployeeId: state.filters["EmployeeId"] as string | undefined,
     };
   },

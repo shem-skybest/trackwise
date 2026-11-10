@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal, type OnInit } from "@angular/core";
+import { Permission } from "@trackwise/shared";
 import {
   Api,
   createConnectAccount,
@@ -19,6 +20,7 @@ import {
   UiButton,
   type UiBadgeIntent,
 } from "@trackwise/shared/ui";
+import { PermissionService } from "@/core/auth";
 import { ToastService } from "@/core/services";
 import { EmptyState, LoadingSkeleton } from "@/shared/components";
 
@@ -54,6 +56,9 @@ const STATUS_META: Record<StripeConnectStatus, { severity: UiBadgeIntent; label:
 export class StripeConnectCard implements OnInit {
   private readonly api = inject(Api);
   private readonly toastService = inject(ToastService);
+  protected readonly canManagePayments = inject(PermissionService).hasPermission(
+    Permission.Payment.Manage,
+  );
 
   protected readonly isLoading = signal(false);
   protected readonly isCreatingAccount = signal(false);

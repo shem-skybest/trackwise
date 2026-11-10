@@ -1,0 +1,22 @@
+<ui-card header="History" subheader="Every change to a role, and every move between roles.">
+  <ui-stack gap="2">
+    @for (entry of entries(); track entry.id) {
+      <div class="border-border flex flex-wrap justify-between gap-2 border-b pb-2 text-sm">
+        <span>
+          <strong>{{ entry.changedByName || "Someone" }}</strong>
+          {{ describe(entry) }}
+        </span>
+        <span class="text-muted-foreground">{{ entry.changedAt | date: "MMM d, y h:mm a" }}</span>
+      </div>
+    } @empty {
+      @if (!isLoading()) {
+        <p class="text-muted-foreground text-sm">No changes yet.</p>
+      }
+    }
+    @if (isLoading()) {
+      <ui-spinner />
+    } @else if (hasMore()) {
+      <ui-button label="Show more" appearance="text" intent="secondary" (click)="loadMore()" />
+    }
+  </ui-stack>
+</ui-card>

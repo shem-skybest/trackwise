@@ -1,5 +1,6 @@
 import { DatePipe } from "@angular/common";
 import { Component, inject, signal, type OnInit } from "@angular/core";
+import { Permission } from "@trackwise/shared";
 import {
   Api,
   createApiKey,
@@ -18,6 +19,7 @@ import {
   UiTextField,
   UiTooltip,
 } from "@trackwise/shared/ui";
+import { PermissionService } from "@/core/auth";
 import { ToastService } from "@/core/services";
 import { UiFormField } from "@/shared/components";
 
@@ -40,6 +42,9 @@ import { UiFormField } from "@/shared/components";
 export class ApiKeysTable implements OnInit {
   private readonly api = inject(Api);
   private readonly toastService = inject(ToastService);
+  protected readonly canManageKeys = inject(PermissionService).hasPermission(
+    Permission.ApiKey.Manage,
+  );
 
   protected readonly isLoading = signal(true);
   protected readonly isCreating = signal(false);

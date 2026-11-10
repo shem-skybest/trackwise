@@ -1,7 +1,8 @@
 import { CommonModule, DatePipe } from "@angular/common";
 import { Component, inject, signal } from "@angular/core";
 import { RouterModule } from "@angular/router";
-import { Api, getInvoices, type InvoiceDto } from "@trackwise/shared/api";
+import { Permission } from "@trackwise/shared";
+import { Api, getPayrollInvoices, type InvoiceDto } from "@trackwise/shared/api";
 import { invoiceStatusOptions } from "@trackwise/shared/api/enums";
 import { CurrencyFormatPipe } from "@trackwise/shared/pipes";
 import {
@@ -15,6 +16,7 @@ import {
   UiDataTable,
   UiTooltip,
 } from "@trackwise/shared/ui";
+import { PermissionService } from "@/core/auth";
 import { InvoiceStatusTag, PageHeader } from "@/shared/components";
 
 interface PayrollDashboardData {
@@ -52,6 +54,9 @@ interface PayrollDashboardData {
 })
 export class PayrollDashboard {
   private readonly api = inject(Api);
+  protected readonly canManagePayroll = inject(PermissionService).hasPermission(
+    Permission.Payroll.Manage,
+  );
 
   protected readonly isLoading = signal(false);
   protected readonly dashboard = signal<PayrollDashboardData | null>(null);
@@ -66,15 +71,14 @@ export class PayrollDashboard {
 
     // Fetch payroll invoices grouped by status
     const [draft, pendingApproval, approved, paid, recent] = await Promise.all([
-      this.api.invoke(getInvoices, { InvoiceType: "payroll", Status: "draft", PageSize: 1000 }),
-      this.api.invoke(getInvoices, {
-        InvoiceType: "payroll",
+      this.api.invoke(getPayrollInvoices, { Status: "draft", PageSize: 1000 }),
+      this.api.invoke(getPayrollInvoices, {
         Status: "pending_approval",
         PageSize: 1000,
       }),
-      this.api.invoke(getInvoices, { InvoiceType: "payroll", Status: "approved", PageSize: 1000 }),
-      this.api.invoke(getInvoices, { InvoiceType: "payroll", Status: "paid", PageSize: 1000 }),
-      this.api.invoke(getInvoices, { InvoiceType: "payroll", PageSize: 10, OrderBy: "-CreatedAt" }),
+      this.api.invoke(getPayrollInvoices, { Status: "approved", PageSize: 1000 }),
+      this.api.invoke(getPayrollInvoices, { Status: "paid", PageSize: 1000 }),
+      this.api.invoke(getPayrollInvoices, { PageSize: 10, OrderBy: "-CreatedAt" }),
     ]);
 
     const sumAmount = (items: InvoiceDto[] | null | undefined) =>

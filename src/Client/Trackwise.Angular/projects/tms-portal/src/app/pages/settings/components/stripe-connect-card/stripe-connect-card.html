@@ -80,13 +80,15 @@
             (click)="openDashboard()"
             [loading]="isOpeningDashboard()"
           />
-          <ui-button
-            appearance="outlined"
-            icon="settings"
-            label="Account Settings"
-            (click)="continueOnboarding()"
-            [loading]="isGettingLink()"
-          />
+          @if (canManagePayments) {
+            <ui-button
+              appearance="outlined"
+              icon="settings"
+              label="Account Settings"
+              (click)="continueOnboarding()"
+              [loading]="isGettingLink()"
+            />
+          }
         </ui-stack>
       }
 
@@ -134,12 +136,14 @@
             Set up Stripe Connect to receive payments from your customers directly into your bank
             account. You'll be redirected to Stripe to complete the secure onboarding process.
           </ui-typography>
-          <ui-button
-            icon="external-link"
-            label="Connect with Stripe"
-            (click)="startOnboarding()"
-            [loading]="isCreatingAccount() || isGettingLink()"
-          />
+          @if (canManagePayments) {
+            <ui-button
+              icon="external-link"
+              label="Connect with Stripe"
+              (click)="startOnboarding()"
+              [loading]="isCreatingAccount() || isGettingLink()"
+            />
+          }
         </ui-stack>
       }
     }
