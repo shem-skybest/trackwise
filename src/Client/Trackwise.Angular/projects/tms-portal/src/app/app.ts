@@ -7,6 +7,7 @@ import { AuthService } from "@/core/auth";
 import { UpgradeDialog } from "@/shared/components/subscription/upgrade-dialog/upgrade-dialog";
 import { CopilotDrawer, MobileDrawer, MobileHeader, Sidebar } from "@/shared/layout";
 import { CommandPalette } from "@/shared/layout/command-palette/command-palette";
+import { StickyNotes } from "./shared/components/sticky-note/sticky-notes";
 
 /** Routes that should not show the sidebar/breadcrumb layout */
 const STANDALONE_ROUTES = ["/", "/unauthorized", "/404"];
@@ -25,6 +26,7 @@ const STANDALONE_ROUTES = ["/", "/unauthorized", "/404"];
     Sidebar,
     Spinner,
     UpgradeDialog,
+    StickyNotes,
   ],
 })
 export class App {
