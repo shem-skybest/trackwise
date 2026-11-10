@@ -33,14 +33,6 @@
         autocomplete="off"
         [(value)]="searchTerm"
       />
-      <ui-button
-        class="shrink-0"
-        icon="pin"
-        ariaLabel="Show pinned only"
-        [appearance]="pinnedOnly() ? 'solid' : 'text'"
-        [attr.aria-pressed]="pinnedOnly()"
-        (click)="togglePinnedFilter()"
-      />
       <ui-button class="shrink-0" label="New" icon="plus" (click)="newNote()" />
     </div>
 
