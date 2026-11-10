@@ -7,20 +7,22 @@
 } @else {
   <!-- Stats Cards -->
   <div class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-    <ui-card
-      class="cursor-pointer transition-shadow hover:shadow-lg"
-      (click)="navigateTo('/safety/dvir')"
-    >
-      <div class="flex items-center gap-4">
-        <div class="bg-warning/10 flex h-12 w-12 items-center justify-center rounded-lg">
-          <ui-icon name="clipboard" size="inherit" class="text-warning text-2xl" />
+    @if (canViewDvirs) {
+      <ui-card
+        class="cursor-pointer transition-shadow hover:shadow-lg"
+        (click)="navigateTo('/safety/dvir')"
+      >
+        <div class="flex items-center gap-4">
+          <div class="bg-warning/10 flex h-12 w-12 items-center justify-center rounded-lg">
+            <ui-icon name="clipboard" size="inherit" class="text-warning text-2xl" />
+          </div>
+          <div>
+            <div class="text-muted-foreground text-sm">Pending DVIR Reviews</div>
+            <div class="text-2xl font-bold">{{ pendingDvirCount() }}</div>
+          </div>
         </div>
-        <div>
-          <div class="text-muted-foreground text-sm">Pending DVIR Reviews</div>
-          <div class="text-2xl font-bold">{{ pendingDvirCount() }}</div>
-        </div>
-      </div>
-    </ui-card>
+      </ui-card>
+    }
 
     <ui-card
       class="cursor-pointer transition-shadow hover:shadow-lg"
@@ -71,12 +73,14 @@
   <!-- Quick Actions -->
   <div class="mb-6 flex flex-wrap gap-2">
     <ui-button label="Report Incident" icon="plus" (click)="navigateTo('/incidents/add')" />
-    <ui-button
-      appearance="outlined"
-      label="View DVIRs"
-      icon="clipboard"
-      (click)="navigateTo('/safety/dvir')"
-    />
+    @if (canViewDvirs) {
+      <ui-button
+        appearance="outlined"
+        label="View DVIRs"
+        icon="clipboard"
+        (click)="navigateTo('/safety/dvir')"
+      />
+    }
     <ui-button
       appearance="outlined"
       label="Condition Reports"
@@ -86,46 +90,47 @@
   </div>
 
   <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-    <!-- Recent DVIRs -->
-    <ui-card>
-      <ng-template #header>
-        <div class="flex items-center justify-between p-4 pb-0">
-          <h3 class="text-lg font-semibold">Recent DVIRs</h3>
-          <ui-button appearance="link" label="View All" (click)="navigateTo('/safety/dvir')" />
-        </div>
-      </ng-template>
+    @if (canViewDvirs) {
+      <ui-card>
+        <ng-template #header>
+          <div class="flex items-center justify-between p-4 pb-0">
+            <h3 class="text-lg font-semibold">Recent DVIRs</h3>
+            <ui-button appearance="link" label="View All" (click)="navigateTo('/safety/dvir')" />
+          </div>
+        </ng-template>
 
-      @if (recentDvirs().length > 0) {
-        <ui-data-table [value]="recentDvirs()" [tableStyle]="{ 'min-width': '100%' }">
-          <ng-template #header>
-            <tr>
-              <th>Date</th>
-              <th>Truck</th>
-              <th>Driver</th>
-              <th>Status</th>
-            </tr>
-          </ng-template>
-          <ng-template #body let-dvir>
-            <tr class="hover:bg-hover cursor-pointer" (click)="viewDvir(dvir)">
-              <td>{{ dvir.inspectionDate | date: "shortDate" }}</td>
-              <td>{{ dvir.truckNumber }}</td>
-              <td>{{ dvir.driverName }}</td>
-              <td>
-                <ui-badge
-                  [value]="dvir.statusDisplay ?? dvir.status"
-                  [severity]="getDvirStatusSeverity(dvir.status)"
-                />
-              </td>
-            </tr>
-          </ng-template>
-        </ui-data-table>
-      } @else {
-        <div class="flex flex-col items-center py-8 text-center">
-          <ui-icon name="clipboard" size="inherit" class="text-muted-foreground mb-2 text-3xl" />
-          <p class="text-muted-foreground">No recent DVIRs</p>
-        </div>
-      }
-    </ui-card>
+        @if (recentDvirs().length > 0) {
+          <ui-data-table [value]="recentDvirs()" [tableStyle]="{ 'min-width': '100%' }">
+            <ng-template #header>
+              <tr>
+                <th>Date</th>
+                <th>Truck</th>
+                <th>Driver</th>
+                <th>Status</th>
+              </tr>
+            </ng-template>
+            <ng-template #body let-dvir>
+              <tr class="hover:bg-hover cursor-pointer" (click)="viewDvir(dvir)">
+                <td>{{ dvir.inspectionDate | date: "shortDate" }}</td>
+                <td>{{ dvir.truckNumber }}</td>
+                <td>{{ dvir.driverName }}</td>
+                <td>
+                  <ui-badge
+                    [value]="dvir.statusDisplay ?? dvir.status"
+                    [severity]="getDvirStatusSeverity(dvir.status)"
+                  />
+                </td>
+              </tr>
+            </ng-template>
+          </ui-data-table>
+        } @else {
+          <div class="flex flex-col items-center py-8 text-center">
+            <ui-icon name="clipboard" size="inherit" class="text-muted-foreground mb-2 text-3xl" />
+            <p class="text-muted-foreground">No recent DVIRs</p>
+          </div>
+        }
+      </ui-card>
+    }
 
     <ui-card>
       <ng-template #header>

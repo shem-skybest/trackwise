@@ -8,9 +8,11 @@ namespace Trackwise.Application.Modules.IdentityAccess.Roles.Services;
 /// The guardrails around changing access. Every path that edits a role or moves a person between
 /// roles goes through here, so the rules hold no matter which screen or API made the change:
 /// <list type="bullet">
-/// <item>nobody grants, removes or hands out a permission they don't hold themselves;</item>
+/// <item>nobody adds or removes a permission on a role unless they hold it themselves;</item>
+/// <item>nobody hands out a role, or moves someone out of one, that controls access (roles, employees,
+/// invitations, API keys, company settings) beyond their own - other permissions don't block assignment;</item>
 /// <item>nobody edits the role they are in, or changes their own role;</item>
-/// <item>the Owner role is locked to the whole catalog.</item>
+/// <item>the Owner role is locked to the whole catalog, and only an Owner moves people into or out of it.</item>
 /// </list>
 /// </summary>
 public interface ITenantRoleAccess : IApplicationService

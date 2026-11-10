@@ -15,6 +15,25 @@ internal sealed class TenantRoleAccess(
     ICurrentUserService currentUser,
     IUserPermissionService userPermissions) : ITenantRoleAccess
 {
+    /// <summary>
+    /// The permissions that decide who has access. Handing out a role is only refused over these:
+    /// giving someone Booking.ViewCosts is a business call, giving them TenantRole.Manage is an escalation.
+    /// </summary>
+    internal static readonly IReadOnlySet<string> AccessControlPermissions = new HashSet<string>
+    {
+        Permission.TenantRole.View,
+        Permission.TenantRole.Manage,
+        Permission.Employee.Manage,
+        Permission.Invitation.Manage,
+        Permission.ApiKey.View,
+        Permission.ApiKey.Manage,
+        Permission.Tenant.Manage
+    };
+
+    internal static IReadOnlyList<string> MissingAccessControl(
+        IEnumerable<string> rolePermissions, IReadOnlySet<string> callerPermissions) =>
+        rolePermissions.Where(p => AccessControlPermissions.Contains(p) && !callerPermissions.Contains(p)).ToList();
+
     public Guid? CallerId => currentUser.GetUserId();
 
     public async Task<IReadOnlySet<string>> GetCallerPermissionsAsync(CancellationToken ct = default)
@@ -93,21 +112,30 @@ internal sealed class TenantRoleAccess(
             return Result.Fail("Only people who manage employees can assign roles.");
         }
 
-        var newRolePermissions = await GetRolePermissionsAsync(newRole.Id, ct);
-        if (!newRolePermissions.IsSubsetOf(callerPermissions))
+        var callerRole = await GetCallerRoleAsync(ct);
+        var callerIsOwner = callerRole is null || callerRole.Name == TenantRoles.Owner;
+        var currentRole = employee?.Role is { } r && r.Id != newRole.Id ? r : null;
+        if (!callerIsOwner && (newRole.Name == TenantRoles.Owner || currentRole?.Name == TenantRoles.Owner))
         {
-            return Result.Fail(
-                $"'{newRole.DisplayName ?? newRole.Name}' has permissions you don't have, so you can't give it to anyone.");
+            return Result.Fail("Only the Owner can move someone into or out of the Owner role.");
         }
 
-        // Without this, someone could demote a person who outranks them - the Owner included.
-        if (employee?.Role is { } currentRole && currentRole.Id != newRole.Id)
+        var newRolePermissions = await GetRolePermissionsAsync(newRole.Id, ct);
+        var missing = MissingAccessControl(newRolePermissions, callerPermissions);
+        if (missing.Count > 0)
+        {
+            return Result.Fail(
+                $"'{newRole.DisplayName ?? newRole.Name}' can change who has access ({string.Join(", ", missing)}) and you can't, so you can't give it to anyone.");
+        }
+
+        // Without this, someone could strip access from a person who controls more of it than they do.
+        if (currentRole is not null)
         {
             var currentRolePermissions = await GetRolePermissionsAsync(currentRole.Id, ct);
-            if (!currentRolePermissions.IsSubsetOf(callerPermissions))
+            if (MissingAccessControl(currentRolePermissions, callerPermissions).Count > 0)
             {
                 return Result.Fail(
-                    $"{employee.GetFullName()} is in '{currentRole.DisplayName ?? currentRole.Name}', which has permissions you don't have, so you can't move them.");
+                    $"{employee!.GetFullName()} is in '{currentRole.DisplayName ?? currentRole.Name}', which can change access in ways you can't, so you can't move them.");
             }
         }
 

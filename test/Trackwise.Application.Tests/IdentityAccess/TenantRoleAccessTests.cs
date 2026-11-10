@@ -14,8 +14,9 @@ using Xunit;
 namespace Trackwise.Application.Tests.IdentityAccess;
 
 /// <summary>
-/// The guardrails on changing access: nobody hands out what they don't hold, nobody edits their own
-/// role or moves themselves, the Owner role is locked, and nobody demotes someone who outranks them.
+/// The guardrails on changing access: nobody edits in a permission they don't hold or hands out access
+/// control they don't hold, nobody edits their own role or moves themselves, the Owner role is locked,
+/// and nobody demotes someone who controls more access than they do.
 /// </summary>
 public class TenantRoleAccessTests
 {
@@ -143,14 +144,72 @@ public class TenantRoleAccessTests
     }
 
     [Fact]
-    public async Task CanAssign_ARoleWithMorePowerThanTheCaller_IsRefused()
+    public async Task CanAssign_ARoleWithBusinessPermissionsTheCallerLacks_IsAllowed()
     {
-        CallerHas(null, Permission.Employee.Manage, Permission.Load.View);
+        CallerHas(Role(TenantRoles.HumanResources), Permission.Employee.Manage, Permission.Load.View);
 
         var result = await sut.CanAssignAsync(
-            Person(null), Role(TenantRoles.Manager, Permission.Load.View, Permission.Booking.ApproveCredit), default);
+            Person(Role(TenantRoles.AdminStaff, Permission.Load.View)),
+            Role(TenantRoles.Manager, Permission.Load.View, Permission.Booking.ApproveCredit),
+            default);
+
+        Assert.True(result.IsSuccess);
+    }
+
+    [Fact]
+    public async Task CanAssign_ARoleWithAccessControlTheCallerLacks_IsRefused()
+    {
+        CallerHas(Role(TenantRoles.HumanResources), Permission.Employee.Manage, Permission.Load.View);
+
+        var result = await sut.CanAssignAsync(
+            Person(null), Role(TenantRoles.SystemAdmin, Permission.Employee.Manage, Permission.TenantRole.Manage), default);
 
         Assert.False(result.IsSuccess);
+        Assert.Contains(Permission.TenantRole.Manage, result.Error);
+    }
+
+    [Fact]
+    public async Task CanAssign_MovingSomeoneWithMoreAccessControl_IsRefused()
+    {
+        CallerHas(Role(TenantRoles.HumanResources), Permission.Employee.Manage, Permission.Load.View);
+        var sysAdmin = Person(Role(TenantRoles.SystemAdmin, Permission.Employee.Manage, Permission.ApiKey.Manage));
+
+        var result = await sut.CanAssignAsync(sysAdmin, Role(TenantRoles.Dispatcher, Permission.Load.View), default);
+
+        Assert.False(result.IsSuccess);
+    }
+
+    [Fact]
+    public async Task CanAssign_IntoOwner_ByANonOwner_IsRefused()
+    {
+        string[] all = [.. TenantRoleAccess.AccessControlPermissions];
+        CallerHas(Role(TenantRoles.SystemAdmin), all);
+
+        var result = await sut.CanAssignAsync(Person(null), Role(TenantRoles.Owner, all), default);
+
+        Assert.False(result.IsSuccess);
+    }
+
+    [Fact]
+    public async Task CanAssign_OutOfOwner_ByANonOwner_IsRefused()
+    {
+        string[] all = [.. TenantRoleAccess.AccessControlPermissions];
+        CallerHas(Role(TenantRoles.SystemAdmin), all);
+
+        var result = await sut.CanAssignAsync(Person(Role(TenantRoles.Owner, all)), Role(TenantRoles.Dispatcher), default);
+
+        Assert.False(result.IsSuccess);
+    }
+
+    [Fact]
+    public async Task CanAssign_IntoOwner_ByAnOwner_IsAllowed()
+    {
+        string[] all = [.. TenantRoleAccess.AccessControlPermissions];
+        CallerHas(Role(TenantRoles.Owner), all);
+
+        var result = await sut.CanAssignAsync(Person(null), Role(TenantRoles.Owner, all), default);
+
+        Assert.True(result.IsSuccess);
     }
 
     [Fact]

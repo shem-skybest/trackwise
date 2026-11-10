@@ -1,6 +1,6 @@
 import {
   formatSortField,
-  getInvoices,
+  getPayrollInvoices,
   type InvoiceDto,
   type InvoiceStatus,
   type SalaryType,
@@ -11,7 +11,7 @@ import { createListStore } from "@trackwise/shared/stores";
  * Store for the payroll invoices list page.
  * Supports filtering by employee, status, salary type, and date range.
  */
-export const PayrollInvoicesListStore = createListStore<InvoiceDto>(getInvoices, {
+export const PayrollInvoicesListStore = createListStore<InvoiceDto>(getPayrollInvoices, {
   defaultSortField: "-CreatedAt",
   defaultPageSize: 10,
   buildParams: (state) => {
@@ -22,7 +22,6 @@ export const PayrollInvoicesListStore = createListStore<InvoiceDto>(getInvoices,
       PageSize: state.pageSize,
       EmployeeName: state.search || undefined,
       OrderBy: orderBy,
-      InvoiceType: "payroll",
       Status: state.filters["Status"] as InvoiceStatus | undefined,
       SalaryType: state.filters["SalaryType"] as SalaryType | undefined,
       StartDate: state.filters["StartDate"] as string | undefined,

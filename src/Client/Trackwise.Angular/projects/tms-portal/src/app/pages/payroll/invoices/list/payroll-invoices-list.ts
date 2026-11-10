@@ -1,7 +1,7 @@
 import { CommonModule } from "@angular/common";
 import { Component, computed, inject, signal } from "@angular/core";
 import { Router, RouterModule } from "@angular/router";
-import { downloadBlobFile } from "@trackwise/shared";
+import { downloadBlobFile, Permission } from "@trackwise/shared";
 import {
   Api,
   approvePayrollInvoice,
@@ -27,6 +27,7 @@ import {
   UiTextareaField,
   UiTooltip,
 } from "@trackwise/shared/ui";
+import { PermissionService } from "@/core/auth";
 import { ToastService } from "@/core/services";
 import {
   DataContainer,
@@ -71,6 +72,10 @@ export class PayrollInvoicesList {
   private readonly api = inject(Api);
   private readonly toastService = inject(ToastService);
   protected readonly store = inject(PayrollInvoicesListStore);
+  private readonly permissions = inject(PermissionService);
+
+  protected readonly canManagePayroll = this.permissions.hasPermission(Permission.Payroll.Manage);
+  protected readonly canApprovePayroll = this.permissions.hasPermission(Permission.Payroll.Approve);
 
   // Filter state
   protected readonly selectedStatuses = signal<InvoiceStatus[]>([]);

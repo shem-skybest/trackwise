@@ -45,6 +45,7 @@ internal sealed class GetTenantRolesHandler(ITenantUnitOfWork tenantUow, ITenant
         var callerRole = await roleAccess.GetCallerRoleAsync(ct);
         var canManageRoles = callerPermissions.Contains(Shared.Identity.Policies.Permission.TenantRole.Manage);
         var canManageEmployees = callerPermissions.Contains(Shared.Identity.Policies.Permission.Employee.Manage);
+        var callerIsOwner = callerRole is null || callerRole.Name == TenantRoles.Owner;
 
         var items = roles.Select(role =>
         {
@@ -61,7 +62,8 @@ internal sealed class GetTenantRolesHandler(ITenantUnitOfWork tenantUow, ITenant
                           && role.Id != callerRole?.Id;
             dto.CanAssign = canManageEmployees
                             && role.Name != TenantRoles.Customer
-                            && permissions.IsSubsetOf(callerPermissions);
+                            && (callerIsOwner || role.Name != TenantRoles.Owner)
+                            && TenantRoleAccess.MissingAccessControl(permissions, callerPermissions).Count == 0;
             return dto;
         }).ToArray();
 

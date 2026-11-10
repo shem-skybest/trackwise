@@ -1,10 +1,11 @@
 import { CommonModule, DatePipe, PercentPipe } from "@angular/common";
 import { Component, inject, input, signal, type OnInit } from "@angular/core";
 import { RouterModule } from "@angular/router";
+import { Permission } from "@trackwise/shared";
 import {
   Api,
   approvePayrollInvoice,
-  getInvoiceById,
+  getPayrollInvoiceById,
   payPayrollInvoice,
   rejectPayrollInvoice,
   submitPayrollForApproval,
@@ -28,6 +29,7 @@ import {
   UiTextareaField,
   UiTooltip,
 } from "@trackwise/shared/ui";
+import { PermissionService } from "@/core/auth";
 import { PdfService, TenantService, ToastService } from "@/core/services";
 import { RecordPaymentDialog } from "@/pages/invoices/components";
 import { InvoiceStatusTag, PageHeader, PaymentStatusTag } from "@/shared/components";
@@ -66,6 +68,10 @@ export class PayrollInvoiceDetails implements OnInit {
   private readonly pdfService = inject(PdfService);
   private readonly toastService = inject(ToastService);
   private readonly tenantService = inject(TenantService);
+  private readonly permissions = inject(PermissionService);
+
+  protected readonly canManagePayroll = this.permissions.hasPermission(Permission.Payroll.Manage);
+  private readonly canApprovePayroll = this.permissions.hasPermission(Permission.Payroll.Approve);
 
   protected readonly invoiceId = input.required<string>();
   protected readonly isLoading = signal(false);
@@ -102,20 +108,24 @@ export class PayrollInvoiceDetails implements OnInit {
   }
 
   canSubmitForApproval(): boolean {
-    return this.invoice()?.status === "draft";
+    return this.canManagePayroll && this.invoice()?.status === "draft";
   }
 
   canApprove(): boolean {
-    return this.invoice()?.status === "pending_approval";
+    return this.canApprovePayroll && this.invoice()?.status === "pending_approval";
   }
 
   canReject(): boolean {
-    return this.invoice()?.status === "pending_approval";
+    return this.canApprovePayroll && this.invoice()?.status === "pending_approval";
   }
 
   canRecordPayment(): boolean {
     const status = this.invoice()?.status;
-    return (status === "approved" || status === "issued") && this.getOutstandingAmount() > 0;
+    return (
+      this.canManagePayroll &&
+      (status === "approved" || status === "issued") &&
+      this.getOutstandingAmount() > 0
+    );
   }
 
   async submitForApproval(): Promise<void> {
@@ -248,7 +258,7 @@ export class PayrollInvoiceDetails implements OnInit {
     }
 
     this.isLoading.set(true);
-    const result = await this.api.invoke(getInvoiceById, { id: this.invoiceId() });
+    const result = await this.api.invoke(getPayrollInvoiceById, { id: this.invoiceId() });
     if (result) {
       this.invoice.set(result);
     }

@@ -1,6 +1,11 @@
 import { Component, inject, input, signal, type OnInit } from "@angular/core";
 import { RouterLink } from "@angular/router";
-import { Api, getTruckById, type DocumentType, type TruckDto } from "@trackwise/shared/api";
+import {
+  Api,
+  getTruckMasterDataById,
+  type DocumentType,
+  type TruckDto,
+} from "@trackwise/shared/api";
 import { Stack, Typography, UiButton } from "@trackwise/shared/ui";
 import { DocumentManager } from "@/shared/components";
 
@@ -35,7 +40,7 @@ export class TruckDocumentsPage implements OnInit {
   }
 
   private async fetchTruck(): Promise<void> {
-    const result = await this.api.invoke(getTruckById, { truckOrDriverId: this.id() });
+    const result = await this.api.invoke(getTruckMasterDataById, { id: this.id() });
     if (result) {
       this.truck.set(result);
     }

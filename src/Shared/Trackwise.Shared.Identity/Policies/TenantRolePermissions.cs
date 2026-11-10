@@ -231,6 +231,8 @@ public static class TenantRolePermissions
         list.Add(Permission.Expense.View);
         list.Add(Permission.Expense.Manage);
         list.Add(Permission.Invoice.View);
+        // door-to-door moves run on our trucks, and fuel/expense entries are per truck
+        list.Add(Permission.Truck.View);
         return list;
     }
 
@@ -351,6 +353,8 @@ public static class TenantRolePermissions
         list.Add(Permission.BusinessPartner.View);
         list.Add(Permission.MasterData.View);
         list.Add(Permission.Tax.View);
+        // fuel and expense entries are per truck
+        list.Add(Permission.Truck.View);
         return list;
     }
 

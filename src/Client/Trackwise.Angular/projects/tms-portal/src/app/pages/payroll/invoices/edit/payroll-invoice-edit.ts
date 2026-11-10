@@ -5,7 +5,7 @@ import { Router, RouterModule } from "@angular/router";
 import {
   Api,
   getEmployees,
-  getInvoiceById,
+  getPayrollInvoiceById,
   previewPayrollInvoice,
   updatePayrollInvoice,
   type EmployeeDto,
@@ -182,7 +182,7 @@ export class PayrollInvoiceEdit implements OnInit {
 
     this.isLoading.set(true);
     try {
-      const invoice = await this.api.invoke(getInvoiceById, { id: invoiceId });
+      const invoice = await this.api.invoke(getPayrollInvoiceById, { id: invoiceId });
       if (invoice) {
         this.model.update((v) => ({
           ...v,

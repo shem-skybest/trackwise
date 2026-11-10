@@ -62,6 +62,7 @@ export const Permission = {
   Payroll: {
     View: "Permission.Payroll.View",
     Manage: "Permission.Payroll.Manage",
+    Approve: "Permission.Payroll.Approve",
   },
   Eld: {
     View: "Permission.Eld.View",

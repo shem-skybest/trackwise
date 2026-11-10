@@ -7,6 +7,7 @@ using Trackwise.Application.Modules.Financial.Invoices.Queries;
 using Trackwise.Application.Modules.Financial.PaymentLinks.Commands;
 using Trackwise.Application.Modules.Financial.Payments.Commands;
 using Trackwise.Application.Modules.Financial.Payroll.Commands;
+using Trackwise.Domain.Primitives.Enums;
 using Trackwise.Shared.Identity.Policies;
 using Trackwise.Shared.Models;
 
@@ -373,6 +374,37 @@ public class InvoicesController(IMediator mediator) : ControllerBase
     #endregion
 
     #region Payroll Invoice
+
+    /// <summary>
+    ///     Payroll invoices only, so payroll staff can list them without <c>Invoice.View</c>.
+    /// </summary>
+    [HttpGet("payrolls", Name = "GetPayrollInvoices")]
+    [ProducesResponseType(typeof(PagedResponse<InvoiceDto>), StatusCodes.Status200OK)]
+    [Authorize(Policy = Permission.Payroll.View)]
+    public async Task<IActionResult> GetPayrollList([FromQuery] GetInvoicesQuery query)
+    {
+        query.InvoiceType = InvoiceType.Payroll;
+        var result = await mediator.Send(query);
+        return Ok(PagedResponse<InvoiceDto>.FromPagedResult(result, query.Page, query.PageSize));
+    }
+
+    /// <summary>
+    ///     One payroll invoice. Any other invoice type is a 404, so this never widens <c>Invoice.View</c>.
+    /// </summary>
+    [HttpGet("payrolls/{id:guid}", Name = "GetPayrollInvoiceById")]
+    [ProducesResponseType(typeof(InvoiceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [Authorize(Policy = Permission.Payroll.View)]
+    public async Task<IActionResult> GetPayrollById(Guid id)
+    {
+        var result = await mediator.Send(new GetInvoiceByIdQuery { Id = id });
+        if (result.IsSuccess && result.Value?.Type != InvoiceType.Payroll)
+        {
+            return NotFound(ErrorResponse.FromResult(Result.Fail($"Could not find a payroll invoice with ID '{id}'")));
+        }
+
+        return result.IsSuccess ? Ok(result.Value) : NotFound(ErrorResponse.FromResult(result));
+    }
 
     [HttpGet("payrolls/preview", Name = "PreviewPayrollInvoice")]
     [ProducesResponseType(typeof(PayrollDto), StatusCodes.Status200OK)]
