@@ -44,7 +44,7 @@ services:
     restart: unless-stopped
 
   identity-server:
-    image: "ghcr.io/${GITHUB_REPOSITORY:-shem-skybest/skybest-logistics-corporation}/identity:${IMAGE_TAG:-latest}"
+    image: "ghcr.io/${GITHUB_REPOSITORY:-skybest-logistics-corporation/trackwise}/identity:${IMAGE_TAG:-latest}"
     # All config/secrets come from .env; entries below are literals not in .env
     env_file:
       - .env
@@ -61,7 +61,7 @@ services:
     restart: unless-stopped
 
   api:
-    image: "ghcr.io/${GITHUB_REPOSITORY:-shem-skybest/skybest-logistics-corporation}/api:${IMAGE_TAG:-latest}"
+    image: "ghcr.io/${GITHUB_REPOSITORY:-skybest-logistics-corporation/trackwise}/api:${IMAGE_TAG:-latest}"
     # All config/secrets come from .env; entries below are literals not in .env
     env_file:
       - .env
@@ -83,7 +83,7 @@ services:
     restart: unless-stopped
 
   admin-portal:
-    image: "ghcr.io/${GITHUB_REPOSITORY:-shem-skybest/skybest-logistics-corporation}/admin-portal:${IMAGE_TAG:-latest}"
+    image: "ghcr.io/${GITHUB_REPOSITORY:-skybest-logistics-corporation/trackwise}/admin-portal:${IMAGE_TAG:-latest}"
     ports:
       - "127.0.0.1:${ADMIN_PORTAL_PORT:-7002}:80"
     depends_on:
@@ -96,7 +96,7 @@ services:
     restart: unless-stopped
 
   tms-portal:
-    image: "ghcr.io/${GITHUB_REPOSITORY:-shem-skybest/skybest-logistics-corporation}/tms-portal:${IMAGE_TAG:-latest}"
+    image: "ghcr.io/${GITHUB_REPOSITORY:-skybest-logistics-corporation/trackwise}/tms-portal:${IMAGE_TAG:-latest}"
     environment:
       MAPBOX_TOKEN: "${Mapbox__AccessToken}"
     ports:
@@ -111,7 +111,7 @@ services:
     restart: unless-stopped
 
   customer-portal:
-    image: "ghcr.io/${GITHUB_REPOSITORY:-shem-skybest/skybest-logistics-corporation}/customer-portal:${IMAGE_TAG:-latest}"
+    image: "ghcr.io/${GITHUB_REPOSITORY:-skybest-logistics-corporation/trackwise}/customer-portal:${IMAGE_TAG:-latest}"
     ports:
       - "127.0.0.1:${CUSTOMER_PORTAL_PORT:-7004}:80"
     depends_on:
@@ -124,7 +124,7 @@ services:
     restart: unless-stopped
 
   website:
-    image: "ghcr.io/${GITHUB_REPOSITORY:-shem-skybest/skybest-logistics-corporation}/website:${IMAGE_TAG:-latest}"
+    image: "ghcr.io/${GITHUB_REPOSITORY:-skybest-logistics-corporation/trackwise}/website:${IMAGE_TAG:-latest}"
     environment:
       # Untrusted X-Forwarded-* are stripped; without this SSR sees http:// behind nginx.
       NG_TRUST_PROXY_HEADERS: "x-forwarded-proto,x-forwarded-port"
@@ -141,7 +141,7 @@ services:
   #   docker compose --profile migrate pull dbmigrator && docker compose run --rm dbmigrator
   # Production seeds only system data and the real records (staff, crew, fleet, clients) - no demo data.
   dbmigrator:
-    image: "ghcr.io/${GITHUB_REPOSITORY:-shem-skybest/skybest-logistics-corporation}/dbmigrator:${IMAGE_TAG:-latest}"
+    image: "ghcr.io/${GITHUB_REPOSITORY:-skybest-logistics-corporation/trackwise}/dbmigrator:${IMAGE_TAG:-latest}"
     profiles: ["migrate"]
     command: ["--exit"]
     env_file:

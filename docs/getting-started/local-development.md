@@ -5,8 +5,8 @@ Step-by-step guide to run TrackWise without Docker.
 ## Step 1: Clone Repository
 
 ```bash
-git clone https://github.com/shem-skybest/skybest-logistics-corporation.git
-cd logistics-app
+git clone https://github.com/skybest-logistics-corporation/trackwise.git
+cd trackwise
 ```
 
 ## Step 2: Install Angular Dependencies

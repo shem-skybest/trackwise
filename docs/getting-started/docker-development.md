@@ -11,8 +11,8 @@ Run local infrastructure (PostgreSQL + the database migrator) in Docker, then ru
 ## Quick Start
 
 ```bash
-git clone https://github.com/shem-skybest/skybest-logistics-corporation.git
-cd logistics-app
+git clone https://github.com/skybest-logistics-corporation/trackwise.git
+cd trackwise
 
 # Start Postgres and run the migrator once (creates DBs + seeds dev data)
 docker compose -f deploy/docker-compose.dev.yml up -d

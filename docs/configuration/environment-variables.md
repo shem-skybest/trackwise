@@ -15,7 +15,7 @@ layered on top as `Section__Key` variables.
 ### Images and Ports
 
 Images are selected by `GITHUB_REPOSITORY` and `IMAGE_TAG`, which the deploy workflow
-appends to `.env` automatically. The compose file defaults to `shem-skybest/skybest-logistics-corporation`
+appends to `.env` automatically. The compose file defaults to `skybest-logistics-corporation/trackwise`
 and `latest` if they are unset.
 
 ```bash
@@ -25,7 +25,7 @@ IDENTITY_SERVER_PORT=7001
 
 | Variable               | Description                                                                           |
 | ---------------------- | ------------------------------------------------------------------------------------- |
-| `GITHUB_REPOSITORY`    | GHCR image owner/repo (set by CI; default shem-skybest/skybest-logistics-corporation) |
+| `GITHUB_REPOSITORY`    | GHCR image owner/repo (set by CI; default skybest-logistics-corporation/trackwise) |
 | `IMAGE_TAG`            | Image tag to pull (set by CI; default latest)                                         |
 | `API_PORT`             | Port for the API service (default: 7000)                                              |
 | `IDENTITY_SERVER_PORT` | Port for the Identity Server (default: 7001)                                          |
