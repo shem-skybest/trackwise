@@ -1,0 +1,180 @@
+<!-- Launcher. The list dialog is anchored 80px above it so the two never overlap. -->
+<ui-button
+  class="fixed right-4 bottom-4 z-40"
+  data-ui-dialog-ignore
+  icon="sticky-note"
+  rounded
+  size="lg"
+  ariaLabel="Toggle sticky notes"
+  [attr.aria-expanded]="open()"
+  (click)="open.set(!open())"
+/>
+
+<!-- ============================== List dialog ============================== -->
+<ui-dialog
+  [(open)]="open"
+  header="Sticky notes"
+  width="380px"
+  placement="bottom-right"
+  [placementInset]="inset"
+  [breakpoints]="breakpoints"
+  [modal]="false"
+  [resizable]="false"
+  compact
+  closeOnOutsideClick
+>
+  <div class="flex flex-col gap-3">
+    <div class="flex items-center gap-2">
+      <ui-text-field
+        class="block min-w-0 flex-1"
+        type="search"
+        name="search"
+        placeholder="Search notes"
+        autocomplete="off"
+        [(value)]="searchTerm"
+      />
+      <ui-button
+        class="shrink-0"
+        icon="pin"
+        ariaLabel="Show pinned only"
+        [appearance]="pinnedOnly() ? 'solid' : 'text'"
+        [attr.aria-pressed]="pinnedOnly()"
+        (click)="togglePinnedFilter()"
+      />
+      <ui-button class="shrink-0" label="New" icon="plus" (click)="newNote()" />
+    </div>
+
+    @if (error(); as message) {
+      <p role="alert" class="rounded-md bg-red-100 px-3 py-2 text-sm text-red-800">
+        {{ message }}
+      </p>
+    }
+
+    <ul
+      cdkDropList
+      [cdkDropListDisabled]="!canReorder()"
+      (cdkDropListDropped)="drop($event)"
+      class="flex max-h-[55vh] flex-col gap-2 overflow-y-auto pr-1"
+    >
+      @for (note of notes(); track note.id) {
+        <li
+          cdkDrag
+          cdkDragLockAxis="y"
+          class="group relative cursor-pointer rounded-md p-3 shadow-sm transition-shadow hover:shadow-md"
+          [class]="
+            note.isPinned
+              ? 'bg-amber-200 text-amber-950 ring-1 ring-amber-400'
+              : 'bg-amber-100 text-amber-950'
+          "
+          tabindex="0"
+          (click)="edit(note)"
+          (keydown.enter)="edit(note)"
+        >
+          <div class="flex items-start gap-2">
+            @if (canReorder()) {
+              <span
+                cdkDragHandle
+                class="mt-0.5 cursor-grab touch-none text-amber-700/70 select-none"
+                aria-label="Drag to reorder"
+                (click)="$event.stopPropagation()"
+              >
+                ⠿
+              </span>
+            }
+
+            <div class="min-w-0 flex-1">
+              <h3 class="truncate text-sm font-semibold">
+                {{ note.title || "Untitled" }}
+              </h3>
+              @if (note.contentPreview) {
+                <p class="mt-1 line-clamp-3 text-xs break-words whitespace-pre-line">
+                  {{ note.contentPreview }}
+                </p>
+              }
+              <p class="mt-2 text-[10px] text-amber-800/70">
+                {{ note.updatedAt ?? note.createdAt | date: "MMM d, h:mm a" }}
+              </p>
+            </div>
+
+            <div class="flex shrink-0 flex-col gap-1">
+              <ui-button
+                icon="pin"
+                [appearance]="note.isPinned ? 'solid' : 'text'"
+                [ariaLabel]="note.isPinned ? 'Unpin note' : 'Pin note'"
+                (click)="togglePin(note); $event.stopPropagation()"
+              />
+              <ui-button
+                icon="trash"
+                intent="danger"
+                appearance="text"
+                ariaLabel="Delete note"
+                (click)="confirmDelete(note); $event.stopPropagation()"
+              />
+            </div>
+          </div>
+        </li>
+      } @empty {
+        @if (!loading()) {
+          <li class="py-8 text-center text-sm text-amber-900/60">
+            {{ searchTerm() || pinnedOnly() ? "No matching notes." : "No notes yet." }}
+          </li>
+        }
+      }
+    </ul>
+
+    @if (loading()) {
+      <p class="text-center text-sm text-amber-900/60">Loading…</p>
+    } @else if (hasMore()) {
+      <ui-button label="Load more" appearance="text" block (click)="loadMore()" />
+    }
+  </div>
+</ui-dialog>
+
+<!-- ============================== Editor dialog ============================== -->
+<!-- Used for both "New" and opening an existing note. Modal, so it sits above and blocks the list. -->
+<ui-dialog
+  [(open)]="editorOpen"
+  [header]="draft()?.id ? 'Edit note' : 'New note'"
+  width="340px"
+  placement="bottom-right"
+  [placementInset]="inset"
+  [breakpoints]="breakpoints"
+  [modal]="false"
+  [resizable]="false"
+  compact
+  closeOnOutsideClick
+>
+  @if (draft(); as d) {
+    <div class="flex flex-col gap-3">
+      <ui-text-field
+        class="block"
+        name="title"
+        placeholder="Title (optional)"
+        [maxlength]="200"
+        [value]="d.title"
+        (valueChange)="patchDraft({ title: $event })"
+      />
+
+      <textarea
+        name="content"
+        rows="10"
+        placeholder="Write something..."
+        class="w-full resize-none rounded-md border border-amber-300 bg-amber-100 px-3 py-2 text-base text-amber-950 placeholder:text-amber-700/50 focus:ring-2 focus:ring-amber-400 focus:outline-none sm:text-sm"
+        [ngModel]="d.content"
+        (ngModelChange)="patchDraft({ content: $event })"
+      ></textarea>
+
+      @if (editorError(); as message) {
+        <p role="alert" class="rounded-md bg-red-100 px-3 py-2 text-sm text-red-800">
+          {{ message }}
+        </p>
+      }
+    </div>
+  }
+
+  <!-- Must stay a direct child of <ui-dialog>: its footer query uses `descendants: false`. -->
+  <ng-template #footer>
+    <ui-button label="Cancel" appearance="text" (click)="editorOpen.set(false)" />
+    <ui-button label="Save" icon="check" [loading]="saving()" (click)="save()" />
+  </ng-template>
+</ui-dialog>

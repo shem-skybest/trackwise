@@ -103,6 +103,7 @@ import {
   lucidePencil,
   lucidePercent,
   lucidePhone,
+  lucidePin,
   lucidePlay,
   lucidePlus,
   lucideReceipt,
@@ -125,6 +126,7 @@ import {
   lucideSparkles,
   lucideSquarePen,
   lucideStar,
+  lucideStickyNote,
   lucideStopCircle,
   lucideSun,
   lucideTable,
@@ -315,6 +317,8 @@ export const UI_ICONS = {
   zap: lucideZap,
   "zoom-in": lucideZoomIn,
   thermometer: lucideThermometer,
+  pin: lucidePin,
+  "sticky-note": lucideStickyNote,
 } as const;
 
 /** Every name `<ui-icon>` accepts. The 51 files that import `IconName` key off this. */

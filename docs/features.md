@@ -102,6 +102,7 @@ The dispatcher and manager web interface for managing all fleet operations.
 | **Real-Time Messaging** | Built-in chat between dispatchers and drivers via SignalR. Supports direct conversations, load-specific threads, and company-wide announcements. Read receipts and typing indicators. |
 | **Push Notifications**  | Instant alerts for load assignments, status changes, and important updates via Firebase Cloud Messaging.                                                                              |
 | **Email Notifications** | Automated email notifications for invoices, payment confirmations, and account events using Fluid templates.                                                                          |
+| **Sticky Notes**        | Floating, draggable notes panel with search, pinning, drag-to-reorder, and auto-save on close. Available from anywhere in the portal.                                                 |
 
 ### Settings & Configuration
 

@@ -297,12 +297,21 @@ public sealed class QuotationPdfDocument : IDocument
 
                     c.Item().PaddingTop(3).Column(terms =>
                     {
-                        // Split by line to ensure clean paragraph spacing between numbered points
-                        var lines = _quote.Notes.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+                        // Use StringSplitOptions.None to preserve the empty lines
+                        var lines = _quote.Notes.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
 
                         foreach (var line in lines)
                         {
-                            terms.Item().PaddingBottom(2).Text(line.Trim()).FontSize(8);
+                            if (string.IsNullOrWhiteSpace(line))
+                            {
+                                // Explicitly add vertical space for blank lines. 
+                                // Adjust the Height value to match your desired paragraph gap.
+                                terms.Item().Height(8);
+                            }
+                            else
+                            {
+                                terms.Item().PaddingBottom(2).Text(line.Trim()).FontSize(8);
+                            }
                         }
                     });
                 }
