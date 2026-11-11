@@ -150,9 +150,14 @@ private class LocationTrackerDelegate(
         city: String?,
         state: String?
     ) {
+        // No trip means no truck today; the server can't bind an empty truck id and drops the
+        // update without telling us, so don't send one.
+        val truckId = preferencesManager.getTruckId()
+        if (truckId.isNullOrBlank()) return
+
         try {
             val geolocation = TruckGeolocation(
-                truckId = preferencesManager.getTruckId() ?: "",
+                truckId = truckId,
                 tenantId = preferencesManager.getTenantId() ?: "",
                 currentLocation = GeoPoint(latitude = latitude, longitude = longitude),
                 currentAddress = Address(line1 = addressLine, city = city, state = state, zipCode = null, country = null),

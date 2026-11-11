@@ -2,12 +2,14 @@ using Trackwise.Application.Abstractions.Realtime;
 using Trackwise.Infrastructure.Communications.SignalR.Clients;
 using Trackwise.Shared.Models;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
 
 namespace Trackwise.Infrastructure.Communications.SignalR.Hubs;
 
 public class TrackingHub(
     ITruckGeolocationUpdater geolocationUpdater,
-    TrackingHubContext hubContext) : Hub<ITrackingHubClient>
+    TrackingHubContext hubContext,
+    ILogger<TrackingHub> logger) : Hub<ITrackingHubClient>
 {
     private const string TripGroupPrefix = "trip:";
 
@@ -21,7 +23,7 @@ public class TrackingHub(
     {
         var geolocationData = hubContext.GetGeolocationData(Context.ConnectionId);
 
-        if (geolocationData != null)
+        if (geolocationData != null && geolocationData.TruckId != Guid.Empty)
         {
             await geolocationUpdater.UpdateAsync(geolocationData);
         }
@@ -37,6 +39,21 @@ public class TrackingHub(
             .Group(truckGeolocation.TenantId.ToString())
             .ReceiveGeolocationData(truckGeolocation);
         hubContext.UpdateGeolocationData(Context.ConnectionId, truckGeolocation);
+
+        // Pages that load the saved location (trip details, a map opened mid-shift) never see the
+        // broadcast above, so the truck record has to keep up while the phone stays connected.
+        if (truckGeolocation.TruckId != Guid.Empty
+            && hubContext.TryClaimPersist(Context.ConnectionId, DateTime.UtcNow))
+        {
+            try
+            {
+                await geolocationUpdater.UpdateAsync(truckGeolocation, Context.ConnectionAborted);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                logger.LogError(ex, "Failed to save live geolocation for truck {TruckId}", truckGeolocation.TruckId);
+            }
+        }
     }
 
     #endregion

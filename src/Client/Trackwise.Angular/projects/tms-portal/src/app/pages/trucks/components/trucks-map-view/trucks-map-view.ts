@@ -1,40 +1,13 @@
-import { Component, computed, input } from "@angular/core";
-import type { TruckDto } from "@trackwise/shared/api";
-import type { TruckGeolocationDto } from "@trackwise/shared/api/models";
+import { Component, viewChild } from "@angular/core";
 import { Icon } from "@trackwise/shared/ui";
-import { GeolocationMap } from "@/shared/components";
+import { TrucksMap } from "@/shared/components";
 
+// Shows the whole fleet, live, not the table's current page - so search and filters don't narrow it.
 @Component({
   selector: "app-trucks-map-view",
   templateUrl: "./trucks-map-view.html",
-  imports: [GeolocationMap, Icon],
+  imports: [TrucksMap, Icon],
 })
 export class TrucksMapView {
-  public readonly trucks = input<TruckDto[]>([]);
-  public readonly isLoading = input(false);
-
-  protected readonly truckLocations = computed<TruckGeolocationDto[]>(() => {
-    return this.trucks()
-      .filter((truck) => truck.currentLocation?.latitude && truck.currentLocation?.longitude)
-      .map((truck) => ({
-        truckId: truck.id,
-        truckNumber: truck.number,
-        driversName: [truck.mainDriver?.fullName, truck.secondaryDriver?.fullName]
-          .filter(Boolean)
-          .join(", "),
-        currentLocation: truck.currentLocation,
-        currentAddress: truck.currentAddress,
-      }));
-  });
-
-  protected readonly trucksWithLocation = computed(() => {
-    return this.trucks().filter((t) => t.currentLocation?.latitude && t.currentLocation?.longitude)
-      .length;
-  });
-
-  protected readonly trucksWithoutLocation = computed(() => {
-    return this.trucks().filter(
-      (t) => !t.currentLocation?.latitude || !t.currentLocation?.longitude,
-    ).length;
-  });
+  protected readonly map = viewChild(TrucksMap);
 }
