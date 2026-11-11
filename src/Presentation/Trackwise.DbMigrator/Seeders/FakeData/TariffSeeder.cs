@@ -130,7 +130,8 @@ internal sealed record SeededTariffRates(
     IReadOnlyList<TariffRate> DomesticReefer,
     IReadOnlyList<TariffRate> ImportSeaFcl,
     IReadOnlyList<TariffRate> ExportAir,
-    IReadOnlyList<TariffRate> TriangularSea);
+    IReadOnlyList<TariffRate> TriangularSea,
+    IReadOnlyList<TariffRate> DomesticTrucking40Ft);
 
 internal static class SeedCodes
 {
@@ -147,6 +148,9 @@ internal static class SeedCodes
     public const string ReefGenset = "REEF-GEN";
     public const string ReefTelematics = "REEF-TEL";
     public const string ReefPlugin = "REEF-PLG";
+    public const string TrkLabor = "TRK-LAB";
+    public const string TrkWarehouse = "TRK-WHF";
+    public const string TrkAfterHours = "TRK-OT";
 
     // Sea (USD)
     public const string OceanFreight40 = "OFR-40HC";
@@ -194,6 +198,9 @@ internal static class TariffCatalog
         new(SeedCodes.TrkToll,     "Toll & Port Access",       ChargeCategory.Accessorial, Dom, "per trip",      "PHP"),
         new(SeedCodes.TrkDetention,"Truck Detention",          ChargeCategory.Accessorial, Dom, "per hour",      "PHP"),
         new(SeedCodes.TrkDiscount, "Contract Volume Discount", ChargeCategory.Discount,    Dom, "per trip",      "PHP"),
+        new(SeedCodes.TrkLabor,      "Loading/Unloading Labor", ChargeCategory.Accessorial, Dom, "per hour",   "PHP"),
+        new(SeedCodes.TrkWarehouse,  "Warehouse Handling Fee",  ChargeCategory.Accessorial, Dom, "per pallet", "PHP"),
+        new(SeedCodes.TrkAfterHours, "After-Hours Delivery",    ChargeCategory.Accessorial, Dom, "per trip",   "PHP"),
 
         // Domestic reefer (PHP)
         new(SeedCodes.ReefLinehaul,  "Reefer Linehaul",       ChargeCategory.Base,        Dom, "per trip", "PHP"),
@@ -305,6 +312,16 @@ internal static class TariffCatalog
             new(SeedCodes.IsfFiling,    PricingModel.Flat,    60m,    "per filing"),
             new(SeedCodes.TriDiscount,  PricingModel.Flat,    100m,   "per shipment"),
         ]),
+
+        new("Metro Manila - Batangas Port 40'FT Domestic Trucking 2026", FreightMode.Domestic, "PHP", "PHMNL", "PHBTG", false,
+        [
+            new(SeedCodes.TrkLinehaul,   PricingModel.Flat,       8_500m, "per trip"),
+            new(SeedCodes.TrkFuel,       PricingModel.Percentage, 0m,     "% of TRK", Percentage: 8m, PercentageBase: "BAS"),
+            new(SeedCodes.TrkToll,       PricingModel.Flat,       650m,   "per trip"),
+            new(SeedCodes.TrkLabor,      PricingModel.PerUnit,    150m,   "per hour"),
+            new(SeedCodes.TrkWarehouse,  PricingModel.PerUnit,    45m,    "per pallet"),
+            new(SeedCodes.TrkAfterHours, PricingModel.Flat,       2_000m, "per trip"),
+        ]),
     ];
 
     /// <summary>Splits the flat <c>CreatedTariffRates</c> list back into per-tariff lists.</summary>
@@ -324,7 +341,7 @@ internal static class TariffCatalog
             return slice;
         }
 
-        return new SeededTariffRates(Next(0), Next(1), Next(2), Next(3), Next(4));
+        return new SeededTariffRates(Next(0), Next(1), Next(2), Next(3), Next(4), Next(5));
     }
 
     /// <summary>Finds a rate by charge code inside one tariff's rate list (codes are unique per tariff).</summary>
