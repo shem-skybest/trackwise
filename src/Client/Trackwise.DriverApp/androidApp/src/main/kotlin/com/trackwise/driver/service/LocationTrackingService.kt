@@ -189,10 +189,15 @@ class LocationTrackingService : Service() {
         location: Location,
         address: Address?
     ) {
+        // No trip means no truck today; the server can't bind an empty truck id and drops the
+        // update without telling us, so don't send one.
+        val truckId = preferencesManager.getTruckId()
+        if (truckId.isNullOrBlank()) return
+
         try {
             val locationUpdate = TruckGeolocation(
                 currentLocation = location.toGeoPoint(),
-                truckId = preferencesManager.getTruckId() ?: "",
+                truckId = truckId,
                 tenantId = preferencesManager.getTenantId() ?: "",
                 truckNumber = preferencesManager.getTruckNumber(),
                 driversName = preferencesManager.getDriverName(),
