@@ -52,6 +52,19 @@ public class PublicPaymentController(IMediator mediator) : ControllerBase
         });
         return result.IsSuccess ? Ok(result.Value) : BadRequest(ErrorResponse.FromResult(result));
     }
+
+    /// <summary>
+    /// Called when the customer returns from the hosted payment page. Asks the gateway whether the
+    /// invoice was paid and records it if the callback hasn't yet.
+    /// </summary>
+    [HttpPost("{tenantId:guid}/{token}/confirm", Name = "ConfirmPublicPayment")]
+    [ProducesResponseType(typeof(PublicPaymentConfirmationDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ConfirmPayment(Guid tenantId, string token)
+    {
+        var result = await mediator.Send(new ConfirmPublicPaymentCommand { TenantId = tenantId, Token = token });
+        return result.IsSuccess ? Ok(result.Value) : BadRequest(ErrorResponse.FromResult(result));
+    }
 }
 
 public record CreatePublicCheckoutSessionRequest

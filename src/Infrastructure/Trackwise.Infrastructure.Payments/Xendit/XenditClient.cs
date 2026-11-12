@@ -42,7 +42,7 @@ internal sealed class XenditClient(HttpClient http, ILogger<XenditClient> logger
 
         using var message = new HttpRequestMessage(HttpMethod.Post, "v2/invoices");
         message.Content = JsonContent.Create(body, options: Json);
-        return await SendAsync(secretKey, message, "Create Xendit invoice", ct);
+        return (await SendAsync<InvoiceBody>(secretKey, message, "Create Xendit invoice", ct)).ToModel();
     }
 
     public async Task<XenditInvoice> GetInvoiceAsync(
@@ -50,7 +50,16 @@ internal sealed class XenditClient(HttpClient http, ILogger<XenditClient> logger
     {
         using var message = new HttpRequestMessage(
             HttpMethod.Get, $"v2/invoices/{Uri.EscapeDataString(invoiceId)}");
-        return await SendAsync(secretKey, message, "Get Xendit invoice", ct);
+        return (await SendAsync<InvoiceBody>(secretKey, message, "Get Xendit invoice", ct)).ToModel();
+    }
+
+    public async Task<IReadOnlyList<XenditInvoice>> ListInvoicesAsync(
+        string secretKey, string externalId, CancellationToken ct = default)
+    {
+        using var message = new HttpRequestMessage(
+            HttpMethod.Get, $"v2/invoices?external_id={Uri.EscapeDataString(externalId)}&limit=100");
+        var invoices = await SendAsync<List<InvoiceBody>>(secretKey, message, "List Xendit invoices", ct);
+        return invoices.Select(i => i.ToModel()).ToList();
     }
 
     public async Task<string?> ValidateSecretKeyAsync(string secretKey, CancellationToken ct = default)
@@ -82,7 +91,7 @@ internal sealed class XenditClient(HttpClient http, ILogger<XenditClient> logger
         }
     }
 
-    private async Task<XenditInvoice> SendAsync(
+    private async Task<T> SendAsync<T>(
         string secretKey, HttpRequestMessage message, string action, CancellationToken ct)
     {
         Authorize(message, secretKey);
@@ -107,9 +116,8 @@ internal sealed class XenditClient(HttpClient http, ILogger<XenditClient> logger
                 throw new XenditApiException(error, (int)response.StatusCode);
             }
 
-            var dto = await response.Content.ReadFromJsonAsync<InvoiceBody>(Json, ct)
-                      ?? throw new XenditApiException("Xendit returned an empty response.");
-            return dto.ToModel();
+            return await response.Content.ReadFromJsonAsync<T>(Json, ct)
+                   ?? throw new XenditApiException("Xendit returned an empty response.");
         }
     }
 

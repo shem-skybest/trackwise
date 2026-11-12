@@ -24827,6 +24827,55 @@
         }
       }
     },
+    "/public/payments/{tenantId}/{token}/confirm": {
+      "post": {
+        "tags": [
+          "PublicPayment"
+        ],
+        "operationId": "ConfirmPublicPayment",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicPaymentConfirmationDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/quotations/{id}": {
       "get": {
         "tags": [
@@ -52025,6 +52074,27 @@
           }
         },
         "additionalProperties": false
+      },
+      "PublicPaymentConfirmationDto": {
+        "required": [
+          "state"
+        ],
+        "type": "object",
+        "properties": {
+          "state": {
+            "$ref": "#/components/schemas/PublicPaymentState"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PublicPaymentState": {
+        "enum": [
+          "paid",
+          "pending",
+          "not_paid",
+          "not_checked"
+        ],
+        "type": "string"
       },
       "PublicTrackingDto": {
         "type": "object",

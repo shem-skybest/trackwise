@@ -22,6 +22,14 @@ public interface IXenditClient
         string secretKey, string invoiceId, CancellationToken ct = default);
 
     /// <summary>
+    /// Every Xendit invoice created with this external id, newest first - each try at paying one
+    /// TrackWise invoice shares the external id.
+    /// </summary>
+    /// <exception cref="XenditApiException">Xendit refused the request or could not be reached.</exception>
+    Task<IReadOnlyList<XenditInvoice>> ListInvoicesAsync(
+        string secretKey, string externalId, CancellationToken ct = default);
+
+    /// <summary>
     /// Checks a secret key against Xendit. Returns null when it works, or the reason it doesn't.
     /// </summary>
     Task<string?> ValidateSecretKeyAsync(string secretKey, CancellationToken ct = default);

@@ -3,9 +3,11 @@ import { Component, computed, effect, inject, input, signal } from "@angular/cor
 import { ErrorState, LoadingSkeleton, ToastService } from "@trackwise/shared";
 import {
   Api,
+  confirmPublicPayment,
   createPublicCheckoutSession,
   getPublicInvoice,
   type PublicInvoiceDto,
+  type PublicPaymentState,
 } from "@trackwise/shared/api";
 import { CurrencyFormatPipe } from "@trackwise/shared/pipes";
 import {
@@ -57,7 +59,13 @@ export class PublicPayment {
   protected readonly isLoading = signal(true);
   protected readonly isProcessing = signal(false);
   protected readonly error = signal<string | null>(null);
-  protected readonly paymentSuccess = signal(false);
+  /** What the gateway said when the customer came back from the hosted page (?paid=1). */
+  protected readonly returnState = signal<PublicPaymentState | null>(null);
+  protected readonly paymentSuccess = computed(() => {
+    const state = this.returnState();
+    return state === "paid" || state === "not_checked";
+  });
+  protected readonly paymentPending = computed(() => this.returnState() === "pending");
   protected readonly paymentAmount = signal<number | null>(null);
 
   /** Currency reported by the invoice - drives the currency input + formatting. */
@@ -90,18 +98,32 @@ export class PublicPayment {
       const tenantId = this.tenantId();
       const token = this.token();
       if (tenantId && token) {
-        this.loadInvoice(tenantId, token);
+        this.load(tenantId, token);
       }
     });
+  }
 
-    // Detect the return from the hosted payment page (Xendit or Stripe) - the success URL points
-    // back here with ?paid=1, so flip into the success state without an extra round-trip.
-    effect(() => {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("paid") === "1") {
-        this.paymentSuccess.set(true);
+  /**
+   * Back from the hosted payment page (the success URL carries ?paid=1): ask the API to check
+   * with the gateway first, so the payment is recorded even if the gateway's callback never
+   * arrives, then load the invoice with the payment on it.
+   */
+  private async load(tenantId: string, token: string): Promise<void> {
+    if (new URLSearchParams(window.location.search).get("paid") === "1") {
+      this.isLoading.set(true);
+      try {
+        const confirmation = await this.api.invoke(confirmPublicPayment, { tenantId, token });
+        this.returnState.set(confirmation.state ?? "pending");
+      } catch (err) {
+        console.error("Failed to confirm payment:", err);
+        this.returnState.set("pending");
       }
-    });
+    }
+    await this.loadInvoice(tenantId, token);
+  }
+
+  protected async checkAgain(): Promise<void> {
+    await this.load(this.tenantId(), this.token());
   }
 
   private async loadInvoice(tenantId: string, token: string): Promise<void> {

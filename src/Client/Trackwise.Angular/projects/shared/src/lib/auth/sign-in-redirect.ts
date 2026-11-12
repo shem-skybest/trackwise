@@ -5,14 +5,16 @@ import { filter, switchMap, take } from "rxjs";
 import { ErrorState } from "../ui/status/error-state/error-state";
 import { Spinner } from "../ui/status/spinner/spinner";
 import { AuthService } from "./auth.service";
+import { takeReturnUrl } from "./return-url";
 
 const LAST_ATTEMPT_KEY = "trackwise.signInStartedAt";
 const LOOP_WINDOW_MS = 15_000;
 
 /**
  * Every portal's sign-in route. It has nothing of its own to show: once the startup auth check
- * settles, a signed-in user goes to `route.data["homeUrl"]` (default `/home`) and everyone else
- * straight to the IdentityServer's login page.
+ * settles, a signed-in user goes back to the page a route guard turned them away from, or else to
+ * `route.data["homeUrl"]` (default `/home`), and everyone else straight to the IdentityServer's
+ * login page.
  *
  * It stops and offers a retry instead of redirecting when the IdentityServer sent back an error,
  * or when this tab started a sign-in moments ago and still came back signed out - a callback that
@@ -41,7 +43,9 @@ export class SignInRedirect {
       .subscribe((isAuthenticated) => {
         if (isAuthenticated) {
           clearLastAttempt();
-          this.router.navigateByUrl(this.route.snapshot.data["homeUrl"] ?? "/home");
+          this.router.navigateByUrl(
+            takeReturnUrl() ?? this.route.snapshot.data["homeUrl"] ?? "/home",
+          );
         } else if (this.route.snapshot.queryParamMap.has("error") || startedMomentsAgo()) {
           clearLastAttempt();
           this.failed.set(true);

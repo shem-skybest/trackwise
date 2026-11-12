@@ -14,7 +14,7 @@ const subscriptionCheck = () =>
 // which `createRoleGuard` checks automatically.
 export const authGuard = createRoleGuard({
   allowRole: isTenantStaffRole,
-  unauthenticatedRedirect: "/unauthorized",
+  unauthenticatedRedirect: "/",
   extraCheck: subscriptionCheck,
 });
 
@@ -22,6 +22,6 @@ export const authGuard = createRoleGuard({
 // TenantRole.Manage...), so the role check is the same as the portal's and the tabs do the rest.
 export const settingsGuard = createRoleGuard({
   allowRole: isTenantStaffRole,
-  unauthenticatedRedirect: "/unauthorized",
+  unauthenticatedRedirect: "/",
   extraCheck: subscriptionCheck,
 });

@@ -19,6 +19,24 @@
         Invoice #{{ invoice()?.number }} - {{ invoice()?.companyName }}
       </ui-typography>
     </ui-surface>
+  } @else if (paymentPending()) {
+    <!-- Back from the payment page, but the gateway hasn't confirmed the money yet -->
+    <ui-surface variant="elevated" padding="lg" class="block text-center">
+      <div class="mb-6">
+        <div class="bg-warning/15 mx-auto flex h-20 w-20 items-center justify-center rounded-full">
+          <ui-icon name="clock" size="xl" class="text-warning" />
+        </div>
+      </div>
+      <ui-typography variant="h3" tag="h2" class="mb-2">Waiting for your payment</ui-typography>
+      <ui-typography variant="body" color="muted" class="mb-4">
+        We haven't received the payment yet. If you paid with a code at a store or bank, it can
+        take a few minutes to come through after you pay.
+      </ui-typography>
+      <ui-typography variant="body-sm" color="muted" class="mb-6">
+        Invoice #{{ invoice()?.number }} - {{ invoice()?.companyName }}
+      </ui-typography>
+      <ui-button label="Check again" icon="refresh-cw" (click)="checkAgain()" />
+    </ui-surface>
   } @else if (invoice(); as inv) {
     <!-- Invoice Header -->
     <ui-surface variant="elevated" padding="md" class="mb-6 block">
