@@ -5,6 +5,7 @@ import { filter, map, switchMap, take } from "rxjs";
 import { UserRole } from "../models";
 import { PermissionService } from "../services";
 import { AuthService } from "./auth.service";
+import { rememberReturnUrl } from "./return-url";
 
 /**
  * Configuration for {@link createRoleGuard}. Every portal builds its route guard from this
@@ -18,7 +19,10 @@ export interface RoleGuardOptions {
    * including ones created at runtime that no enum lists. Checked alongside `allowedRoles`.
    */
   allowRole?: (role: string) => boolean;
-  /** Where to send an unauthenticated user. */
+  /**
+   * Where to send an unauthenticated user - the portal's sign-in route, which takes them back to
+   * the page they asked for once they are signed in.
+   */
   unauthenticatedRedirect: string;
   /** Where to send an authenticated-but-forbidden user. Defaults to `/unauthorized`. */
   unauthorizedRedirect?: string;
@@ -34,7 +38,7 @@ export interface RoleGuardOptions {
  * start of the guard so the RxJS callbacks never run outside the injection context.
  */
 export function createRoleGuard(options: RoleGuardOptions): CanActivateFn {
-  return (route) => {
+  return (route, state) => {
     const auth = inject(AuthService);
     const router = inject(Router);
     const permissionService = inject(PermissionService);
@@ -50,6 +54,7 @@ export function createRoleGuard(options: RoleGuardOptions): CanActivateFn {
       take(1),
       map((isAuthenticated) => {
         if (!isAuthenticated) {
+          rememberReturnUrl(state.url);
           return router.parseUrl(options.unauthenticatedRedirect);
         }
 
