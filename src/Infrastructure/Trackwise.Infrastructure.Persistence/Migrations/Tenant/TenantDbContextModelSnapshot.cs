@@ -6710,6 +6710,15 @@ namespace Trackwise.Infrastructure.Persistence.Migrations.Tenant
                         .HasColumnType("text")
                         .HasColumnName("description");
 
+                    b.Property<string>("Gateway")
+                        .HasColumnType("text")
+                        .HasColumnName("gateway");
+
+                    b.Property<string>("GatewayReference")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("gateway_reference");
+
                     b.Property<Guid?>("InvoiceId")
                         .HasColumnType("uuid")
                         .HasColumnName("invoice_id");
@@ -6817,7 +6826,48 @@ namespace Trackwise.Infrastructure.Persistence.Migrations.Tenant
                     b.HasIndex("InvoiceId")
                         .HasDatabaseName("ix_payments_invoice_id");
 
+                    b.HasIndex("Gateway", "GatewayReference")
+                        .IsUnique()
+                        .HasDatabaseName("ix_payments_gateway_gateway_reference")
+                        .HasFilter("gateway_reference IS NOT NULL");
+
                     b.ToTable("payments", (string)null);
+                });
+
+            modelBuilder.Entity("Trackwise.Domain.Entities.PaymentGatewayConfiguration", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CallbackToken")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("callback_token");
+
+                    b.Property<string>("Gateway")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("gateway");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("SecretKey")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("secret_key");
+
+                    b.HasKey("Id")
+                        .HasName("pk_payment_gateway_configurations");
+
+                    b.HasIndex("Gateway")
+                        .IsUnique()
+                        .HasDatabaseName("ix_payment_gateway_configurations_gateway");
+
+                    b.ToTable("payment_gateway_configurations", (string)null);
                 });
 
             modelBuilder.Entity("Trackwise.Domain.Entities.PaymentLink", b =>

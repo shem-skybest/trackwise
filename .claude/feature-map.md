@@ -544,6 +544,15 @@ stays in nSFS e-approval - none is built here.
 - Infrastructure: `Infrastructure.Payments/Stripe/StripeConnectService.cs`, `StripeCapabilities.cs` (country-aware capability map: SEPA/iDEAL/Bacs/ACH)
 - API/UI: `StripeConnectController.cs`, `tms-portal/pages/settings/billing-settings/`
 
+### Xendit payments (PH)
+
+The company's own Xendit account takes invoice payment links (cards, GCash, Maya, bank, OTC). When one is active it wins over Stripe Connect in `CreatePublicCheckoutSessionHandler`; external_id `INV{number}-{invoiceId:N}` ties the Xendit invoice back.
+
+- Domain: `Entities/Payment/PaymentGatewayConfiguration.cs` (encrypted secret key + callback token), `Payment.Gateway` / `GatewayReference` (unique, the retry guard)
+- Application: `Modules/Financial/PaymentGateways/XenditSettings.cs`, `Modules/Integrations/Webhooks/Commands/ProcessXenditCallback/` (token check, then re-reads the invoice from Xendit)
+- Infrastructure: `Infrastructure.Payments/Xendit/XenditClient.cs` (port `Application.Abstractions/Payments/Xendit/IXenditClient.cs`)
+- API/UI: `XenditSettingsController.cs`, `WebhookController` `POST /webhooks/xendit/{tenantId}`, `tms-portal/pages/settings/components/xendit-card/`
+
 ### Stripe webhooks
 
 - Application: `Modules/Integrations/Webhooks/Commands/ProcessStripEvent/` (`invoice.paid`, `customer.subscription.*`, `payment_intent.processing|succeeded|payment_failed`, `account.updated`, `checkout.session.completed`)

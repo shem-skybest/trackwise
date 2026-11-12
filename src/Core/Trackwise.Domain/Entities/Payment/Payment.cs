@@ -14,6 +14,17 @@ public class Payment : AuditableEntity, IMasterEntity, ITenantEntity
     public required Address BillingAddress { get; set; }
     public string? StripePaymentIntentId { get; set; }
 
+    /// <summary>
+    /// Which online gateway took the payment. Null for manual (cash/check) payments.
+    /// </summary>
+    public PaymentGateway? Gateway { get; set; }
+
+    /// <summary>
+    /// The gateway's own id for the payment (Xendit invoice id). Unique per gateway, so a
+    /// retried callback can't record the same payment twice.
+    /// </summary>
+    public string? GatewayReference { get; set; }
+
     #region Manual Payment Fields
 
     /// <summary>

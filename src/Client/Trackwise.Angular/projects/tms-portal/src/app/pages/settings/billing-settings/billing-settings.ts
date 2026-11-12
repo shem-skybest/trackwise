@@ -3,13 +3,21 @@ import { Permission } from "@trackwise/shared";
 import { Container, Stack } from "@trackwise/shared/ui";
 import { PermissionService } from "@/core/auth";
 import { PageHeader } from "@/shared/components";
-import { StripeConnectCard, SubscriptionCard, TenantTaxRatesCard } from "../components";
+import { StripeConnectCard, SubscriptionCard, TenantTaxRatesCard, XenditCard } from "../components";
 
-/** Plan, payouts and tax rates in one tab. */
+/** Plan, online payments (Xendit, Stripe Connect) and tax rates in one tab. */
 @Component({
   selector: "app-billing-settings",
   templateUrl: "./billing-settings.html",
-  imports: [Container, PageHeader, Stack, StripeConnectCard, SubscriptionCard, TenantTaxRatesCard],
+  imports: [
+    Container,
+    PageHeader,
+    Stack,
+    StripeConnectCard,
+    SubscriptionCard,
+    TenantTaxRatesCard,
+    XenditCard,
+  ],
 })
 export class BillingSettings {
   protected readonly canViewTax = inject(PermissionService).hasPermission(Permission.Tax.View);
