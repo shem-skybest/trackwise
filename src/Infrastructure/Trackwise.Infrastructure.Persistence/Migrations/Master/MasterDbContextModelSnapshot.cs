@@ -1160,6 +1160,15 @@ namespace Trackwise.Infrastructure.Persistence.Migrations.Master
                         .HasColumnType("text")
                         .HasColumnName("description");
 
+                    b.Property<string>("Gateway")
+                        .HasColumnType("text")
+                        .HasColumnName("gateway");
+
+                    b.Property<string>("GatewayReference")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("gateway_reference");
+
                     b.Property<Guid?>("InvoiceId")
                         .HasColumnType("uuid")
                         .HasColumnName("invoice_id");
@@ -1266,6 +1275,11 @@ namespace Trackwise.Infrastructure.Persistence.Migrations.Master
 
                     b.HasIndex("InvoiceId")
                         .HasDatabaseName("ix_payments_invoice_id");
+
+                    b.HasIndex("Gateway", "GatewayReference")
+                        .IsUnique()
+                        .HasDatabaseName("ix_payments_gateway_gateway_reference")
+                        .HasFilter("gateway_reference IS NOT NULL");
 
                     b.ToTable("payments", (string)null);
                 });

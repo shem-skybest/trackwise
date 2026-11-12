@@ -94,8 +94,8 @@ export class PublicPayment {
       }
     });
 
-    // Detect Stripe Checkout return - the success URL is configured to point back here with
-    // ?paid=1, so flip into the success state without an extra round-trip to the API.
+    // Detect the return from the hosted payment page (Xendit or Stripe) - the success URL points
+    // back here with ?paid=1, so flip into the success state without an extra round-trip.
     effect(() => {
       const params = new URLSearchParams(window.location.search);
       if (params.get("paid") === "1") {
@@ -182,7 +182,7 @@ export class PublicPayment {
         return;
       }
 
-      // Redirect to Stripe's hosted Checkout page; Stripe will return the customer to
+      // Redirect to the hosted payment page (Xendit or Stripe), which returns the customer to
       // successUrl on completion or cancelUrl on cancel.
       window.location.href = result.url;
     } catch (err) {

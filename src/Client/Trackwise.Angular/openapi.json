@@ -34501,6 +34501,30 @@
         }
       }
     },
+    "/webhooks/xendit/{tenantId}": {
+      "post": {
+        "tags": [
+          "Webhook"
+        ],
+        "operationId": "ProcessXenditCallback",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/webhooks/resend": {
       "post": {
         "tags": [
@@ -35943,6 +35967,84 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/payment-gateways/xendit": {
+      "get": {
+        "tags": [
+          "XenditSettings"
+        ],
+        "operationId": "GetXenditSettings",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/XenditSettingsDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "XenditSettings"
+        ],
+        "operationId": "SaveXenditSettings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveXenditSettingsCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveXenditSettingsCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveXenditSettingsCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/XenditSettingsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "XenditSettings"
+        ],
+        "operationId": "DeleteXenditSettings",
+        "responses": {
+          "204": {
+            "description": "No Content"
           }
         }
       }
@@ -53976,6 +54078,23 @@
         },
         "additionalProperties": false
       },
+      "SaveXenditSettingsCommand": {
+        "type": "object",
+        "properties": {
+          "secretKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "callbackToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "SearchLoadBoardCommand": {
         "type": "object",
         "properties": {
@@ -60993,6 +61112,25 @@
           "trucking"
         ],
         "type": "string"
+      },
+      "XenditSettingsDto": {
+        "type": "object",
+        "properties": {
+          "isConfigured": {
+            "type": "boolean"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "isTestMode": {
+            "type": "boolean"
+          },
+          "secretKeyHint": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       }
     }
   },
@@ -61251,6 +61389,9 @@
     },
     {
       "name": "Workfile"
+    },
+    {
+      "name": "XenditSettings"
     }
   ]
 }

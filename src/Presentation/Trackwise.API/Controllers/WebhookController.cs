@@ -29,6 +29,32 @@ public class WebhookController(IMediator mediator) : ControllerBase
     }
 
     /// <summary>
+    /// Xendit invoice callbacks. Each company pastes this URL, with its own tenant id, into the
+    /// "Invoices paid" callback in its Xendit dashboard. A non-200 makes Xendit retry.
+    /// </summary>
+    [HttpPost("xendit/{tenantId:guid}", Name = "ProcessXenditCallback")]
+    public async Task<IActionResult> Xendit(Guid tenantId)
+    {
+        var requestBodyJson = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
+
+        var result = await mediator.Send(new ProcessXenditCallbackCommand
+        {
+            TenantId = tenantId,
+            RawBody = requestBodyJson,
+            CallbackToken = Request.Headers["x-callback-token"].ToString()
+        });
+
+        if (result.IsSuccess)
+        {
+            return Ok();
+        }
+
+        return result.ErrorCode == ErrorCodes.WebhookRejected
+            ? Unauthorized()
+            : StatusCode(StatusCodes.Status500InternalServerError);
+    }
+
+    /// <summary>
     /// Inbound mail from Resend. A 500 is deliberate on a transient failure - it is what makes
     /// Resend retry a delivery we could not finish.
     /// </summary>

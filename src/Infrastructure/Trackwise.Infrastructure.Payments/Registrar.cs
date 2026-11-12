@@ -3,13 +3,15 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Trackwise.Application.Abstractions.Payments;
 using Trackwise.Application.Abstractions.Payments.Stripe;
+using Trackwise.Application.Abstractions.Payments.Xendit;
+using Trackwise.Infrastructure.Payments.Xendit;
 
 namespace Trackwise.Infrastructure.Payments;
 
 public static class Registrar
 {
     /// <summary>
-    ///     Add payment infrastructure (Stripe standard + Connect).
+    ///     Add payment infrastructure (Stripe standard + Connect, Xendit).
     /// </summary>
     public static IServiceCollection AddPaymentsInfrastructure(
         this IServiceCollection services,
@@ -34,6 +36,13 @@ public static class Registrar
         services.AddSingleton<IStripePortalService, StripePortalService>();
         services.AddScoped<IStripeUsageService, StripeUsageService>();
         services.AddSingleton<IStripeAddressMapper, StripeAddressMapper>();
+
+        // Xendit (PH): keys are per tenant, so the client carries none of its own
+        services.AddHttpClient<IXenditClient, XenditClient>(client =>
+        {
+            client.BaseAddress = new Uri(XenditClient.BaseAddress);
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
 
         return services;
     }

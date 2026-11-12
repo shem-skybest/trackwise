@@ -8,3 +8,4 @@ export * from "./tenant-tax-rates-card/tenant-tax-rates-card";
 export * from "./booking-numbering-card/booking-numbering-card";
 export * from "./copy-role-dialog/copy-role-dialog";
 export * from "./role-history-card/role-history-card";
+export * from "./xendit-card/xendit-card";

@@ -1,0 +1,143 @@
+<ui-stack tag="section" gap="3">
+  <ui-stack direction="row" gap="2" align="center">
+    <ui-icon name="credit-card" color="secondary" />
+    <ui-typography variant="overline" color="secondary">Online payments (Xendit)</ui-typography>
+  </ui-stack>
+  <ui-surface variant="elevated" [border]="true">
+    @if (settings(); as settings) {
+      <ui-stack gap="4">
+        <ui-typography variant="body-sm" color="muted">
+          Customers pay invoice links by card, GCash, Maya, bank transfer or over the counter on
+          Xendit's page. The money goes to your company's Xendit account and the invoice is marked
+          paid here on its own.
+        </ui-typography>
+
+        @if (settings.isConfigured) {
+          <ui-stack direction="row" align="center" justify="between" gap="3">
+            <div>
+              <ui-stack direction="row" align="center" gap="2">
+                <ui-badge
+                  [value]="settings.isActive ? 'Connected' : 'Switched off'"
+                  [severity]="settings.isActive ? 'success' : 'secondary'"
+                />
+                @if (settings.isTestMode) {
+                  <ui-badge value="Test mode" severity="warn" />
+                }
+              </ui-stack>
+              <ui-typography variant="caption" color="muted" class="mt-1 block">
+                Key {{ settings.secretKeyHint }}
+              </ui-typography>
+            </div>
+            <ui-stack direction="row" align="center" gap="2">
+              <ui-typography variant="caption" color="secondary">
+                Use for payment links
+              </ui-typography>
+              <ui-toggle-field
+                [(value)]="active"
+                inputId="xenditActive"
+                [disabled]="!canManage || savingActive()"
+                (valueChange)="onActiveChange($event)"
+              />
+            </ui-stack>
+          </ui-stack>
+
+          @if (settings.isTestMode) {
+            <ui-alert intent="warning">
+              This is a test (development) key: no real money moves. Paste the production key when
+              you're ready to go live.
+            </ui-alert>
+          }
+        }
+
+        <div>
+          <ui-typography variant="caption" color="muted">Callback URL</ui-typography>
+          <ui-stack direction="row" align="center" gap="2">
+            <code class="bg-muted rounded px-2 py-1 text-xs break-all">{{ callbackUrl() }}</code>
+            <ui-button
+              icon="copy"
+              variant="text"
+              size="sm"
+              ariaLabel="Copy callback URL"
+              (click)="copyCallbackUrl()"
+            />
+          </ui-stack>
+          <ui-typography variant="caption" color="muted">
+            In Xendit, open Settings &gt; Webhooks and paste this into "Invoices paid".
+          </ui-typography>
+        </div>
+
+        @if (canManage) {
+          @if (editing()) {
+            <form [formRoot]="form">
+              <ui-stack gap="3">
+                <ui-form-field
+                  label="Secret key"
+                  for="xenditSecretKey"
+                  [hint]="
+                    settings.isConfigured
+                      ? 'Leave blank to keep the saved key.'
+                      : 'Xendit > Settings > API Keys. Generate a secret key with Money-in Write.'
+                  "
+                >
+                  <ui-password-field
+                    id="xenditSecretKey"
+                    autocomplete="off"
+                    placeholder="xnd_production_..."
+                    [formField]="form.secretKey"
+                  />
+                </ui-form-field>
+                <ui-form-field
+                  label="Callback verification token"
+                  for="xenditCallbackToken"
+                  [hint]="
+                    settings.isConfigured
+                      ? 'Leave blank to keep the saved token.'
+                      : 'Xendit > Settings > Webhooks, at the top of the page.'
+                  "
+                >
+                  <ui-password-field
+                    id="xenditCallbackToken"
+                    autocomplete="off"
+                    [formField]="form.callbackToken"
+                  />
+                </ui-form-field>
+                <ui-stack direction="row" gap="2">
+                  <ui-button
+                    type="submit"
+                    icon="save"
+                    [label]="settings.isConfigured ? 'Save' : 'Connect Xendit'"
+                    [loading]="form().submitting()"
+                  />
+                  @if (settings.isConfigured) {
+                    <ui-button
+                      label="Cancel"
+                      variant="outlined"
+                      severity="secondary"
+                      (click)="editing.set(false)"
+                    />
+                  }
+                </ui-stack>
+              </ui-stack>
+            </form>
+          } @else {
+            <ui-stack direction="row" gap="2">
+              <ui-button
+                icon="key"
+                label="Change keys"
+                variant="outlined"
+                (click)="editing.set(true)"
+              />
+              <ui-button
+                icon="trash"
+                label="Disconnect"
+                variant="outlined"
+                severity="danger"
+                (click)="disconnect()"
+              />
+            </ui-stack>
+          }
+        }
+      </ui-stack>
+    }
+  </ui-surface>
+</ui-stack>
