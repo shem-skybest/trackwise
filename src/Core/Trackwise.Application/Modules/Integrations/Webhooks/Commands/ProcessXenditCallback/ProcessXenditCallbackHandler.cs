@@ -4,10 +4,10 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Trackwise.Application.Abstractions;
 using Trackwise.Application.Abstractions.Payments.Xendit;
+using Trackwise.Application.Modules.Financial.Payments;
 using Trackwise.Domain.Entities;
 using Trackwise.Domain.Persistence;
 using Trackwise.Domain.Primitives.Enums;
-using Trackwise.Domain.Primitives.ValueObjects;
 using Trackwise.Shared.Models;
 
 namespace Trackwise.Application.Modules.Integrations.Webhooks.Commands;
@@ -73,66 +73,7 @@ internal sealed class ProcessXenditCallbackHandler(
             return Result.Fail($"Could not confirm Xendit invoice {xenditInvoiceId}: {ex.Message}");
         }
 
-        if (!xenditInvoice.IsPaid)
-        {
-            logger.LogInformation(
-                "Xendit invoice {XenditInvoiceId} is {Status}; nothing to record",
-                xenditInvoice.Id, xenditInvoice.Status);
-            return Result.Ok();
-        }
-
-        if (!TryReadInvoiceGuid(xenditInvoice.ExternalId, out var invoiceId))
-        {
-            logger.LogWarning(
-                "Paid Xendit invoice {XenditInvoiceId} has external id {ExternalId} that isn't ours; ignored",
-                xenditInvoice.Id, xenditInvoice.ExternalId);
-            return Result.Ok();
-        }
-
-        var existing = await tenantUow.Repository<Payment>().GetAsync(
-            p => p.Gateway == PaymentGateway.Xendit && p.GatewayReference == xenditInvoice.Id, ct);
-        if (existing is not null)
-        {
-            return Result.Ok();
-        }
-
-        var invoice = await tenantUow.Repository<Invoice>().GetByIdAsync(invoiceId, ct);
-        if (invoice is null)
-        {
-            logger.LogError(
-                "Paid Xendit invoice {XenditInvoiceId} points at invoice {InvoiceId}, which doesn't exist",
-                xenditInvoice.Id, invoiceId);
-            return Result.Ok();
-        }
-
-        var channel = xenditInvoice.PaymentChannel ?? xenditInvoice.PaymentMethod;
-        var payment = new Payment
-        {
-            Amount = new Money
-            {
-                Amount = xenditInvoice.PaidAmount ?? xenditInvoice.Amount,
-                Currency = xenditInvoice.Currency.ToUpperInvariant()
-            },
-            Status = PaymentStatus.Paid,
-            TenantId = tenant.Id,
-            Gateway = PaymentGateway.Xendit,
-            GatewayReference = xenditInvoice.Id,
-            ReferenceNumber = xenditInvoice.Id,
-            // Xendit doesn't give a billing address; same placeholder the Stripe path uses.
-            BillingAddress = tenant.CompanyAddress,
-            Description = channel is null
-                ? $"Xendit payment for Invoice #{invoice.Number}"
-                : $"Xendit {channel} payment for Invoice #{invoice.Number}"
-        };
-
-        await tenantUow.Repository<Payment>().AddAsync(payment, ct);
-        invoice.ApplyPayment(payment);
-        tenantUow.Repository<Invoice>().Update(invoice);
-        await tenantUow.SaveChangesAsync(ct);
-
-        logger.LogInformation(
-            "Recorded Xendit payment {PaymentId} ({Amount} {Currency}, {Channel}) for invoice {InvoiceId}",
-            payment.Id, payment.Amount.Amount, payment.Amount.Currency, channel, invoice.Id);
+        await XenditPayments.RecordIfPaidAsync(tenantUow, tenant, xenditInvoice, logger, ct);
         return Result.Ok();
     }
 
@@ -166,19 +107,6 @@ internal sealed class ProcessXenditCallbackHandler(
         {
             return null;
         }
-    }
-
-    /// <summary>
-    /// Our external id is <c>INV{number}-{invoiceId:N}</c>
-    /// (see <c>CreatePublicCheckoutSessionHandler</c>).
-    /// </summary>
-    internal static bool TryReadInvoiceGuid(string externalId, out Guid invoiceId)
-    {
-        var dash = externalId.LastIndexOf('-');
-        invoiceId = Guid.Empty;
-        return externalId.StartsWith("INV", StringComparison.Ordinal)
-               && dash > 0
-               && Guid.TryParseExact(externalId[(dash + 1)..], "N", out invoiceId);
     }
 
     private sealed record CallbackBody

@@ -136,7 +136,7 @@ internal sealed class CreatePublicCheckoutSessionHandler(
             // re-reading the payment from Xendit. Retries share it; Xendit's own id tells them apart.
             var xenditInvoice = await xenditClient.CreateInvoiceAsync(xendit.SecretKey, new XenditInvoiceRequest
             {
-                ExternalId = $"INV{invoice.Number}-{invoice.Id:N}",
+                ExternalId = XenditPayments.ExternalIdFor(invoice),
                 Amount = amount,
                 Currency = invoice.Total.Currency,
                 Description = $"{tenant.CompanyName ?? tenant.Name} - Invoice #{invoice.Number}",
