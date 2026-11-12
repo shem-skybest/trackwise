@@ -1,0 +1,128 @@
+<ui-card>
+  <ng-template #header>
+    <ui-stack direction="row" align="center" gap="2" class="flex-wrap p-4">
+      <ui-icon name="truck" color="primary" />
+      <ui-typography variant="h6" tag="h3">Truck {{ truckNumber() }}</ui-typography>
+      @if (unmatchedDrops() > 0) {
+        <ui-badge
+          severity="warn"
+          [value]="unmatchedDrops() === 1 ? '1 drop to check' : unmatchedDrops() + ' drops to check'"
+        />
+      }
+    </ui-stack>
+  </ng-template>
+
+  <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm md:grid-cols-4">
+    <div>
+      <dt class="text-muted-foreground">Date</dt>
+      <dd>{{ serviceDate() ?? "Not stated" }}</dd>
+    </div>
+    <div>
+      <dt class="text-muted-foreground">Call time</dt>
+      <dd>{{ callTime() ?? "Not stated" }}</dd>
+    </div>
+    <div>
+      <dt class="text-muted-foreground">Truck size</dt>
+      <dd>{{ truckSize() ?? "Not stated" }}</dd>
+    </div>
+    <div>
+      <dt class="text-muted-foreground">Pickup</dt>
+      <dd>
+        @if (trip().pickupSite; as site) {
+          {{ site.name }}
+        } @else if (trip().pickupText) {
+          "{{ trip().pickupText }}"
+          <span class="text-muted-foreground">(not a saved warehouse)</span>
+        } @else {
+          Not stated
+        }
+      </dd>
+    </div>
+    @if (trip().commodity) {
+      <div class="col-span-2">
+        <dt class="text-muted-foreground">Product</dt>
+        <dd>{{ trip().commodity }}</dd>
+      </div>
+    }
+    @if (temperature()) {
+      <div>
+        <dt class="text-muted-foreground">Temperature</dt>
+        <dd>{{ temperature() }}</dd>
+      </div>
+    }
+    @if (trip().notes) {
+      <div class="col-span-2 md:col-span-4">
+        <dt class="text-muted-foreground">Notes</dt>
+        <dd>{{ trip().notes }}</dd>
+      </div>
+    }
+  </dl>
+
+  <ui-typography variant="label" weight="semibold" class="mt-5 mb-2">Drops</ui-typography>
+  <ol class="divide-border border-border divide-y rounded-md border">
+    @for (drop of trip().drops ?? []; track $index; let i = $index) {
+      <li class="flex flex-col gap-2 p-3 md:flex-row md:items-start md:gap-4">
+        <span class="text-muted-foreground w-6 shrink-0 text-sm">{{ i + 1 }}.</span>
+
+        <div class="min-w-0 flex-1">
+          <p class="text-muted-foreground text-xs">Client wrote</p>
+          <p class="break-words">"{{ drop.text }}"</p>
+          @if (drop.notes) {
+            <p class="text-muted-foreground mt-1 text-xs break-words">{{ drop.notes }}</p>
+          }
+        </div>
+
+        <div class="min-w-0 flex-1">
+          <p class="text-muted-foreground text-xs">Saved location</p>
+          @if (drop.site; as site) {
+            <ui-stack direction="row" align="center" gap="2">
+              <ui-icon name="map-pin" color="success" size="sm" />
+              <span class="break-words">
+                {{ site.name }}
+                @if (site.city) {
+                  <span class="text-muted-foreground">· {{ site.city }}</span>
+                }
+              </span>
+              <ui-button
+                appearance="text"
+                size="sm"
+                icon="x"
+                ariaLabel="Clear this location"
+                (click)="sitePicked.emit({ dropIndex: i, site: null })"
+              />
+            </ui-stack>
+          } @else if ((drop.candidates ?? []).length > 0) {
+            <p class="text-sm">Which one?</p>
+            <div class="mt-1 flex flex-wrap gap-2">
+              @for (candidate of drop.candidates ?? []; track candidate.id) {
+                <ui-button
+                  appearance="outlined"
+                  intent="secondary"
+                  size="sm"
+                  [label]="candidateLabel(candidate)"
+                  (click)="sitePicked.emit({ dropIndex: i, site: candidate })"
+                />
+              }
+            </div>
+          } @else {
+            <ui-stack direction="row" align="center" gap="2">
+              <ui-icon name="triangle-alert" color="warning" size="sm" />
+              <span class="text-sm">No saved location matches. Add it to the client first.</span>
+            </ui-stack>
+          }
+        </div>
+
+        <div class="shrink-0 text-sm md:w-24 md:text-right">
+          @if (drop.plannedBoxes) {
+            <p>{{ drop.plannedBoxes }} boxes</p>
+          }
+          @if (drop.plannedBags) {
+            <p>{{ drop.plannedBags }} bags</p>
+          }
+        </div>
+      </li>
+    } @empty {
+      <li class="text-muted-foreground p-3 text-sm">No drops named in the request.</li>
+    }
+  </ol>
+</ui-card>
