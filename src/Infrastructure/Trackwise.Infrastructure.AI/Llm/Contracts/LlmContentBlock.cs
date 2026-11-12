@@ -18,8 +18,14 @@ internal record LlmToolUseBlock(string Id, string Name, JsonNode? Input, string?
 
 internal record LlmToolResultBlock(string ToolUseId, string Content) : LlmContentBlock;
 
-/// <summary>An inline document such as a PDF (base64-encoded). Mapped to provider-native document content.</summary>
-internal record LlmDocumentBlock(string MediaType, string Base64Data) : LlmContentBlock;
+/// <summary>
+/// An inline document (a PDF) or image (a PNG/JPEG screenshot), base64-encoded. Providers map
+/// images to their image content and everything else to document content.
+/// </summary>
+internal record LlmDocumentBlock(string MediaType, string Base64Data) : LlmContentBlock
+{
+    public bool IsImage => MediaType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
+}
 
 /// <summary>
 /// An Anthropic thinking block, kept so the tool loop can echo it back - with thinking on, an

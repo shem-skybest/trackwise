@@ -142,6 +142,14 @@ internal sealed class OpenAIResponsesLlmProvider(LlmProviderOptions config, Http
 
             foreach (var document in documents)
             {
+                if (document.IsImage)
+                {
+                    parts.Add(ResponseContentPart.CreateInputImagePart(
+                        BinaryData.FromBytes(Convert.FromBase64String(document.Base64Data)),
+                        document.MediaType));
+                    continue;
+                }
+
                 parts.Add(ResponseContentPart.CreateInputFilePart(
                     fileBytes: BinaryData.FromBytes(Convert.FromBase64String(document.Base64Data)),
                     fileBytesMediaType: document.MediaType,

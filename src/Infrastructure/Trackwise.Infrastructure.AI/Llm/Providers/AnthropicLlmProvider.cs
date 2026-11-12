@@ -184,6 +184,12 @@ internal sealed class AnthropicLlmProvider(LlmProviderOptions config, HttpClient
                         Content = [new TextContent { Text = toolResult.Content }]
                     });
                     break;
+                case LlmDocumentBlock { IsImage: true } image:
+                    content.Add(new ImageContent
+                    {
+                        Source = new ImageSource { MediaType = image.MediaType, Data = image.Base64Data }
+                    });
+                    break;
                 case LlmDocumentBlock document:
                     content.Add(new DocumentContent
                     {

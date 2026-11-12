@@ -4,7 +4,16 @@
     subtitle="Forwarding jobs from accepted quotations, and Cold Chain truck-trips from rate agreements"
     /* [addRoute]="canManage ? '/forwarding/bookings-executions/new' : null" */
     addTooltip="New Cold Chain booking"
-  />
+  >
+    @if (canManage) {
+      <ui-button
+        icon="sparkles"
+        appearance="outlined"
+        label="Read client request"
+        routerLink="/bookings-executions/read"
+      />
+    }
+  </ui-page-header>
 
   <app-bookings-table
     [data]="store.data()"

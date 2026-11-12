@@ -1,7 +1,8 @@
 import { Component, inject } from "@angular/core";
+import { RouterLink } from "@angular/router";
 import { Permission } from "@trackwise/shared/models/permissions";
 import { PermissionService } from "@/core/auth";
-import { PageHeader } from "@/shared/components";
+import { PageHeader, UiButton } from "@/shared/components";
 import { BookingsTable } from "../components/bookings-table/bookings-table";
 import { BookingsListStore } from "../store/bookings-list.store";
 
@@ -9,7 +10,7 @@ import { BookingsListStore } from "../store/bookings-list.store";
   selector: "app-bookings-list",
   templateUrl: "./bookings-list.html",
   providers: [BookingsListStore],
-  imports: [PageHeader, BookingsTable],
+  imports: [PageHeader, BookingsTable, RouterLink, UiButton],
 })
 export class BookingsListComponent {
   private readonly permissions = inject(PermissionService);
