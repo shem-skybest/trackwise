@@ -17,6 +17,7 @@ export class TrucksMap {
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly truckLocations = signal<TruckGeolocationDto[]>([]);
+  private readonly totalTrucks = signal(0);
 
   /** Loading state for initial data fetch */
   protected readonly loading = signal(true);
@@ -27,8 +28,8 @@ export class TrucksMap {
   );
 
   /** Count of trucks without location data */
-  public readonly trucksWithoutLocation = computed(
-    () => this.truckLocations().filter((t) => !t.currentLocation).length,
+  public readonly trucksWithoutLocation = computed(() =>
+    Math.max(0, this.totalTrucks() - this.trucksWithLocation()),
   );
 
   public readonly height = input("100%");
@@ -76,6 +77,8 @@ export class TrucksMap {
 
     try {
       const result = await this.api.invoke(getTrucks, { PageSize: 100 });
+
+      this.totalTrucks.set(result.items?.length ?? 0);
 
       if (!result.items) {
         this.truckLocations.set([]);
