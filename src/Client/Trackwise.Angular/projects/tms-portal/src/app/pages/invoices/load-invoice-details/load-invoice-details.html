@@ -225,6 +225,12 @@
                     <p class="text-muted-foreground text-sm">
                       {{ payment.createdDate | dateFormat: "short" }}
                     </p>
+                    @if (payment.description) {
+                      <p class="text-muted-foreground text-sm">{{ payment.description }}</p>
+                    }
+                    @if (payment.referenceNumber) {
+                      <p class="text-muted-foreground text-xs">Ref: {{ payment.referenceNumber }}</p>
+                    }
                   </div>
                   @if (payment.status) {
                     <app-payment-status-tag [paymentStatus]="payment.status" />
@@ -257,7 +263,11 @@
       (recorded)="onPaymentRecorded()"
     />
 
-    <app-payment-link-dialog [invoiceId]="invoiceId()" [(visible)]="showPaymentLinkDialog" />
+    <app-payment-link-dialog
+      [invoiceId]="invoiceId()"
+      [canGenerate]="getOutstandingAmount() > 0 && invoice()!.status !== 'cancelled'"
+      [(visible)]="showPaymentLinkDialog"
+    />
   } @else {
     <ui-card>
       <ui-empty-state icon="circle-alert" title="Invoice not found" message="" />

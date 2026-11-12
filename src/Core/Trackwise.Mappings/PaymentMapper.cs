@@ -16,7 +16,9 @@ public static class PaymentMapper
             TenantId = entity.TenantId,
             Status = entity.Status,
             Description = entity.Description,
-            BillingAddress = entity.BillingAddress
+            BillingAddress = entity.BillingAddress,
+            Gateway = entity.Gateway,
+            ReferenceNumber = entity.ReferenceNumber ?? entity.GatewayReference
         };
     }
 }

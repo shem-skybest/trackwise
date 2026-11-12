@@ -13,7 +13,10 @@
       </div>
       <ui-typography variant="h3" tag="h2" class="mb-2">Payment Successful!</ui-typography>
       <ui-typography variant="body" color="muted" class="mb-4">
-        Thank you for your payment. A confirmation has been sent to your email.
+        Thank you for your payment.
+        @if (returnState() === "paid") {
+          It has been recorded against this invoice.
+        }
       </ui-typography>
       <ui-typography variant="body-sm" color="muted">
         Invoice #{{ invoice()?.number }} - {{ invoice()?.companyName }}

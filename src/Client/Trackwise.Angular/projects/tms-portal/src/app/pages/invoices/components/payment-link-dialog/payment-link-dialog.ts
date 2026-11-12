@@ -28,6 +28,8 @@ export class PaymentLinkDialog {
 
   public readonly invoiceId = input.required<string>();
   public readonly paymentLinks = input<PaymentLinkDto[]>([]);
+  /** False once the invoice is paid in full or cancelled - there's nothing left to pay. */
+  public readonly canGenerate = input(true);
   public readonly visible = model<boolean>(false);
 
   protected readonly links = signal<PaymentLinkDto[]>([]);

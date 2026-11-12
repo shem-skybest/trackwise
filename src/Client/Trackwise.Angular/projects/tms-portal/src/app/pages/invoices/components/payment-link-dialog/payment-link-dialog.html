@@ -10,12 +10,16 @@
     Generate payment links to share with customers so they can pay this invoice online.
   </p>
 
-  <ui-stack direction="row" justify="end" class="mb-4">
+  <ui-stack direction="row" align="center" justify="end" gap="3" class="mb-4">
+    @if (!canGenerate()) {
+      <span class="text-muted-foreground text-sm">Nothing left to pay on this invoice.</span>
+    }
     <ui-button
       icon="plus"
       label="Generate New Link"
       (click)="generateLink()"
       [loading]="isGenerating()"
+      [disabled]="!canGenerate()"
     />
   </ui-stack>
 

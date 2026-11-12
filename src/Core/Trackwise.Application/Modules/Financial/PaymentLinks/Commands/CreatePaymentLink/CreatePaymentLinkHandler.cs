@@ -2,6 +2,7 @@ using Trackwise.Application.Abstractions;
 using Trackwise.Application.Utilities;
 using Trackwise.Domain.Entities;
 using Trackwise.Domain.Persistence;
+using Trackwise.Domain.Primitives.Enums;
 using Trackwise.Domain.Options;
 using Trackwise.Mappings;
 using Trackwise.Shared.Models;
@@ -26,6 +27,13 @@ internal sealed class CreatePaymentLinkHandler(
         if (invoice is null)
         {
             return Result<PaymentLinkDto>.Fail("Invoice not found.");
+        }
+
+        if (invoice.Status is InvoiceStatus.Paid or InvoiceStatus.Cancelled)
+        {
+            return Result<PaymentLinkDto>.Fail(invoice.Status == InvoiceStatus.Paid
+                ? "This invoice is already paid in full."
+                : "This invoice has been cancelled.");
         }
 
         // Generate a secure random token
