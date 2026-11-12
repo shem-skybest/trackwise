@@ -92,6 +92,14 @@ internal sealed class OpenAICompatibleLlmProvider(LlmProviderOptions config, Htt
 
             foreach (var document in documents)
             {
+                if (document.IsImage)
+                {
+                    parts.Add(ChatMessageContentPart.CreateImagePart(
+                        BinaryData.FromBytes(Convert.FromBase64String(document.Base64Data)),
+                        document.MediaType));
+                    continue;
+                }
+
                 // OPENAI001: file content parts are still marked [Experimental] by the SDK.
 #pragma warning disable OPENAI001
                 parts.Add(ChatMessageContentPart.CreateFilePart(

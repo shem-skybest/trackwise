@@ -122,6 +122,39 @@ public class BookingController(IMediator mediator) : ControllerBase
         return result.IsSuccess ? Ok(result.Value) : BadRequest(ErrorResponse.FromResult(result));
     }
 
+    /// <summary>
+    /// Reads a client's booking request (a screenshot of their Viber message or Excel table, or the
+    /// pasted text) into proposed Cold Chain truck-trips. Saves nothing.
+    /// </summary>
+    [HttpPost("read", Name = "ReadBookingRequest")]
+    [ProducesResponseType(typeof(BookingRequestReadingDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [Authorize(Policy = Permission.Booking.Manage)]
+    [RequestSizeLimit(11 * 1024 * 1024)]
+    public async Task<IActionResult> ReadRequest([FromForm] ReadBookingRequestForm form, CancellationToken ct)
+    {
+        byte[]? attachment = null;
+        if (form.File is { Length: > 0 } file)
+        {
+            using var buffer = new MemoryStream();
+            await file.CopyToAsync(buffer, ct);
+            attachment = buffer.ToArray();
+        }
+
+        var result = await mediator.Send(new ReadBookingRequestQuery
+        {
+            CustomerId = form.CustomerId,
+            ReceivedOn = form.ReceivedOn,
+            Attachment = attachment,
+            AttachmentMediaType = form.File?.ContentType,
+            AttachmentFileName = form.File?.FileName,
+            MessageText = form.MessageText
+        }, ct);
+        return result.IsSuccess ? Ok(result.Value) : BadRequest(ErrorResponse.FromResult(result));
+    }
+
     /// <summary>Books one Cold Chain truck-trip from the client's rate agreement.</summary>
     [HttpPost(Name = "CreateColdChainBooking")]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
@@ -430,3 +463,6 @@ public class BookingController(IMediator mediator) : ControllerBase
             : BadRequest(ErrorResponse.FromResult(result));
     }
 }
+
+/// <summary>A client's booking request as uploaded: a screenshot, the pasted message, or both.</summary>
+public record ReadBookingRequestForm(Guid CustomerId, DateOnly ReceivedOn, IFormFile? File, string? MessageText);

@@ -51,3 +51,15 @@ export function documentStatusLabel(status: unknown): string {
 export function chargeSourceLabel(source: unknown): string {
   return statusKey(source) === "quoted" ? "Quoted" : "Added";
 }
+
+const TRUCK_SIZES: Record<string, string> = {
+  twotonner: "2-tonner",
+  threetonner: "3-tonner",
+  fourtonner: "4-tonner",
+  tentonner: "10-tonner",
+};
+
+/** 'four_tonner' | 'FourTonner' -> '4-tonner'. Null/undefined -> '-'. */
+export function truckSizeLabel(size: unknown): string {
+  return TRUCK_SIZES[statusKey(size)] ?? humanize(size);
+}

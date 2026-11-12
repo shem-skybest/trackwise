@@ -1007,6 +1007,17 @@ bills in batches per client billing period, roadmap #11).
 - **Planning board** (`GetUnassignedBookings`): one day's Cold Chain bookings still Pending or
   Confirmed, which is exactly the ones with no trip (making the trip moves a booking to
   InExecution, cancelling it moves it back). Shown on Crew Plan's Bookings tab.
+- **Reading a client's request** (`ReadBookingRequest`, `POST /bookings/read`, multipart): Customer
+  Service drops in the client's Viber screenshot, Excel table pasted as an image, or copied text;
+  one `ILlmClient` call returns one proposed truck-trip per truck asked for (date, call time, size,
+  pickup, drops), with drops matched to that client's saved locations plus shared warehouses.
+  Prompt + parser in `Modules/Operations/FreightForwarding/Services/BookingRequests/`. ⚠️ Saves
+  nothing: the model sees short keys (`S12`), never GUIDs, and the parser drops any key it was not
+  shown; a drop saved word for word is matched in code, since the model holds back on near-duplicate
+  outlet names. Built from 14 real 2026 booking screenshots (2026-11-12). UI:
+  `pages/forwarding/booking/read-booking-request` (`/bookings-executions/read`) + `components/proposed-trip-card` ("Read client
+  request" on the bookings list). Images reach every provider as image content
+  (`LlmDocumentBlock.IsImage`). Tests: `BookingRequestReplyParserTests`
 - API: `POST /bookings` (create), `PUT /bookings/{id}`, `POST /bookings/estimate`,
   `POST /bookings/{id}/trip` (needs `Booking.Manage` and `Load.Manage`),
   `POST /bookings/{id}/repeat`, `GET /bookings/unassigned?date=`

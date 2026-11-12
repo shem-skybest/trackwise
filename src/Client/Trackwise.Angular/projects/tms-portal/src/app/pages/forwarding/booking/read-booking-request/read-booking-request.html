@@ -1,0 +1,134 @@
+<div class="animate-in fade-in space-y-4">
+  <ui-page-header
+    title="Read a client's booking request"
+    subtitle="Drop in the Viber screenshot or pasted Excel table; the AI lists the trucks it asks for"
+    backLink="/bookings-executions"
+  />
+
+  <div class="grid gap-4 lg:grid-cols-2">
+    <ui-card>
+      <form [formRoot]="form" class="space-y-4">
+        <ui-form-field label="Client" [required]="true">
+          <app-search-customer [formField]="form.customer" />
+        </ui-form-field>
+
+        <ui-form-field
+          label="Message received"
+          for="receivedOn"
+          [required]="true"
+          hint="Used to work out 'bukas', 'monday' and dates without a year"
+        >
+          <ui-date-field id="receivedOn" [formField]="form.receivedOn" />
+        </ui-form-field>
+
+        <div>
+          <ui-typography variant="label" weight="semibold" class="mb-2">Screenshot</ui-typography>
+          @if (file(); as selected) {
+            <ui-stack
+              direction="row"
+              align="center"
+              gap="2"
+              class="border-border rounded-md border p-3"
+            >
+              <ui-icon name="image" color="muted" />
+              <span class="min-w-0 flex-1 truncate text-sm">{{ selected.name }}</span>
+              <ui-button
+                appearance="text"
+                size="sm"
+                icon="x"
+                ariaLabel="Remove the screenshot"
+                (click)="clearFile()"
+              />
+            </ui-stack>
+          } @else {
+            <ui-file-upload
+              mode="advanced"
+              accept="image/png,image/jpeg,image/webp,application/pdf"
+              [maxFileSize]="10485760"
+              chooseLabel="Choose screenshot"
+              (filesSelect)="onFilesSelect($event)"
+              (rejected)="fileError.set($event)"
+            >
+              <ui-stack align="center" gap="2" class="p-6 text-center">
+                <ui-icon name="images" color="muted" size="xl" />
+                <ui-typography color="secondary">
+                  Drag the screenshot here, or press Ctrl+V to paste it
+                </ui-typography>
+              </ui-stack>
+            </ui-file-upload>
+          }
+          @if (fileError(); as message) {
+            <ui-alert intent="danger" class="mt-2">{{ message }}</ui-alert>
+          }
+        </div>
+
+        <ui-form-field
+          label="Or paste the message text"
+          for="messageText"
+          hint="Optional when there's a screenshot"
+        >
+          <ui-textarea-field id="messageText" [formField]="form.messageText" [rows]="4" />
+        </ui-form-field>
+
+        <ui-button
+          type="submit"
+          icon="sparkles"
+          label="Read request"
+          [loading]="form().submitting()"
+        />
+      </form>
+    </ui-card>
+
+    <ui-card class="lg:sticky lg:top-4 lg:self-start">
+      @if (previewUrl(); as url) {
+        <img
+          [src]="url"
+          alt="The client's booking request"
+          class="max-h-[70vh] w-full rounded-md object-contain"
+        />
+      } @else if (file()) {
+        <ui-stack align="center" gap="2" class="p-8 text-center">
+          <ui-icon name="file-text" color="muted" size="xl" />
+          <ui-typography color="secondary">PDF attached - no preview</ui-typography>
+        </ui-stack>
+      } @else {
+        <ui-stack align="center" gap="2" class="p-8 text-center">
+          <ui-icon name="message-square" color="muted" size="xl" />
+          <ui-typography color="secondary">The screenshot shows here</ui-typography>
+        </ui-stack>
+      }
+    </ui-card>
+  </div>
+
+  @if (error(); as message) {
+    <ui-alert intent="danger">{{ message }}</ui-alert>
+  }
+
+  @if (form().submitting()) {
+    <ui-stack direction="row" align="center" gap="2">
+      <ui-spinner size="24px" />
+      <span>Reading the request…</span>
+    </ui-stack>
+  }
+
+  @if (hasReading()) {
+    <ui-alert intent="info">
+      Check every truck against the screenshot. Nothing is saved yet: booking straight from here comes
+      once Cold Chain booking is back in the new booking module.
+    </ui-alert>
+
+    @for (warning of warnings(); track $index) {
+      <ui-alert intent="warning">{{ warning }}</ui-alert>
+    }
+
+    @for (trip of trips(); track $index; let i = $index) {
+      <app-proposed-trip-card
+        [trip]="trip"
+        [truckNumber]="i + 1"
+        (sitePicked)="pickSite(i, $event)"
+      />
+    } @empty {
+      <ui-alert intent="neutral">No trucks found in this request.</ui-alert>
+    }
+  }
+</div>

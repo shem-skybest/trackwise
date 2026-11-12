@@ -2,6 +2,7 @@ import type { Routes } from "@angular/router";
 import { authGuard } from "@/core/auth";
 import { BookingDetailsComponent } from "./booking-details/booking-details";
 import { BookingsListComponent } from "./bookings-list/bookings-list";
+import { ReadBookingRequest } from "./read-booking-request/read-booking-request";
 
 // import { ColdChainBookingAdd } from "./cold-chain-booking-add/cold-chain-booking-add";
 // import { ColdChainBookingEdit } from "./cold-chain-booking-edit/cold-chain-booking-edit";
@@ -34,6 +35,15 @@ export const BookingRoutes: Routes = [
   //     permission: "Permission.Booking.Manage",
   //   },
   // },
+  {
+    path: "read",
+    component: ReadBookingRequest,
+    canActivate: [authGuard],
+    data: {
+      breadcrumb: "Read Client Request",
+      permission: "Permission.Booking.Manage",
+    },
+  },
   {
     path: ":id",
     component: BookingDetailsComponent,

@@ -3274,6 +3274,96 @@
         }
       }
     },
+    "/bookings/read": {
+      "post": {
+        "tags": [
+          "Booking"
+        ],
+        "operationId": "ReadBookingRequest",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "CustomerId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "ReceivedOn": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "File": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "MessageText": {
+                    "type": "string"
+                  }
+                }
+              },
+              "encoding": {
+                "CustomerId": {
+                  "style": "form"
+                },
+                "ReceivedOn": {
+                  "style": "form"
+                },
+                "File": {
+                  "style": "form"
+                },
+                "MessageText": {
+                  "style": "form"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingRequestReadingDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/bookings/estimate": {
       "post": {
         "tags": [
@@ -38359,6 +38449,26 @@
         },
         "additionalProperties": false
       },
+      "BookingRequestReadingDto": {
+        "type": "object",
+        "properties": {
+          "trips": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProposedColdChainTripDto"
+            },
+            "nullable": true
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "BookingStatus": {
         "enum": [
           "draft",
@@ -51723,6 +51833,113 @@
           },
           "isAdvanceBilling": {
             "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProposedColdChainTripDto": {
+        "type": "object",
+        "properties": {
+          "serviceDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "callTime": {
+            "type": "string",
+            "format": "time",
+            "nullable": true
+          },
+          "truckSize": {
+            "$ref": "#/components/schemas/TruckTonnageClass"
+          },
+          "pickupSite": {
+            "$ref": "#/components/schemas/ProposedSiteDto"
+          },
+          "pickupText": {
+            "type": "string",
+            "nullable": true
+          },
+          "commodity": {
+            "type": "string",
+            "nullable": true
+          },
+          "temperatureMinC": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "temperatureMaxC": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "drops": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProposedDropDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProposedDropDto": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "nullable": true
+          },
+          "site": {
+            "$ref": "#/components/schemas/ProposedSiteDto"
+          },
+          "candidates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProposedSiteDto"
+            },
+            "nullable": true
+          },
+          "plannedBoxes": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "plannedBags": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProposedSiteDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "code": {
+            "type": "string",
+            "nullable": true
+          },
+          "city": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
