@@ -2,7 +2,9 @@
 
 <ui-container maxWidth="md">
   <ui-stack gap="6">
-    <app-subscription-card />
+    @if (showSubscription()) {
+      <app-subscription-card />
+    }
     <app-xendit-card />
     <app-stripe-connect-card />
     @if (canViewTax) {
