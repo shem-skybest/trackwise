@@ -157,3 +157,8 @@ kotlin {
 tasks.withType<KotlinCompilationTask<*>>().configureEach {
     dependsOn(tasks.named("openApiGenerate"))
 }
+
+// Release builds also scan the source set roots for baseline profiles, which includes the generated dir.
+tasks.matching { it.name.endsWith("ArtProfile") }.configureEach {
+    dependsOn(tasks.named("openApiGenerate"))
+}
